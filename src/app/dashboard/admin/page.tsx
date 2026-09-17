@@ -248,6 +248,23 @@ export default async function AdminDashboard({
           <div className="text-xs text-slate-500">View staff attendance</div>
         </Link>
       </div>
+      <div className="mt-8">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">Master Data & Settings</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <Link href="/dashboard/admin/states" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
+            <div className="font-semibold text-slate-900">States</div>
+            <div className="text-xs text-slate-500 mt-1">Manage States</div>
+          </Link>
+          <Link href="/dashboard/admin/cities" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
+            <div className="font-semibold text-slate-900">Cities</div>
+            <div className="text-xs text-slate-500 mt-1">Manage Cities</div>
+          </Link>
+          <Link href="/dashboard/admin/routes" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
+            <div className="font-semibold text-slate-900">Routes</div>
+            <div className="text-xs text-slate-500 mt-1">Manage Routes</div>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
