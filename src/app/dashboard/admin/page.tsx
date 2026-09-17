@@ -226,7 +226,7 @@ export default async function AdminDashboard({
                     </tr>
                   ) : (
                     salesmanPerformance.map((sp: any) => (
-                      <tr key={sp.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors">
+                      <tr key={sp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                         <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{sp.name}</td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-alvoun-green">
@@ -259,7 +259,7 @@ export default async function AdminDashboard({
             </div>
             <div className="p-2">
               {outstandingCustomersCount > 0 ? (
-                <Link href="/dashboard/admin/customers" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors group">
+                <Link href="/dashboard/admin/customers" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-colors group">
                   <div className="mt-0.5 text-alvoun-amber"><AlertCircle className="h-5 w-5" /></div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-alvoun-blue transition-colors">
@@ -270,7 +270,7 @@ export default async function AdminDashboard({
                   <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-alvoun-blue" />
                 </Link>
               ) : null}
-              <Link href="/dashboard/admin/locations" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors group">
+              <Link href="/dashboard/admin/locations" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-colors group">
                 <div className="mt-0.5 text-alvoun-blue"><MapIcon className="h-5 w-5" /></div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-alvoun-blue transition-colors">

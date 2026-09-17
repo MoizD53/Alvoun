@@ -61,7 +61,7 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
           <div className="flex gap-3">
             <button 
               onClick={() => setShowComplete(false)} 
-              className="flex-1 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-600 dark:text-slate-400 active:bg-slate-50 dark:bg-slate-900 transition-colors"
+              className="flex-1 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-600 dark:text-slate-400 active:bg-slate-50 dark:active:bg-slate-900 transition-colors"
             >
               Cancel
             </button>
@@ -97,7 +97,7 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
         </button>
         <button 
           onClick={() => setShowComplete(true)}
-          className="w-full py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold active:bg-slate-50 dark:bg-slate-900 transition-colors flex items-center justify-center gap-2 shadow-sm"
+          className="w-full py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold active:bg-slate-50 dark:active:bg-slate-900 transition-colors flex items-center justify-center gap-2 shadow-sm"
         >
           <CheckCircle2 className="h-5 w-5 text-slate-400" />
           END VISIT

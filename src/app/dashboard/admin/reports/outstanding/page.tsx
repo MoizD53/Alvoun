@@ -107,7 +107,7 @@ export default async function OutstandingReportPage({
                 </tr>
               ) : (
                 reportData.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors group">
+                  <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
                     <td className="px-6 py-3">
                       <div className="font-bold text-slate-900 dark:text-slate-100">{c.customerName}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-400">{c.city.name}, {c.state.name}</div>

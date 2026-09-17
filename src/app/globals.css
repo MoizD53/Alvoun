@@ -66,3 +66,24 @@ body {
   --color-alvoun-dark: #38bdf8;
 }
 
+/* Leaflet Dark Mode Support */
+.dark .leaflet-popup-content-wrapper,
+.dark .leaflet-popup-tip {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+.dark .leaflet-container a.leaflet-popup-close-button {
+  color: #94a3b8;
+}
+.dark .leaflet-container a.leaflet-popup-close-button:hover {
+  color: #f8fafc;
+}
+.dark .leaflet-control-zoom a, 
+.dark .leaflet-control-attribution {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+.dark .leaflet-control-zoom a:hover {
+  background-color: #1e293b !important;
+}
+

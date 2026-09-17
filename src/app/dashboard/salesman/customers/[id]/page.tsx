@@ -24,7 +24,7 @@ export default async function CustomerDetailPage({
     <div className="space-y-6 pb-24 animate-fade-in-up">
       {/* Top Nav */}
       <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sticky top-0 z-20">
-        <Link href="/dashboard/salesman/customers" className="p-2.5 bg-white dark:bg-slate-950 rounded-full shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 active:bg-slate-50 dark:bg-slate-900 transition-colors">
+        <Link href="/dashboard/salesman/customers" className="p-2.5 bg-white dark:bg-slate-950 rounded-full shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 active:bg-slate-50 dark:active:bg-slate-900 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate flex-1">{customer.customerName}</h1>
@@ -72,7 +72,7 @@ export default async function CustomerDetailPage({
 
       {/* Actions */}
       <div className="space-y-4">
-        <a href={`tel:${customer.contact}`} className="flex items-center justify-center gap-2 w-full py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold active:bg-slate-50 dark:bg-slate-900 transition-colors shadow-sm text-base">
+        <a href={`tel:${customer.contact}`} className="flex items-center justify-center gap-2 w-full py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold active:bg-slate-50 dark:active:bg-slate-900 transition-colors shadow-sm text-base">
           <Phone className="h-5 w-5 text-slate-400" />
           CALL CUSTOMER
         </a>

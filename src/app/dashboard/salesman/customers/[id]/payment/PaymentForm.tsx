@@ -56,7 +56,7 @@ export default function PaymentForm({ customer }: { customer: any }) {
   return (
     <div className="space-y-6 pb-24 animate-fade-in-up">
       <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sticky top-0 z-20">
-        <Link href={`/dashboard/salesman/customers/${customer.id}`} className="p-2.5 bg-white dark:bg-slate-950 rounded-full shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 active:bg-slate-50 dark:bg-slate-900 transition-colors">
+        <Link href={`/dashboard/salesman/customers/${customer.id}`} className="p-2.5 bg-white dark:bg-slate-950 rounded-full shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 active:bg-slate-50 dark:active:bg-slate-900 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate">Collect Payment</h1>
@@ -77,7 +77,7 @@ export default function PaymentForm({ customer }: { customer: any }) {
               placeholder="0.00"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-2xl font-black focus:outline-none focus:ring-2 focus:ring-alvoun-green focus:bg-white dark:bg-slate-950 transition-all shadow-inner"
+              className="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-2xl font-black focus:outline-none focus:ring-2 focus:ring-alvoun-green focus:bg-white dark:focus:bg-slate-950 transition-all shadow-inner"
             />
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function PaymentForm({ customer }: { customer: any }) {
           <select 
             value={method}
             onChange={e => setMethod(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 font-bold text-slate-700 dark:text-slate-300 text-lg focus:outline-none focus:ring-2 focus:ring-alvoun-green focus:bg-white dark:bg-slate-950"
+            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 font-bold text-slate-700 dark:text-slate-300 text-lg focus:outline-none focus:ring-2 focus:ring-alvoun-green focus:bg-white dark:focus:bg-slate-950"
           >
             <option value="Cash">Cash</option>
             <option value="UPI">UPI</option>

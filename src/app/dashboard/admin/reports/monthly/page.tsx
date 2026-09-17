@@ -92,7 +92,7 @@ export default async function MonthlyReportsPage({
                 const [y, m] = row.monthStr.split('-');
                 const monthName = new Date(2000, parseInt(m)-1, 1).toLocaleString('default', { month: 'long' });
                 return (
-                  <tr key={row.monthStr} className="hover:bg-slate-50 dark:bg-slate-900">
+                  <tr key={row.monthStr} className="hover:bg-slate-50 dark:hover:bg-slate-900">
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{monthName} {y}</td>
                     <td className="px-4 py-3 text-right font-bold text-alvoun-blue">{formatMoney(row.salesAmount)}</td>
                     <td className="px-4 py-3 text-right font-bold text-green-600">{formatMoney(row.collectionAmount)}</td>

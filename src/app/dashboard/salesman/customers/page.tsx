@@ -67,7 +67,7 @@ export default async function SalesmanCustomersPage({
                   <Link 
                     key={c.id} 
                     href={`/dashboard/salesman/customers/${c.id}`}
-                    className="flex items-center justify-between p-4 active:bg-slate-50 dark:bg-slate-900 transition-colors group"
+                    className="flex items-center justify-between p-4 active:bg-slate-50 dark:active:bg-slate-900 transition-colors group"
                   >
                     <div className="flex-1 min-w-0 pr-4">
                       <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate mb-1">

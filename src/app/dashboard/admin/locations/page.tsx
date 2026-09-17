@@ -122,7 +122,7 @@ export default async function AdminLocationsPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {displayData.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors">
+                <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-bold text-slate-900 dark:text-slate-100">{s.name}</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">{s.employeeCode}</div>

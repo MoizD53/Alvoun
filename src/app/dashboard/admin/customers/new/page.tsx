@@ -17,7 +17,7 @@ export default async function NewCustomerPage() {
   return (
     <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 sm:p-8">
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/dashboard/admin/customers" className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+        <Link href="/dashboard/admin/customers" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Add New Customer</h1>

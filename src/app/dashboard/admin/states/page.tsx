@@ -46,7 +46,7 @@ export default async function StatesPage() {
                     </tr>
                   ) : (
                     states.map((state) => (
-                      <tr key={state.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors group">
+                      <tr key={state.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
                         <td className="px-6 py-3 font-bold text-slate-900 dark:text-slate-100">{state.name}</td>
                         <td className="px-6 py-3 text-center">
                           <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
@@ -81,7 +81,7 @@ export default async function StatesPage() {
                   name="name" 
                   required 
                   placeholder="e.g. Gujarat"
-                  className="w-full rounded-md border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 focus:bg-white dark:bg-slate-950 focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
+                  className="w-full rounded-md border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-950 focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
                 />
               </div>
               <button type="submit" className="w-full bg-alvoun-blue text-white rounded-md px-4 py-2.5 text-sm font-medium hover:bg-alvoun-dark transition-colors shadow-sm mt-2">

@@ -80,7 +80,7 @@ export default async function ProductReportPage({
               </tr>
             ) : (
               reportData.map((row) => (
-                <tr key={row.name} className="hover:bg-slate-50 dark:bg-slate-900">
+                <tr key={row.name} className="hover:bg-slate-50 dark:hover:bg-slate-900">
                   <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">{row.name}</td>
                   <td className="px-4 py-3 text-right">{formatNumber(row.cratesSold)}</td>
                   <td className="px-4 py-3 text-right">{formatNumber(row.bottlesSold)}</td>

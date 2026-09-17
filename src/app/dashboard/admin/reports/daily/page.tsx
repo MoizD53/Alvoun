@@ -126,7 +126,7 @@ export default async function DailyReportsPage({
                 </tr>
               ) : (
                 reportData.map((d) => (
-                  <tr key={d.dateStr} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors">
+                  <tr key={d.dateStr} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                     <td className="px-6 py-3 font-bold text-slate-900 dark:text-slate-100">{d.dateStr}</td>
                     <td className="px-6 py-3 text-center text-slate-600 dark:text-slate-400">{formatNumber(d.visits)}</td>
                     <td className="px-6 py-3 text-center text-slate-600 dark:text-slate-400">{formatNumber(d.numSales)}</td>

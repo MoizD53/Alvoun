@@ -68,7 +68,7 @@ export default async function CustomersPage({
         <div className="flex gap-2 w-full sm:w-auto">
           <Link 
             href="/dashboard/admin/customers/import" 
-            className="flex items-center justify-center gap-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-50 dark:bg-slate-900 transition-colors flex-1 sm:flex-none shadow-sm"
+            className="flex items-center justify-center gap-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors flex-1 sm:flex-none shadow-sm"
           >
             <Upload className="h-4 w-4" />
             Import
@@ -152,7 +152,7 @@ export default async function CustomersPage({
                   const lastVisit = c.visits[0]?.createdAt ? new Date(c.visits[0].createdAt).toLocaleDateString() : 'Never';
                   
                   return (
-                    <tr key={c.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors group">
+                    <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
                       <td className="px-6 py-3">
                         <div className="font-bold text-slate-900 dark:text-slate-100">{c.customerName}</div>
                         <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{c.contact} • {c.city.name}</div>
@@ -207,7 +207,7 @@ export default async function CustomersPage({
               const outstanding = calculateOutstanding(c as any);
               const isNegative = outstanding > 0;
               return (
-                <div key={c.id} className="p-4 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:bg-slate-900 transition-colors">
+                <div key={c.id} className="p-4 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-slate-100">{c.customerName}</h3>
@@ -231,7 +231,7 @@ export default async function CustomersPage({
                     </div>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <a href={`tel:${c.contact}`} className="flex-1 flex justify-center items-center gap-2 py-2 border border-slate-200 dark:border-slate-800 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900">
+                    <a href={`tel:${c.contact}`} className="flex-1 flex justify-center items-center gap-2 py-2 border border-slate-200 dark:border-slate-800 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900">
                       <Phone className="h-4 w-4" /> Call
                     </a>
                     <Link href={`/dashboard/admin/customers/${c.id}`} className="flex-1 flex justify-center items-center gap-2 py-2 bg-alvoun-light/30 border border-alvoun-light text-alvoun-blue rounded-md text-sm font-medium hover:bg-alvoun-light/50">

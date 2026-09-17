@@ -86,7 +86,7 @@ export default async function AdminSessionsPage() {
                   }
 
                   return (
-                    <tr key={ws.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors">
+                    <tr key={ws.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                       <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{ws.salesman.name}</td>
                       <td className="px-6 py-4">
                         {ws.status === 'ACTIVE' && (
