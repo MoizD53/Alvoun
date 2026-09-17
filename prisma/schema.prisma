@@ -1,0 +1,244 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums are not supported in SQLite, using String instead.
+
+model Profile {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String?
+  email     String    @unique
+  password  String
+  role      String    @default("SALESMAN")
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  salesman  Salesman?
+}
+
+model Salesman {
+  id           String     @id @default(cuid())
+  profileId    String     @unique
+  profile      Profile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  employeeCode String     @unique
+  name         String
+  phone        String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  routes       Route[]
+  customers    Customer[]
+  visits       Visit[]
+  sales        Sale[]
+  payments     Payment[]
+  workSessions WorkSession[]
+  locations    Location[]
+}
+
+model State {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cities    City[]
+  customers Customer[]
+}
+
+model City {
+  id        String   @id @default(cuid())
+  stateId   String
+  state     State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routes    Route[]
+  customers Customer[]
+
+  @@index([stateId])
+}
+
+model Route {
+  id         String    @id @default(cuid())
+  name       String
+  cityId     String
+  city       City      @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  salesmanId String?
+  salesman   Salesman? @relation(fields: [salesmanId], references: [id], onDelete: SetNull)
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  customers  Customer[]
+
+  @@index([cityId])
+  @@index([salesmanId])
+}
+
+model Customer {
+  id                 String      @id @default(cuid())
+  customerName       String
+  contact            String
+  address            String
+  stateId            String
+  state              State       @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  cityId             String
+  city               City        @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  routeId            String
+  route              Route       @relation(fields: [routeId], references: [id], onDelete: Restrict)
+  salesmanId         String
+  salesman           Salesman    @relation(fields: [salesmanId], references: [id], onDelete: Restrict)
+  openingBalance     Int         @default(0)
+  openingBalanceType String      @default("DEBIT")
+  status             String      @default("ACTIVE")
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  visits             Visit[]
+  sales              Sale[]
+  payments           Payment[]
+
+  @@index([stateId])
+  @@index([cityId])
+  @@index([routeId])
+  @@index([salesmanId])
+  @@index([status])
+}
+
+model Product {
+  id              String     @id @default(cuid())
+  name            String     @unique
+  bottlesPerCrate Int
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  rates           Rate[]
+  saleItems       SaleItem[]
+}
+
+model Rate {
+  id            String    @id @default(cuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  minQuantity   Int       @default(0)
+  maxQuantity   Int?
+  rate          Int
+  effectiveDate DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([productId])
+}
+
+model Visit {
+  id           String    @id @default(cuid())
+  customerId   String
+  customer     Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  salesmanId   String
+  salesman     Salesman  @relation(fields: [salesmanId], references: [id], onDelete: Restrict)
+  startedAt    DateTime  @default(now())
+  status       String    @default("STARTED") // STARTED, COMPLETED
+  noSaleReason String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([customerId])
+  @@index([salesmanId])
+}
+
+model Sale {
+  id          String     @id @default(cuid())
+  customerId  String
+  customer    Customer   @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  salesmanId  String
+  salesman    Salesman   @relation(fields: [salesmanId], references: [id], onDelete: Restrict)
+  saleDate    DateTime   @default(now())
+  totalAmount Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  items       SaleItem[]
+
+  @@index([customerId])
+  @@index([salesmanId])
+}
+
+model SaleItem {
+  id           String   @id @default(cuid())
+  saleId       String
+  sale         Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  crates       Int
+  looseBottles Int      @default(0)
+  standardRate Int
+  actualRate   Int
+  amount       Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  salesmanId      String
+  salesman        Salesman @relation(fields: [salesmanId], references: [id], onDelete: Restrict)
+  amount          Int
+  paymentMethod   String   // Cash, UPI, Bank Transfer, Cheque, Other
+  referenceNumber String?
+  paymentDate     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([salesmanId])
+}
+
+model WorkSession {
+  id         String    @id @default(cuid())
+  salesmanId String
+  salesman   Salesman  @relation(fields: [salesmanId], references: [id], onDelete: Restrict)
+  workDate   DateTime
+  loginAt    DateTime  @default(now())
+  logoutAt   DateTime?
+  status     String    @default("ACTIVE") // ACTIVE, COMPLETED, FORCE_CLOSED
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  locations  Location[]
+
+  @@unique([salesmanId, workDate])
+  @@index([salesmanId])
+}
+
+model Location {
+  id            String      @id @default(cuid())
+  salesmanId    String
+  workSessionId String
+  latitude      Float
+  longitude     Float
+  accuracy      Float
+  recordedAt    DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+
+  salesman      Salesman    @relation(fields: [salesmanId], references: [id], onDelete: Cascade)
+  workSession   WorkSession @relation(fields: [workSessionId], references: [id], onDelete: Cascade)
+
+  @@index([salesmanId, recordedAt])
+  @@index([workSessionId, recordedAt])
+  @@index([recordedAt])
+}
