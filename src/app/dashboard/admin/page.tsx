@@ -118,77 +118,77 @@ export default async function AdminDashboard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             Good morning, {session.user.name?.split(' ')[0]}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Here is what's happening with your business today.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Here is what's happening with your business today.</p>
         </div>
         <div className="flex items-center gap-3">
           <input 
             type="date" 
             defaultValue={startOfDay.toISOString().split('T')[0]}
-            className="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-alvoun-blue/20 outline-none"
+            className="text-sm border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-alvoun-blue/20 outline-none"
           />
         </div>
       </div>
 
       {/* 4 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500">TOTAL SALES</h3>
+            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">TOTAL SALES</h3>
             <div className="h-8 w-8 rounded-full bg-alvoun-light flex items-center justify-center text-alvoun-blue">
               <TrendingUp className="h-4 w-4" />
             </div>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-slate-900">{formatMoney(totalSales)}</div>
+            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatMoney(totalSales)}</div>
             <div className="text-xs font-medium text-alvoun-green mt-2 flex items-center">
               Today's Volume
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500">COLLECTION</h3>
-            <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center text-alvoun-green">
+            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">COLLECTION</h3>
+            <div className="h-8 w-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-alvoun-green">
               <Wallet className="h-4 w-4" />
             </div>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-slate-900">{formatMoney(totalCollection)}</div>
-            <div className="text-xs font-medium text-slate-500 mt-2 flex items-center">
+            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatMoney(totalCollection)}</div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 flex items-center">
               Received Today
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500">OUTSTANDING</h3>
+            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">OUTSTANDING</h3>
             <div className="h-8 w-8 rounded-full bg-orange-50 flex items-center justify-center text-alvoun-amber">
               <CreditCard className="h-4 w-4" />
             </div>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-slate-900">{formatMoney(totalOutstanding)}</div>
-            <div className="text-xs font-medium text-slate-500 mt-2 flex items-center">
+            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatMoney(totalOutstanding)}</div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 flex items-center">
               Across Market
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500">VISITS</h3>
-            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">VISITS</h3>
+            <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
               <MapPin className="h-4 w-4" />
             </div>
           </div>
           <div>
-            <div className="text-3xl font-extrabold text-slate-900">{formatNumber(visits.length)}</div>
-            <div className="text-xs font-medium text-slate-500 mt-2 flex items-center">
+            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatNumber(visits.length)}</div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 flex items-center">
               Customers Visited Today
             </div>
           </div>
@@ -200,16 +200,16 @@ export default async function AdminDashboard({
         <div className="lg:col-span-2 space-y-8">
           
           {/* Salesman Activity Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900">Salesman Activity</h2>
+          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Salesman Activity</h2>
               <Link href="/dashboard/admin/locations" className="text-sm font-medium text-alvoun-blue hover:underline">
                 View Map
               </Link>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
                   <tr>
                     <th className="px-6 py-3">Salesman</th>
                     <th className="px-6 py-3">Status</th>
@@ -217,27 +217,27 @@ export default async function AdminDashboard({
                     <th className="px-6 py-3 text-right">Collection</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {salesmanPerformance.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                      <td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                         No field staff active today.
                       </td>
                     </tr>
                   ) : (
                     salesmanPerformance.map((sp: any) => (
-                      <tr key={sp.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-900">{sp.name}</td>
+                      <tr key={sp.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{sp.name}</td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-alvoun-green">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-alvoun-green">
                             <span className="h-1.5 w-1.5 rounded-full bg-alvoun-green"></span>
                             {sp.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-right font-medium text-slate-900">
+                        <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
                           {formatMoney(sp.sales)}
                         </td>
-                        <td className="px-6 py-4 text-right font-medium text-slate-900">
+                        <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
                           {formatMoney(sp.collection)}
                         </td>
                       </tr>
@@ -253,30 +253,30 @@ export default async function AdminDashboard({
         <div className="space-y-6">
           
           {/* Attention Required */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200">
-              <h2 className="text-base font-bold text-slate-900">Attention Required</h2>
+          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Attention Required</h2>
             </div>
             <div className="p-2">
               {outstandingCustomersCount > 0 ? (
-                <Link href="/dashboard/admin/customers" className="flex items-start gap-3 p-4 hover:bg-slate-50 rounded-lg transition-colors group">
+                <Link href="/dashboard/admin/customers" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors group">
                   <div className="mt-0.5 text-alvoun-amber"><AlertCircle className="h-5 w-5" /></div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900 group-hover:text-alvoun-blue transition-colors">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-alvoun-blue transition-colors">
                       {outstandingCustomersCount} customers have outstanding
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">Review pending market collections</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Review pending market collections</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-alvoun-blue" />
                 </Link>
               ) : null}
-              <Link href="/dashboard/admin/locations" className="flex items-start gap-3 p-4 hover:bg-slate-50 rounded-lg transition-colors group">
+              <Link href="/dashboard/admin/locations" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors group">
                 <div className="mt-0.5 text-alvoun-blue"><MapIcon className="h-5 w-5" /></div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900 group-hover:text-alvoun-blue transition-colors">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-alvoun-blue transition-colors">
                     View Live Locations
                   </p>
-                  <p className="text-xs text-slate-500 mt-1">Monitor real-time field activity</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monitor real-time field activity</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-alvoun-blue" />
               </Link>
@@ -284,26 +284,26 @@ export default async function AdminDashboard({
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200">
-              <h2 className="text-base font-bold text-slate-900">Quick Actions</h2>
+          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Quick Actions</h2>
             </div>
             <div className="p-4 grid grid-cols-2 gap-3">
-              <Link href="/dashboard/admin/customers" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+              <Link href="/dashboard/admin/customers" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
                 <Users className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Customers</span>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Customers</span>
               </Link>
-              <Link href="/dashboard/admin/sessions" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+              <Link href="/dashboard/admin/sessions" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
                 <UserPlus className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Salesmen</span>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Salesmen</span>
               </Link>
-              <Link href="/dashboard/admin/routes" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+              <Link href="/dashboard/admin/routes" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
                 <MapPin className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Routes</span>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Routes</span>
               </Link>
-              <Link href="/dashboard/admin/reports/monthly" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+              <Link href="/dashboard/admin/reports/monthly" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
                 <FileDown className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Reports</span>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Reports</span>
               </Link>
             </div>
           </div>

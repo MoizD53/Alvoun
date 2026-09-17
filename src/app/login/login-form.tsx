@@ -29,7 +29,7 @@ export default function LoginForm() {
               name="email"
               placeholder="Enter your email"
               required
-              className="block w-full appearance-none rounded-[12px] bg-[#02060D]/40 border border-white/10 pl-10 pr-4 h-[44px] sm:h-[48px] text-[14px] text-white placeholder-white/40 focus:border-[#0099FF] focus:bg-[#02060D]/60 focus:outline-none focus:ring-1 focus:ring-[#0099FF] transition-all"
+              className="block w-full appearance-none rounded-[12px] bg-[#02060D]/40 border border-white dark:border-slate-950/10 pl-10 pr-4 h-[44px] sm:h-[48px] text-[14px] text-white placeholder-white/40 focus:border-[#0099FF] focus:bg-[#02060D]/60 focus:outline-none focus:ring-1 focus:ring-[#0099FF] transition-all"
             />
           </div>
         </div>
@@ -49,7 +49,7 @@ export default function LoginForm() {
               placeholder="••••••••••••"
               required
               minLength={6}
-              className="block w-full appearance-none rounded-[12px] bg-[#02060D]/40 border border-white/10 pl-10 pr-10 h-[44px] sm:h-[48px] text-[14px] text-white placeholder-white/40 focus:border-[#0099FF] focus:bg-[#02060D]/60 focus:outline-none focus:ring-1 focus:ring-[#0099FF] transition-all tracking-[0.2em]"
+              className="block w-full appearance-none rounded-[12px] bg-[#02060D]/40 border border-white dark:border-slate-950/10 pl-10 pr-10 h-[44px] sm:h-[48px] text-[14px] text-white placeholder-white/40 focus:border-[#0099FF] focus:bg-[#02060D]/60 focus:outline-none focus:ring-1 focus:ring-[#0099FF] transition-all tracking-[0.2em]"
             />
             <button
               type="button"
@@ -77,7 +77,7 @@ export default function LoginForm() {
         </div>
 
         {errorMessage && (
-          <div className="mt-4 p-4 rounded-[12px] bg-red-500/10 border border-red-500/20 text-center animate-fade-in-up" style={{ animationDuration: '0.3s' }}>
+          <div className="mt-4 p-4 rounded-[12px] bg-red-50 dark:bg-red-900/200/10 border border-red-500/20 text-center animate-fade-in-up" style={{ animationDuration: '0.3s' }}>
             <p className="text-[14px] font-medium text-red-400">Unable to sign in</p>
             <p className="text-[13px] text-red-300/80 mt-1">{errorMessage}</p>
           </div>

@@ -14,7 +14,7 @@ export default async function SalesmanLayout({
   const workingHours = isWorkingHours(getCurrentKolkataTime());
 
   return (
-    <div className={`max-w-md mx-auto sm:max-w-none bg-slate-50 min-h-screen flex flex-col ${workingHours ? 'pb-20' : ''}`}>
+    <div className={`max-w-md mx-auto sm:max-w-none bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col ${workingHours ? 'pb-20' : ''}`}>
       {workingHours && <LocationTracker />}
       
       {/* Mobile Top Header */}
@@ -40,12 +40,12 @@ export default async function SalesmanLayout({
 
       {/* Bottom Navigation */}
       {workingHours && (
-        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto sm:max-w-none bg-white border-t border-slate-200 z-50 px-6 py-2 flex justify-between items-center pb-safe">
-          <Link href="/dashboard/salesman" className="flex flex-col items-center text-slate-500 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
+        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto sm:max-w-none bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 z-50 px-6 py-2 flex justify-between items-center pb-safe">
+          <Link href="/dashboard/salesman" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
             <Home className="h-6 w-6 mb-1" />
             <span className="text-[10px] font-semibold">Home</span>
           </Link>
-          <Link href="/dashboard/salesman/customers" className="flex flex-col items-center text-slate-500 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
+          <Link href="/dashboard/salesman/customers" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
             <Users className="h-6 w-6 mb-1" />
             <span className="text-[10px] font-semibold">Customers</span>
           </Link>

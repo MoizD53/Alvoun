@@ -19,7 +19,7 @@ interface SalesmanLocation {
 const LeafletMap = dynamic(() => import('./LeafletMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[450px] lg:h-[600px] bg-slate-100 animate-pulse rounded-lg flex items-center justify-center border border-slate-200">
+    <div className="w-full h-[450px] lg:h-[600px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-800">
       <span className="text-slate-400 font-medium">Loading Map...</span>
     </div>
   )

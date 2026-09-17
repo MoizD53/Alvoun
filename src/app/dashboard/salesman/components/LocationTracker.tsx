@@ -88,7 +88,7 @@ export default function LocationTracker() {
         return { color: 'text-yellow-600', bg: 'bg-yellow-100', text: 'Location Stale' };
       case 'offline':
       case 'pending':
-        return { color: 'text-slate-400', bg: 'bg-slate-100', text: 'Location Offline' };
+        return { color: 'text-slate-400', bg: 'bg-slate-100 dark:bg-slate-800', text: 'Location Offline' };
       case 'denied':
         return { color: 'text-red-500', bg: 'bg-red-100', text: 'Permission Denied' };
     }
@@ -97,7 +97,7 @@ export default function LocationTracker() {
   const display = getStatusDisplay();
 
   return (
-    <div className="bg-white px-4 py-3 border-b border-slate-100 flex items-center justify-between shadow-sm sticky top-0 z-20">
+    <div className="bg-white dark:bg-slate-950 px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shadow-sm sticky top-0 z-20">
       <div className="flex items-center gap-2">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${display.bg} ${display.color}`}>
           <MapPin className="w-4 h-4" />

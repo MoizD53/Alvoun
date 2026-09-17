@@ -12,18 +12,18 @@ export default async function RoutesPage() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Routes</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage delivery routes and salesman assignments.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Routes</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage delivery routes and salesman assignments.</p>
         </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Table Column */}
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left whitespace-nowrap">
-                <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
                   <tr>
                     <th className="px-6 py-3">Route Name</th>
                     <th className="px-6 py-3">Location</th>
@@ -33,45 +33,45 @@ export default async function RoutesPage() {
                     <th className="px-6 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {routes.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                      <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center">
                           <MapPin className="h-8 w-8 mb-3 text-slate-300" />
-                          <p className="text-base font-medium text-slate-600">No routes found</p>
+                          <p className="text-base font-medium text-slate-600 dark:text-slate-400">No routes found</p>
                           <p className="text-sm mt-1 text-slate-400">Create your first route using the form.</p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     routes.map((route) => (
-                      <tr key={route.id} className="hover:bg-slate-50 transition-colors group">
-                        <td className="px-6 py-3 font-bold text-slate-900">{route.name}</td>
+                      <tr key={route.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors group">
+                        <td className="px-6 py-3 font-bold text-slate-900 dark:text-slate-100">{route.name}</td>
                         <td className="px-6 py-3">
-                          <span className="font-medium text-slate-700">{route.city.name}</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{route.city.name}</span>
                           <span className="text-slate-400 text-xs ml-1">({route.city.state.name})</span>
                         </td>
                         <td className="px-6 py-3">
                           {route.salesman ? (
-                            <div className="font-medium text-slate-900">{route.salesman.name}</div>
+                            <div className="font-medium text-slate-900 dark:text-slate-100">{route.salesman.name}</div>
                           ) : (
                             <span className="text-slate-400 italic">Unassigned</span>
                           )}
                         </td>
                         <td className="px-6 py-3 text-center">
-                          <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                          <span className="inline-flex items-center justify-center h-6 min-w-[1.5rem] px-2 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
                             {route._count.customers}
                           </span>
                         </td>
                         <td className="px-6 py-3 text-center">
                           {route.isActive ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-alvoun-green">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-alvoun-green">
                               <span className="h-1.5 w-1.5 rounded-full bg-alvoun-green"></span>
                               Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-500">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400">
                               <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
                               Inactive
                             </span>
@@ -93,18 +93,18 @@ export default async function RoutesPage() {
 
         {/* Form Column */}
         <div className="lg:col-span-1">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-24">
-            <h2 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <div className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 sticky top-24">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
               <Plus className="h-4 w-4 text-alvoun-blue" />
               Add New Route
             </h2>
             <form action={async (data) => { 'use server'; await createRoute(data); }} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">City</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">City</label>
                 <select 
                   name="cityId" 
                   required 
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
+                  className="w-full rounded-md border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 focus:bg-white dark:bg-slate-950 focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
                 >
                   <option value="">Select City</option>
                   {cities.map(c => (
@@ -113,20 +113,20 @@ export default async function RoutesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Route Name</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Route Name</label>
                 <input 
                   type="text" 
                   name="name" 
                   required 
                   placeholder="e.g. Downtown Sector A"
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
+                  className="w-full rounded-md border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 focus:bg-white dark:bg-slate-950 focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Default Salesman (Optional)</label>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Default Salesman (Optional)</label>
                 <select 
                   name="defaultSalesmanId" 
-                  className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm bg-slate-50 focus:bg-white focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
+                  className="w-full rounded-md border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 focus:bg-white dark:bg-slate-950 focus:border-alvoun-blue focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 transition-colors"
                 >
                   <option value="">None</option>
                   {salesmen.map(s => (

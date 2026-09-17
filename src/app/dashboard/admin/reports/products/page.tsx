@@ -49,12 +49,12 @@ export default async function ProductReportPage({
   const reportData = Array.from(productMap.values());
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+    <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h2 className="text-xl font-bold text-slate-900">Product Sales Report</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Product Sales Report</h2>
         <div className="flex items-center gap-3">
           <form className="flex items-center gap-2">
-            <input type="date" name="date" defaultValue={dateStr} className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50" />
+            <input type="date" name="date" defaultValue={dateStr} className="px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900" />
             <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium">Filter</button>
           </form>
           <a href={`/api/admin/export?type=products&date=${dateStr}`} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap">
@@ -65,7 +65,7 @@ export default async function ProductReportPage({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 text-slate-600 font-medium border-y border-slate-100">
+          <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-medium border-y border-slate-100 dark:border-slate-800">
             <tr>
               <th className="px-4 py-3">Product</th>
               <th className="px-4 py-3 text-right">Crates Sold</th>
@@ -76,12 +76,12 @@ export default async function ProductReportPage({
           <tbody className="divide-y divide-slate-50">
             {reportData.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-slate-500">No products configured.</td>
+                <td colSpan={4} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">No products configured.</td>
               </tr>
             ) : (
               reportData.map((row) => (
-                <tr key={row.name} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-bold text-slate-900">{row.name}</td>
+                <tr key={row.name} className="hover:bg-slate-50 dark:bg-slate-900">
+                  <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">{row.name}</td>
                   <td className="px-4 py-3 text-right">{formatNumber(row.cratesSold)}</td>
                   <td className="px-4 py-3 text-right">{formatNumber(row.bottlesSold)}</td>
                   <td className="px-4 py-3 text-right font-bold text-alvoun-blue">{formatMoney(row.salesAmount)}</td>

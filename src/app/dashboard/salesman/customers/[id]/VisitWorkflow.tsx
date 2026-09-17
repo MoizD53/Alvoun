@@ -41,13 +41,13 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
   if (visitId) {
     if (showComplete) {
       return (
-        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mt-6 animate-fade-in-up">
-          <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+        <div className="bg-slate-50 dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 mt-6 animate-fade-in-up">
+          <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
             <FileX className="h-5 w-5 text-slate-400" />
             Complete Without Sale
           </h3>
           <select 
-            className="w-full p-4 rounded-xl border border-slate-200 mb-4 bg-white focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 text-slate-700 font-medium"
+            className="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-800 mb-4 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 text-slate-700 dark:text-slate-300 font-medium"
             value={noSaleReason}
             onChange={e => setNoSaleReason(e.target.value)}
           >
@@ -61,7 +61,7 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
           <div className="flex gap-3">
             <button 
               onClick={() => setShowComplete(false)} 
-              className="flex-1 py-3.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 active:bg-slate-50 transition-colors"
+              className="flex-1 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-slate-600 dark:text-slate-400 active:bg-slate-50 dark:bg-slate-900 transition-colors"
             >
               Cancel
             </button>
@@ -80,10 +80,10 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
 
     return (
       <div className="mt-6 space-y-3 animate-fade-in-up">
-        <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-3 mb-4">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 rounded-xl p-4 flex items-center gap-3 mb-4">
            <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-50 dark:bg-green-900/200"></span>
             </span>
            <span className="font-bold text-green-800 text-sm">Visit in progress</span>
         </div>
@@ -97,7 +97,7 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
         </button>
         <button 
           onClick={() => setShowComplete(true)}
-          className="w-full py-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold active:bg-slate-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
+          className="w-full py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold active:bg-slate-50 dark:bg-slate-900 transition-colors flex items-center justify-center gap-2 shadow-sm"
         >
           <CheckCircle2 className="h-5 w-5 text-slate-400" />
           END VISIT

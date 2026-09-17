@@ -104,14 +104,14 @@ export default function CustomerImporter() {
 
   if (results) {
     return (
-      <div className="bg-white p-6 rounded-xl border border-slate-200">
+      <div className="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
         <h2 className="text-xl font-bold mb-4">Import Results</h2>
         <div className="grid grid-cols-2 gap-4 mb-6 text-center">
-          <div className="bg-green-50 text-green-700 p-4 rounded-lg">
+          <div className="bg-green-50 dark:bg-green-900/20 text-green-700 p-4 rounded-lg">
             <div className="text-2xl font-bold">{results.success}</div>
             <div className="text-sm">Successfully Imported</div>
           </div>
-          <div className="bg-red-50 text-red-700 p-4 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 p-4 rounded-lg">
             <div className="text-2xl font-bold">{results.failed}</div>
             <div className="text-sm">Failed</div>
           </div>
@@ -119,8 +119,8 @@ export default function CustomerImporter() {
         
         {results.errors.length > 0 && (
           <div className="mt-6">
-            <h3 className="font-semibold text-slate-800 mb-2">Error Log:</h3>
-            <div className="bg-slate-50 border border-slate-200 rounded-md p-4 max-h-64 overflow-y-auto text-sm font-mono text-red-600 space-y-1">
+            <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Error Log:</h3>
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-4 max-h-64 overflow-y-auto text-sm font-mono text-red-600 space-y-1">
               {results.errors.map((e: string, i: number) => <div key={i}>{e}</div>)}
             </div>
           </div>
@@ -136,10 +136,10 @@ export default function CustomerImporter() {
   return (
     <div>
       {step === 1 && (
-        <div className="bg-white p-8 rounded-xl border border-slate-200 text-center border-dashed">
+        <div className="bg-white dark:bg-slate-950 p-8 rounded-xl border border-slate-200 dark:border-slate-800 text-center border-dashed">
           <UploadIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">Upload Excel/CSV File</h3>
-          <p className="text-slate-500 text-sm mb-6">File must contain customer details along with location routing information.</p>
+          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">Upload Excel/CSV File</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">File must contain customer details along with location routing information.</p>
           <label className="bg-alvoun-blue text-white px-4 py-2 rounded-md cursor-pointer hover:bg-alvoun-dark transition-colors">
             Select File
             <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} />
@@ -148,20 +148,20 @@ export default function CustomerImporter() {
       )}
 
       {step === 2 && (
-        <div className="bg-white p-6 rounded-xl border border-slate-200">
+        <div className="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
           <h2 className="text-xl font-bold mb-4">Map Columns</h2>
-          <p className="text-slate-600 mb-6 text-sm">Match your file's columns to the required system fields.</p>
+          <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">Match your file's columns to the required system fields.</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
             {Object.keys(mappings).map(key => (
-              <div key={key} className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="text-sm font-medium text-slate-700">
+              <div key={key} className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {key} {requiredFields.includes(key) && <span className="text-red-500">*</span>}
                 </span>
                 <select 
                   value={mappings[key]}
                   onChange={e => setMappings({...mappings, [key]: e.target.value})}
-                  className="rounded-md border border-slate-300 text-sm p-1.5 bg-white w-48"
+                  className="rounded-md border border-slate-300 dark:border-slate-700 text-sm p-1.5 bg-white dark:bg-slate-950 w-48"
                 >
                   <option value="">-- Ignore --</option>
                   {headers.map(h => <option key={h} value={h}>{h}</option>)}
@@ -171,27 +171,27 @@ export default function CustomerImporter() {
           </div>
 
           <div className="mt-8 flex gap-4">
-            <button onClick={() => setStep(1)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200">Back</button>
+            <button onClick={() => setStep(1)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-200 dark:bg-slate-700">Back</button>
             <button onClick={proceedToPreview} className="px-4 py-2 bg-alvoun-blue text-white rounded-md hover:bg-alvoun-dark">Preview Data</button>
           </div>
         </div>
       )}
 
       {step === 3 && (
-        <div className="bg-white p-6 rounded-xl border border-slate-200">
+        <div className="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
           <h2 className="text-xl font-bold mb-4">Preview & Confirm</h2>
-          <p className="text-slate-600 mb-6 text-sm">Showing first 5 rows of {data.length} total rows.</p>
+          <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">Showing first 5 rows of {data.length} total rows.</p>
           
-          <div className="overflow-x-auto rounded-lg border border-slate-200 mb-6">
+          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 mb-6">
             <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600">
+              <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
                 <tr>
                   {Object.keys(mappings).filter(k => mappings[k]).map(k => (
                     <th key={k} className="px-4 py-2 border-b">{k}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {data.slice(0, 5).map((row, idx) => (
                   <tr key={idx}>
                     {Object.keys(mappings).filter(k => mappings[k]).map(k => (
@@ -204,7 +204,7 @@ export default function CustomerImporter() {
           </div>
 
           <div className="flex gap-4">
-            <button onClick={() => setStep(2)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200" disabled={importing}>Back</button>
+            <button onClick={() => setStep(2)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-200 dark:bg-slate-700" disabled={importing}>Back</button>
             <button onClick={handleImport} disabled={importing} className="px-4 py-2 bg-alvoun-blue text-white rounded-md hover:bg-alvoun-dark disabled:opacity-50">
               {importing ? 'Importing...' : `Import ${data.length} Customers`}
             </button>

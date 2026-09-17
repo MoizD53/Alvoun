@@ -30,14 +30,14 @@ export default async function AdminSessionsPage() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Work Sessions</h1>
-          <p className="text-sm text-slate-500 mt-1">Monitor daily attendance and field staff activity.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Work Sessions</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Monitor daily attendance and field staff activity.</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium border border-green-100">
+          <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium border border-green-100">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-50 dark:bg-green-900/200"></span>
             </span>
             {activeSessionsCount} Active Now
           </div>
@@ -47,10 +47,10 @@ export default async function AdminSessionsPage() {
         </div>
       </div>
       
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="px-6 py-3">Salesman</th>
                 <th className="px-6 py-3">Status</th>
@@ -59,14 +59,14 @@ export default async function AdminSessionsPage() {
                 <th className="px-6 py-3">Duration</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {sessions.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400">
                       <Clock className="h-8 w-8 mb-3 text-slate-300" />
-                      <p className="text-base font-medium text-slate-600">No sessions today</p>
-                      <p className="text-sm mt-1 text-slate-500">Salesmen haven't logged in for work yet.</p>
+                      <p className="text-base font-medium text-slate-600 dark:text-slate-400">No sessions today</p>
+                      <p className="text-sm mt-1 text-slate-500 dark:text-slate-400">Salesmen haven't logged in for work yet.</p>
                     </div>
                   </td>
                 </tr>
@@ -86,32 +86,32 @@ export default async function AdminSessionsPage() {
                   }
 
                   return (
-                    <tr key={ws.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-900">{ws.salesman.name}</td>
+                    <tr key={ws.id} className="hover:bg-slate-50 dark:bg-slate-900 transition-colors">
+                      <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{ws.salesman.name}</td>
                       <td className="px-6 py-4">
                         {ws.status === 'ACTIVE' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-alvoun-green border border-green-100">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-alvoun-green border border-green-100">
                             <Activity className="h-3 w-3" /> Working
                           </span>
                         )}
                         {ws.status === 'COMPLETED' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
                             <CheckCircle2 className="h-3 w-3" /> Completed
                           </span>
                         )}
                         {ws.status === 'FORCE_CLOSED' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-alvoun-red border border-red-100">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-alvoun-red border border-red-100">
                             <AlertCircle className="h-3 w-3" /> Force Closed
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-600 font-medium">
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                         {ws.loginAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="px-6 py-4 text-slate-600 font-medium">
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                         {ws.logoutAt ? ws.logoutAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : <span className="text-slate-400">—</span>}
                       </td>
-                      <td className="px-6 py-4 text-slate-500 text-sm">
+                      <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm">
                         {duration}
                       </td>
                     </tr>

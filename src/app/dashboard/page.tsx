@@ -15,9 +15,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8">
-      <h1 className="text-2xl font-bold text-slate-900 mb-4">Welcome to Alvoun Dashboard</h1>
-      <p className="text-slate-600">Day 1 foundation is working.</p>
+    <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-8">
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">Welcome to Alvoun Dashboard</h1>
+      <p className="text-slate-600 dark:text-slate-400">Day 1 foundation is working.</p>
     </div>
   );
 }

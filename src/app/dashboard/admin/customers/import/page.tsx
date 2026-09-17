@@ -4,12 +4,12 @@ import { ArrowLeft } from 'lucide-react';
 
 export default function ImportCustomersPage() {
   return (
-    <div className="bg-slate-50 min-h-[80vh] rounded-xl p-4 sm:p-8">
+    <div className="bg-slate-50 dark:bg-slate-900 min-h-[80vh] rounded-xl p-4 sm:p-8">
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/dashboard/admin/customers" className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors bg-white shadow-sm border border-slate-100">
+        <Link href="/dashboard/admin/customers" className="p-2 hover:bg-slate-200 dark:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors bg-white dark:bg-slate-950 shadow-sm border border-slate-100 dark:border-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-slate-900">Import Customers</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Import Customers</h1>
       </div>
       
       <CustomerImporter />
