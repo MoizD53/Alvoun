@@ -13,7 +13,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex bg-slate-50 dark:bg-slate-900 min-h-screen w-full transition-colors">
+    <div className="flex flex-col bg-slate-50 dark:bg-slate-900 min-h-screen w-full transition-colors">
       <AdminNav user={session.user} />
       
       <div className="flex flex-col flex-1 w-full min-w-0 lg:pl-64">
