@@ -3,8 +3,9 @@
 import { useState, useMemo } from 'react';
 import { createSale } from '@/lib/actions/salesman/sale';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShoppingCart, Loader2, Minus, Plus, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
+import { formatMoney } from '@/lib/format';
 
 export default function SaleWorkflow({ 
   customer, 
@@ -82,113 +83,94 @@ export default function SaleWorkflow({
       items: cartItems.map(i => ({
         productId: i.product.id,
         crates: i.crates,
-        actualRate: i.actualRate
+        rate: i.actualRate
       })),
-      paymentAmount: paymentAmountPaise,
-      paymentMethod: paymentAmountPaise > 0 ? paymentMethod : undefined
+      paymentAmount: paymentAmountPaise > 0 ? paymentAmountPaise : undefined,
+      paymentMethod: paymentAmountPaise > 0 ? paymentMethod : undefined,
     };
 
-    const res = await createSale(payload);
-    
-    if (res.error) {
-      alert(res.error);
-      setSubmitting(false);
-      setShowConfirm(false);
-    } else {
+    try {
+      await createSale(payload);
       setSuccess(true);
+      setTimeout(() => {
+        router.push(`/dashboard/salesman/customers/${customer.id}`);
+        router.refresh();
+      }, 1500);
+    } catch (err) {
+      alert('Failed to save sale');
+      setSubmitting(false);
     }
   };
 
   if (success) {
     return (
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center space-y-6 mt-10">
-        <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-2">
-          <CheckCircle className="w-10 h-10" />
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6 animate-fade-in-up">
+        <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
+          <CheckCircle2 className="h-12 w-12 text-alvoun-green" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900">Sale Saved</h2>
-        
-        <div className="w-full bg-slate-50 p-4 rounded-xl text-left space-y-3">
-          <div className="flex justify-between">
-            <span className="text-slate-500">Sale Amount</span>
-            <span className="font-bold">₹{(totalAmount / 100).toFixed(2)}</span>
-          </div>
-          {paymentAmountPaise > 0 && (
-            <div className="flex justify-between text-green-600">
-              <span>Payment Received ({paymentMethod})</span>
-              <span className="font-bold">-₹{(paymentAmountPaise / 100).toFixed(2)}</span>
-            </div>
-          )}
-          <div className="pt-3 border-t border-slate-200 flex justify-between">
-            <span className="font-bold text-slate-900">New Outstanding</span>
-            <span className={`font-bold ${newOutstanding > 0 ? 'text-red-500' : 'text-green-500'}`}>
-              ₹{(Math.abs(newOutstanding) / 100).toFixed(2)} {newOutstanding > 0 ? 'Dr' : ''}
-            </span>
-          </div>
-        </div>
-
-        <button 
-          onClick={() => router.push(`/dashboard/salesman/customers/${customer.id}`)}
-          className="w-full py-4 bg-alvoun-blue text-white rounded-xl font-bold active:scale-95 transition-transform"
-        >
-          Return to Customer
-        </button>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Sale Recorded!</h1>
+        <p className="text-slate-500 font-medium text-lg">Total: <span className="text-alvoun-blue font-bold">{formatMoney(totalAmount)}</span></p>
+        <p className="text-sm text-slate-400 mt-8">Redirecting...</p>
       </div>
     );
   }
 
   if (showConfirm) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowConfirm(false)} className="p-2 bg-white rounded-full shadow-sm border border-slate-100">
+      <div className="space-y-6 pb-24 animate-fade-in-up">
+        <div className="flex items-center gap-4 bg-slate-50 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sticky top-0 z-20">
+          <button onClick={() => setShowConfirm(false)} className="p-2.5 bg-white rounded-full shadow-sm border border-slate-200 text-slate-700 active:bg-slate-50 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="text-xl font-bold text-slate-900">Confirm Sale</h1>
+          <h1 className="text-xl font-bold text-slate-900 truncate">Review Sale</h1>
         </div>
         
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
           <div>
-            <h2 className="font-bold text-slate-900">{customer.customerName}</h2>
-            <p className="text-sm text-slate-500">Current Outstanding: ₹{(Math.abs(originalOutstanding)/100).toFixed(2)}</p>
+            <h2 className="font-bold text-slate-900 text-lg mb-1">{customer.customerName}</h2>
+            <p className="text-sm text-slate-500 font-medium">Prev Outstanding: <span className={originalOutstanding > 0 ? 'text-alvoun-red' : ''}>{formatMoney(Math.abs(originalOutstanding))} {originalOutstanding > 0 ? 'Dr' : ''}</span></p>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {cartItems.map((item, idx) => (
-              <div key={idx} className="flex justify-between text-sm">
+              <div key={idx} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
                 <div>
-                  <span className="font-bold text-slate-700">{item.product.name}</span>
-                  <div className="text-slate-500">{item.crates} crates × ₹{(item.actualRate/100).toFixed(2)}</div>
+                  <span className="font-bold text-slate-900 block mb-1">{item.product.name}</span>
+                  <div className="text-sm text-slate-500 font-medium">{item.crates} crates × {formatMoney(item.actualRate)}</div>
                 </div>
-                <div className="font-bold text-slate-900">₹{(item.amount/100).toFixed(2)}</div>
+                <div className="font-black text-slate-900 text-lg">{formatMoney(item.amount)}</div>
               </div>
             ))}
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex justify-between text-lg">
-            <span className="font-bold text-slate-900">Total Sale</span>
-            <span className="font-bold text-alvoun-blue">₹{(totalAmount/100).toFixed(2)}</span>
+          <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
+            <span className="font-bold text-slate-500">Total Sale</span>
+            <span className="text-2xl font-black text-alvoun-blue">{formatMoney(totalAmount)}</span>
           </div>
 
           {paymentAmountPaise > 0 && (
-            <div className="flex justify-between text-green-600 bg-green-50 p-3 rounded-lg">
-              <span className="font-medium">Payment ({paymentMethod})</span>
-              <span className="font-bold">-₹{(paymentAmountPaise/100).toFixed(2)}</span>
+            <div className="flex justify-between items-center bg-green-50 border border-green-100 p-4 rounded-xl">
+              <span className="font-bold text-green-700">Payment ({paymentMethod})</span>
+              <span className="text-xl font-black text-alvoun-green">-{formatMoney(paymentAmountPaise)}</span>
             </div>
           )}
 
-          <div className="pt-4 border-t border-slate-100 flex justify-between text-lg bg-slate-50 p-4 rounded-xl">
-            <span className="font-bold text-slate-900">New Outstanding</span>
-            <span className={`font-bold ${newOutstanding > 0 ? 'text-red-500' : 'text-green-500'}`}>
-              ₹{(Math.abs(newOutstanding)/100).toFixed(2)}
+          <div className="pt-4 border-t border-slate-200 flex justify-between items-center bg-slate-900 p-4 rounded-xl text-white">
+            <span className="font-bold text-slate-300">New Outstanding</span>
+            <span className={`text-2xl font-black ${newOutstanding > 0 ? 'text-red-400' : 'text-green-400'}`}>
+              {formatMoney(Math.abs(newOutstanding))} {newOutstanding > 0 ? 'Dr' : ''}
             </span>
           </div>
+        </div>
 
+        <div className="fixed bottom-[72px] sm:bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-40">
           <button 
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full py-4 bg-alvoun-blue text-white rounded-xl font-bold disabled:opacity-50 active:scale-95 transition-transform"
+            className="w-full py-4 bg-alvoun-green text-white rounded-xl font-bold disabled:opacity-50 active:scale-[0.98] transition-transform flex justify-center items-center gap-2 text-lg shadow-sm"
           >
-            {submitting ? 'Saving...' : 'CONFIRM SALE'}
+            {submitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <CheckCircle2 className="h-6 w-6" />}
+            CONFIRM SALE
           </button>
         </div>
       </div>
@@ -196,61 +178,66 @@ export default function SaleWorkflow({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href={`/dashboard/salesman/customers/${customer.id}`} className="p-2 bg-white rounded-full shadow-sm border border-slate-100 text-slate-600">
+    <div className="space-y-6 pb-40 animate-fade-in-up">
+      <div className="flex items-center gap-4 bg-slate-50 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sticky top-0 z-20">
+        <Link href={`/dashboard/salesman/customers/${customer.id}`} className="p-2.5 bg-white rounded-full shadow-sm border border-slate-200 text-slate-700 active:bg-slate-50 transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="truncate">
-          <h1 className="text-xl font-bold text-slate-900 truncate">{customer.customerName}</h1>
-          <p className="text-xs font-medium text-slate-500">Outstanding: ₹{(Math.abs(originalOutstanding)/100).toFixed(2)}</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold text-slate-900 truncate mb-0.5">{customer.customerName}</h1>
+          <p className="text-xs font-bold text-slate-500">Outstanding: <span className={originalOutstanding > 0 ? 'text-alvoun-red' : ''}>{formatMoney(Math.abs(originalOutstanding))}</span></p>
         </div>
       </div>
 
-      <div className="space-y-4 pb-32">
+      <div className="space-y-4">
         {products.map(product => {
           const crates = quantities[product.id] || 0;
           const applicableRate = product.rates.find((r: any) => crates >= r.minQuantity) || product.rates[product.rates.length - 1];
           const standardRate = applicableRate ? applicableRate.rate : 0;
           const actualRate = overrides[product.id] !== undefined ? overrides[product.id] : standardRate;
+          const isActive = crates > 0;
 
           return (
-            <div key={product.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-              <div className="flex justify-between items-center mb-4">
+            <div key={product.id} className={`p-5 rounded-2xl shadow-sm border transition-colors ${isActive ? 'bg-white border-alvoun-blue/30 ring-1 ring-alvoun-blue/10' : 'bg-white border-slate-200'}`}>
+              <div className="flex justify-between items-center mb-5">
                 <h3 className="font-bold text-slate-900 text-lg">{product.name}</h3>
-                <div className="text-sm text-slate-500">{product.bottlesPerCrate} btls/crate</div>
+                <div className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{product.bottlesPerCrate} btls/crate</div>
               </div>
               
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4 bg-slate-50 rounded-xl p-1 border border-slate-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3 bg-slate-50 rounded-xl p-1.5 border border-slate-200 shadow-inner">
                   <button 
                     onClick={() => handleCrateChange(product.id, -1)}
-                    className="w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow-sm font-bold text-2xl text-slate-600 active:bg-slate-100"
-                  >-</button>
-                  <span className="w-8 text-center font-bold text-xl">{crates}</span>
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 active:scale-95 transition-transform"
+                  >
+                    <Minus className="h-6 w-6" />
+                  </button>
+                  <span className="w-8 text-center font-black text-2xl text-slate-900">{crates}</span>
                   <button 
                     onClick={() => handleCrateChange(product.id, 1)}
-                    className="w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow-sm font-bold text-2xl text-alvoun-blue active:bg-slate-100"
-                  >+</button>
+                    className="w-12 h-12 flex items-center justify-center bg-white rounded-lg shadow-sm text-alvoun-blue active:scale-95 transition-transform"
+                  >
+                    <Plus className="h-6 w-6" />
+                  </button>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-slate-900">₹{((crates * actualRate)/100).toFixed(2)}</div>
-                  <div className="text-xs font-medium text-slate-400">{crates * product.bottlesPerCrate} bottles</div>
+                  <div className="text-2xl font-black text-slate-900">{formatMoney(crates * actualRate)}</div>
+                  <div className="text-xs font-bold text-alvoun-blue mt-1">{crates * product.bottlesPerCrate} bottles</div>
                 </div>
               </div>
 
-              {crates > 0 && (
-                <div className="pt-4 border-t border-slate-50 flex items-center justify-between gap-4">
-                  <div className="text-xs font-medium text-slate-500">
-                    Rate/Crate
+              {isActive && (
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-4 animate-fade-in-up">
+                  <div className="text-sm font-bold text-slate-500">
+                    Rate / Crate
                   </div>
-                  <div className="flex items-center relative max-w-[120px]">
-                    <span className="absolute left-3 text-slate-400 font-medium">₹</span>
+                  <div className="flex items-center relative max-w-[140px]">
+                    <IndianRupee className="absolute left-3 h-4 w-4 text-slate-400" />
                     <input 
                       type="number" 
                       value={overrides[product.id] !== undefined ? overrides[product.id] / 100 : standardRate / 100}
                       onChange={(e) => handleRateOverride(product.id, e.target.value)}
-                      className="w-full pl-7 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-alvoun-blue focus:bg-white transition-all text-right"
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-bold focus:outline-none focus:ring-2 focus:ring-alvoun-blue focus:bg-white transition-all text-right shadow-inner"
                     />
                   </div>
                 </div>
@@ -259,23 +246,26 @@ export default function SaleWorkflow({
           );
         })}
 
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="font-bold text-slate-900 mb-4">Payment Received (Optional)</h3>
-          <div className="flex gap-4">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <IndianRupee className="h-5 w-5 text-alvoun-green" />
+            Payment Collection
+          </h3>
+          <div className="flex gap-3">
             <div className="flex-1 relative">
-              <span className="absolute left-4 top-3.5 text-slate-400 font-bold text-lg">₹</span>
+              <IndianRupee className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
               <input 
                 type="number" 
                 placeholder="0.00"
                 value={paymentAmount}
                 onChange={e => setPaymentAmount(e.target.value)}
-                className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:ring-2 focus:ring-alvoun-blue focus:bg-white"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-lg font-bold focus:outline-none focus:ring-2 focus:ring-alvoun-green focus:bg-white transition-all shadow-inner"
               />
             </div>
             <select 
               value={paymentMethod}
               onChange={e => setPaymentMethod(e.target.value)}
-              className="w-1/3 bg-slate-50 border border-slate-200 rounded-xl px-3 font-medium text-slate-700"
+              className="w-1/3 bg-slate-50 border border-slate-200 rounded-xl px-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-alvoun-green focus:bg-white"
             >
               <option value="Cash">Cash</option>
               <option value="UPI">UPI</option>
@@ -285,16 +275,17 @@ export default function SaleWorkflow({
         </div>
       </div>
 
-      <div className="fixed bottom-[72px] sm:bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-40 max-w-md mx-auto sm:max-w-none">
-        <div className="flex justify-between items-center mb-3">
-          <span className="font-bold text-slate-500">Total Amount</span>
-          <span className="text-2xl font-bold text-slate-900">₹{(totalAmount/100).toFixed(2)}</span>
+      <div className="fixed bottom-[72px] sm:bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-40">
+        <div className="flex justify-between items-center mb-3 px-2">
+          <span className="font-bold text-slate-500 uppercase tracking-wider text-sm">Cart Total</span>
+          <span className="text-2xl font-black text-slate-900">{formatMoney(totalAmount)}</span>
         </div>
         <button 
           onClick={() => setShowConfirm(true)}
           disabled={totalAmount === 0}
-          className="w-full py-4 bg-alvoun-blue text-white rounded-xl font-bold disabled:opacity-50 active:scale-95 transition-transform"
+          className="w-full py-4 bg-alvoun-blue text-white rounded-xl font-bold disabled:opacity-50 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 text-lg shadow-sm"
         >
+          <ShoppingCart className="h-6 w-6" />
           REVIEW SALE
         </button>
       </div>

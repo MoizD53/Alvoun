@@ -5,6 +5,20 @@ import { getKolkataStartOfDay, getKolkataEndOfDay } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import Link from 'next/link';
+import { 
+  TrendingUp, 
+  Wallet, 
+  CreditCard, 
+  MapPin, 
+  AlertCircle, 
+  Users, 
+  Box, 
+  Map as MapIcon, 
+  Plus, 
+  ChevronRight,
+  UserPlus,
+  FileDown
+} from 'lucide-react';
 
 export default async function AdminDashboard({
   searchParams
@@ -24,245 +38,276 @@ export default async function AdminDashboard({
   const startOfDay = getKolkataStartOfDay(dateStr);
   const endOfDay = getKolkataEndOfDay(dateStr);
 
-  const [
-    sales, 
-    payments, 
-    visits, 
-    activeWorkSessions, 
-    customers,
-    products
-  ] = await Promise.all([
+  // Fetch today's data
+  const [sales, payments, visits, activeWorkSessions, products] = await Promise.all([
     prisma.sale.findMany({
       where: { saleDate: { gte: startOfDay, lte: endOfDay } },
-      include: { salesman: true, items: true }
+      include: { items: true }
     }),
     prisma.payment.findMany({
-      where: { paymentDate: { gte: startOfDay, lte: endOfDay } },
-      include: { salesman: true }
+      where: { paymentDate: { gte: startOfDay, lte: endOfDay } }
     }),
     prisma.visit.findMany({
-      where: { createdAt: { gte: startOfDay, lte: endOfDay } },
-      include: { salesman: true }
+      where: { createdAt: { gte: startOfDay, lte: endOfDay } }
     }),
     prisma.workSession.findMany({
       where: { 
         workDate: { gte: startOfDay, lte: endOfDay }
       },
-      include: { salesman: true }
-    }),
-    prisma.customer.findMany({
       include: {
-        sales: { select: { totalAmount: true } },
-        payments: { select: { amount: true } }
+        salesman: {
+          include: { profile: true }
+        }
       }
     }),
     prisma.product.findMany()
   ]);
 
-  const totalSales = sales.reduce((sum, s) => sum + s.totalAmount, 0);
-  const totalCollection = payments.reduce((sum, p) => sum + p.amount, 0);
-  const totalOutstanding = customers.reduce((sum, c) => sum + calculateOutstanding(c), 0);
+  // Aggregate Metrics
+  const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
+  const totalCollection = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  
+  const allCustomers = await prisma.customer.findMany({
+    include: { sales: { include: { items: true } }, payments: true }
+  });
 
-  // Collection Breakdown
-  const collectionBreakdown = payments.reduce((acc, p) => {
-    acc[p.paymentMethod] = (acc[p.paymentMethod] || 0) + p.amount;
-    return acc;
-  }, {} as Record<string, number>);
+  // Calculate global outstanding
+  let totalOutstanding = 0;
+  let outstandingCustomersCount = 0;
+  for (const c of allCustomers) {
+    const out = calculateOutstanding(c as any);
+    totalOutstanding += out;
+    if (out > 0) outstandingCustomersCount++;
+  }
 
-  // Product Sales
-  const productSalesMap = new Map();
-  sales.forEach(sale => {
-    sale.items.forEach(item => {
-      if (!productSalesMap.has(item.productId)) {
-        productSalesMap.set(item.productId, { crates: 0, bottles: 0, amount: 0 });
-      }
-      const pData = productSalesMap.get(item.productId);
-      pData.crates += item.crates;
-      pData.amount += item.amount;
-      const product = products.find(p => p.id === item.productId);
-      if (product) pData.bottles += (item.crates * product.bottlesPerCrate);
+  // Salesman Performance Map
+  const salesmanData = new Map<string, any>();
+  activeWorkSessions.forEach(ws => {
+    salesmanData.set(ws.salesmanId, {
+      id: ws.salesmanId,
+      name: ws.salesman.name,
+      status: ws.logoutAt ? 'Completed' : 'Working',
+      visits: 0,
+      sales: 0,
+      collection: 0,
     });
   });
 
-  // Salesman Performance
-  const salesmanMap = new Map();
-  const ensureSalesman = (salesman: any) => {
-    if (!salesmanMap.has(salesman.id)) {
-      salesmanMap.set(salesman.id, {
-        name: salesman.name,
-        visits: 0,
-        salesAmount: 0,
-        collectionAmount: 0,
-        crates: 0
-      });
+  visits.forEach(v => {
+    if (salesmanData.has(v.salesmanId)) {
+      salesmanData.get(v.salesmanId).visits++;
     }
-    return salesmanMap.get(salesman.id);
-  };
-
-  // Pre-fill with active work sessions for the day
-  activeWorkSessions.forEach(session => ensureSalesman(session.salesman));
-
-  visits.forEach(v => ensureSalesman(v.salesman).visits++);
-  sales.forEach(s => {
-    const sm = ensureSalesman(s.salesman);
-    sm.salesAmount += s.totalAmount;
-    s.items.forEach(i => sm.crates += i.crates);
   });
-  payments.forEach(p => ensureSalesman(p.salesman).collectionAmount += p.amount);
 
-  const salesmanPerformance = Array.from(salesmanMap.values()).sort((a, b) => b.salesAmount - a.salesAmount);
+  sales.forEach(s => {
+    if (salesmanData.has(s.salesmanId)) {
+      salesmanData.get(s.salesmanId).sales += s.totalAmount;
+    }
+  });
+
+  payments.forEach(p => {
+    if (salesmanData.has(p.salesmanId)) {
+      salesmanData.get(p.salesmanId).collection += p.amount;
+    }
+  });
+
+  const salesmanPerformance = Array.from(salesmanData.values());
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+    <div className="space-y-8 animate-fade-in-up">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Admin Control Center</h1>
-          <p className="text-slate-500 text-sm mt-1">Business performance overview</p>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Good morning, {session.user.name?.split(' ')[0]}
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">Here is what's happening with your business today.</p>
         </div>
-        <form className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <input 
             type="date" 
-            name="date" 
-            defaultValue={dateStr || startOfDay.toISOString().split('T')[0]} 
-            className="px-3 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50"
+            defaultValue={startOfDay.toISOString().split('T')[0]}
+            className="text-sm border border-slate-200 rounded-md px-3 py-2 bg-white focus:ring-2 focus:ring-alvoun-blue/20 outline-none"
           />
-          <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium">Filter</button>
-        </form>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="text-sm font-medium text-slate-500 mb-1">Total Sales</div>
-          <div className="text-2xl font-bold text-alvoun-blue">{formatMoney(totalSales)}</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="text-sm font-medium text-slate-500 mb-1">Total Collection</div>
-          <div className="text-2xl font-bold text-green-600">{formatMoney(totalCollection)}</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="text-sm font-medium text-slate-500 mb-1">Business Outstanding</div>
-          <div className={`text-2xl font-bold ${totalOutstanding > 0 ? 'text-red-500' : 'text-slate-900'}`}>{formatMoney(Math.abs(totalOutstanding))}</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="text-sm font-medium text-slate-500 mb-1">Customer Visits</div>
-          <div className="text-2xl font-bold text-slate-900">{formatNumber(visits.length)}</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <div className="text-sm font-medium text-slate-500 mb-1">Active Salesmen</div>
-          <div className="text-2xl font-bold text-slate-900">{formatNumber(activeWorkSessions.length)}</div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Salesman Performance</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-slate-500 bg-slate-50 border-y border-slate-100">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Salesman</th>
-                  <th className="px-4 py-3 font-medium text-right">Visits</th>
-                  <th className="px-4 py-3 font-medium text-right">Crates</th>
-                  <th className="px-4 py-3 font-medium text-right">Sales</th>
-                  <th className="px-4 py-3 font-medium text-right">Collection</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {salesmanPerformance.length === 0 ? (
+      {/* 4 KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-slate-500">TOTAL SALES</h3>
+            <div className="h-8 w-8 rounded-full bg-alvoun-light flex items-center justify-center text-alvoun-blue">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-slate-900">{formatMoney(totalSales)}</div>
+            <div className="text-xs font-medium text-alvoun-green mt-2 flex items-center">
+              Today's Volume
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-slate-500">COLLECTION</h3>
+            <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center text-alvoun-green">
+              <Wallet className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-slate-900">{formatMoney(totalCollection)}</div>
+            <div className="text-xs font-medium text-slate-500 mt-2 flex items-center">
+              Received Today
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-slate-500">OUTSTANDING</h3>
+            <div className="h-8 w-8 rounded-full bg-orange-50 flex items-center justify-center text-alvoun-amber">
+              <CreditCard className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-slate-900">{formatMoney(totalOutstanding)}</div>
+            <div className="text-xs font-medium text-slate-500 mt-2 flex items-center">
+              Across Market
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-slate-500">VISITS</h3>
+            <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+              <MapPin className="h-4 w-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold text-slate-900">{formatNumber(visits.length)}</div>
+            <div className="text-xs font-medium text-slate-500 mt-2 flex items-center">
+              Customers Visited Today
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Main Column */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* Salesman Activity Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900">Salesman Activity</h2>
+              <Link href="/dashboard/admin/locations" className="text-sm font-medium text-alvoun-blue hover:underline">
+                View Map
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">No data for this date.</td>
+                    <th className="px-6 py-3">Salesman</th>
+                    <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3 text-right">Sales</th>
+                    <th className="px-6 py-3 text-right">Collection</th>
                   </tr>
-                ) : (
-                  salesmanPerformance.map(sp => (
-                    <tr key={sp.name} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-bold text-slate-900">{sp.name}</td>
-                      <td className="px-4 py-3 text-right">{formatNumber(sp.visits)}</td>
-                      <td className="px-4 py-3 text-right">{formatNumber(sp.crates)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-alvoun-blue">{formatMoney(sp.salesAmount)}</td>
-                      <td className="px-4 py-3 text-right font-medium text-green-600">{formatMoney(sp.collectionAmount)}</td>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {salesmanPerformance.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                        No field staff active today.
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    salesmanPerformance.map((sp: any) => (
+                      <tr key={sp.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-900">{sp.name}</td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-alvoun-green">
+                            <span className="h-1.5 w-1.5 rounded-full bg-alvoun-green"></span>
+                            {sp.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right font-medium text-slate-900">
+                          {formatMoney(sp.sales)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-medium text-slate-900">
+                          {formatMoney(sp.collection)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
+        {/* Sidebar Column */}
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">Collections Breakdown</h2>
-            <div className="space-y-3">
-              {Object.keys(collectionBreakdown).length === 0 ? (
-                <div className="text-sm text-slate-500 text-center py-4">No collections today</div>
-              ) : (
-                Object.entries(collectionBreakdown).map(([method, amount]) => (
-                  <div key={method} className="flex justify-between items-center text-sm">
-                    <span className="font-medium text-slate-600">{method}</span>
-                    <span className="font-bold text-slate-900">{formatMoney(amount as number)}</span>
+          
+          {/* Attention Required */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200">
+              <h2 className="text-base font-bold text-slate-900">Attention Required</h2>
+            </div>
+            <div className="p-2">
+              {outstandingCustomersCount > 0 ? (
+                <Link href="/dashboard/admin/customers" className="flex items-start gap-3 p-4 hover:bg-slate-50 rounded-lg transition-colors group">
+                  <div className="mt-0.5 text-alvoun-amber"><AlertCircle className="h-5 w-5" /></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-slate-900 group-hover:text-alvoun-blue transition-colors">
+                      {outstandingCustomersCount} customers have outstanding
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">Review pending market collections</p>
                   </div>
-                ))
-              )}
+                  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-alvoun-blue" />
+                </Link>
+              ) : null}
+              <Link href="/dashboard/admin/locations" className="flex items-start gap-3 p-4 hover:bg-slate-50 rounded-lg transition-colors group">
+                <div className="mt-0.5 text-alvoun-blue"><MapIcon className="h-5 w-5" /></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-900 group-hover:text-alvoun-blue transition-colors">
+                    View Live Locations
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Monitor real-time field activity</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-alvoun-blue" />
+              </Link>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">Product Sales</h2>
-            <div className="space-y-4">
-              {productSalesMap.size === 0 ? (
-                <div className="text-sm text-slate-500 text-center py-4">No products sold today</div>
-              ) : (
-                Array.from(productSalesMap.entries()).map(([productId, data]) => {
-                  const p = products.find(prod => prod.id === productId);
-                  return (
-                    <div key={productId} className="flex justify-between items-center text-sm border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                      <div>
-                        <div className="font-bold text-slate-900">{p?.name}</div>
-                        <div className="text-xs text-slate-500">{formatNumber(data.crates)} crates ({formatNumber(data.bottles)} btls)</div>
-                      </div>
-                      <div className="font-bold text-slate-900">{formatMoney(data.amount)}</div>
-                    </div>
-                  );
-                })
-              )}
+          {/* Quick Actions */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200">
+              <h2 className="text-base font-bold text-slate-900">Quick Actions</h2>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-3">
+              <Link href="/dashboard/admin/customers" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+                <Users className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
+                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Customers</span>
+              </Link>
+              <Link href="/dashboard/admin/sessions" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+                <UserPlus className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
+                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Salesmen</span>
+              </Link>
+              <Link href="/dashboard/admin/routes" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+                <MapPin className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
+                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Routes</span>
+              </Link>
+              <Link href="/dashboard/admin/reports/monthly" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
+                <FileDown className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
+                <span className="text-xs font-medium text-slate-700 group-hover:text-alvoun-blue">Reports</span>
+              </Link>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Admin Quick Links */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link href="/dashboard/admin/reports/daily" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
-          <div className="font-bold text-slate-900">Reports</div>
-          <div className="text-xs text-slate-500">View detailed reports</div>
-        </Link>
-        <Link href="/dashboard/admin/locations" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
-          <div className="font-bold text-slate-900">Live Map</div>
-          <div className="text-xs text-slate-500">Track field staff</div>
-        </Link>
-        <Link href="/dashboard/admin/customers" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
-          <div className="font-bold text-slate-900">Customers</div>
-          <div className="text-xs text-slate-500">Manage database</div>
-        </Link>
-        <Link href="/dashboard/admin/sessions" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
-          <div className="font-bold text-slate-900">Work Sessions</div>
-          <div className="text-xs text-slate-500">View staff attendance</div>
-        </Link>
-      </div>
-      <div className="mt-8">
-        <h2 className="text-xl font-bold text-slate-900 mb-4">Master Data & Settings</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Link href="/dashboard/admin/states" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
-            <div className="font-semibold text-slate-900">States</div>
-            <div className="text-xs text-slate-500 mt-1">Manage States</div>
-          </Link>
-          <Link href="/dashboard/admin/cities" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
-            <div className="font-semibold text-slate-900">Cities</div>
-            <div className="text-xs text-slate-500 mt-1">Manage Cities</div>
-          </Link>
-          <Link href="/dashboard/admin/routes" className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 text-center hover:bg-slate-50 transition-colors">
-            <div className="font-semibold text-slate-900">Routes</div>
-            <div className="text-xs text-slate-500 mt-1">Manage Routes</div>
-          </Link>
         </div>
       </div>
     </div>

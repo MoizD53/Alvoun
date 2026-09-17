@@ -19,11 +19,12 @@ export async function getMyCustomers(routeId?: string, search?: string) {
   const customers = await prisma.customer.findMany({
     where,
     include: {
-      route: true,
       city: true,
       state: true,
-      sales: { select: { totalAmount: true } },
-      payments: { select: { amount: true } }
+      route: true,
+      sales: { orderBy: { saleDate: 'desc' }, include: { items: { include: { product: true } } } },
+      payments: { orderBy: { paymentDate: 'desc' } },
+      visits: { orderBy: { createdAt: 'desc' } }
     },
     orderBy: { route: { name: 'asc' } }
   });

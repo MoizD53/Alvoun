@@ -8,6 +8,10 @@
   --color-alvoun-blue: #0055a4;
   --color-alvoun-light: #e0f2fe;
   --color-alvoun-dark: #003366;
+  --color-alvoun-navy: #0f172a;
+  --color-alvoun-green: #10b981;
+  --color-alvoun-amber: #f59e0b;
+  --color-alvoun-red: #ef4444;
 }
 
 @theme inline {
@@ -19,15 +23,38 @@
   --color-alvoun-blue: var(--color-alvoun-blue);
   --color-alvoun-light: var(--color-alvoun-light);
   --color-alvoun-dark: var(--color-alvoun-dark);
+  --color-alvoun-navy: var(--color-alvoun-navy);
+  --color-alvoun-green: var(--color-alvoun-green);
+  --color-alvoun-amber: var(--color-alvoun-amber);
+  --color-alvoun-red: var(--color-alvoun-red);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling for tables and sidebars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 @keyframes ripple { 0% { transform: scale(1); opacity: 0.03; } 50% { transform: scale(1.1); opacity: 0.05; } 100% { transform: scale(1); opacity: 0.03; } }
-@keyframes fade-in-up { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in-up { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
 
 .animate-ripple { animation: ripple 12s infinite ease-in-out; }
-.animate-fade-in-up { animation: fade-in-up 0.8s ease-out forwards; opacity: 0; }
+.animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; opacity: 0; }
+

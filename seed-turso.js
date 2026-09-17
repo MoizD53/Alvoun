@@ -64,6 +64,19 @@ async function main() {
     ]
   }).catch(() => console.log('Rates already exist or error seeding rates'));
 
+  console.log('Seeding States and Cities...');
+  const gujarat = await prisma.state.upsert({ where: { name: 'Gujarat' }, update: {}, create: { name: 'Gujarat' } });
+  const mp = await prisma.state.upsert({ where: { name: 'MP' }, update: {}, create: { name: 'MP' } });
+  const rajasthan = await prisma.state.upsert({ where: { name: 'Rajasthan' }, update: {}, create: { name: 'Rajasthan' } });
+
+  for (const cityName of ['Dahod', 'Katwara']) {
+    const existing = await prisma.city.findFirst({ where: { name: cityName } });
+    if (!existing) {
+      await prisma.city.create({ data: { name: cityName, stateId: gujarat.id } });
+    }
+  }
+
+
   console.log('Seeding complete.');
 }
 

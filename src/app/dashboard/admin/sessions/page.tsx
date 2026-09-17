@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db';
 import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import { Activity, Clock, CheckCircle2, UserPlus, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function AdminSessionsPage() {
   const session = await auth();
@@ -22,43 +24,103 @@ export default async function AdminSessionsPage() {
     }
   });
 
+  const activeSessionsCount = sessions.filter(s => s.status === 'ACTIVE').length;
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Today's Salesman Sessions</h1>
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Work Sessions</h1>
+          <p className="text-sm text-slate-500 mt-1">Monitor daily attendance and field staff activity.</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium border border-green-100">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            {activeSessionsCount} Active Now
+          </div>
+          <Link href="/dashboard/admin/locations" className="px-4 py-2 bg-alvoun-blue text-white rounded-md text-sm font-medium hover:bg-alvoun-dark transition-colors shadow-sm">
+            View Live Map
+          </Link>
+        </div>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
-            <tr>
-              <th className="px-4 py-3">Salesman</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Login Time</th>
-              <th className="px-4 py-3">Logout Time</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {sessions.length === 0 ? (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-slate-500">No sessions recorded today.</td>
+                <th className="px-6 py-3">Salesman</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Login Time</th>
+                <th className="px-6 py-3">Logout Time</th>
+                <th className="px-6 py-3">Duration</th>
               </tr>
-            ) : (
-              sessions.map((session) => (
-                <tr key={session.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-900">{session.salesman.name}</td>
-                  <td className="px-4 py-3">
-                    {session.status === 'ACTIVE' && <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">Working</span>}
-                    {session.status === 'COMPLETED' && <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Completed</span>}
-                    {session.status === 'FORCE_CLOSED' && <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">Force Closed</span>}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sessions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                      <Clock className="h-8 w-8 mb-3 text-slate-300" />
+                      <p className="text-base font-medium text-slate-600">No sessions today</p>
+                      <p className="text-sm mt-1 text-slate-500">Salesmen haven't logged in for work yet.</p>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{session.loginAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}</td>
-                  <td className="px-4 py-3 text-slate-600">{session.logoutAt ? session.logoutAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                sessions.map((ws) => {
+                  let duration = '-';
+                  if (ws.logoutAt) {
+                    const diffMs = ws.logoutAt.getTime() - ws.loginAt.getTime();
+                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    duration = `${hours}h ${mins}m`;
+                  } else {
+                    const diffMs = getCurrentKolkataTime().getTime() - ws.loginAt.getTime();
+                    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    duration = `${hours}h ${mins}m (Active)`;
+                  }
+
+                  return (
+                    <tr key={ws.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 font-bold text-slate-900">{ws.salesman.name}</td>
+                      <td className="px-6 py-4">
+                        {ws.status === 'ACTIVE' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-alvoun-green border border-green-100">
+                            <Activity className="h-3 w-3" /> Working
+                          </span>
+                        )}
+                        {ws.status === 'COMPLETED' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            <CheckCircle2 className="h-3 w-3" /> Completed
+                          </span>
+                        )}
+                        {ws.status === 'FORCE_CLOSED' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-alvoun-red border border-red-100">
+                            <AlertCircle className="h-3 w-3" /> Force Closed
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">
+                        {ws.loginAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">
+                        {ws.logoutAt ? ws.logoutAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : <span className="text-slate-400">—</span>}
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 text-sm">
+                        {duration}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
-import { Home, Users, ShoppingBag, User } from 'lucide-react';
+import { Home, Users, ShoppingBag, User, Droplet, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { auth } from '@/auth';
+import { auth, signOut } from '@/auth';
 import { getCurrentKolkataTime, isWorkingHours } from '@/lib/time';
 import LocationTracker from './components/LocationTracker';
 
@@ -13,44 +13,47 @@ export default async function SalesmanLayout({
   const workingHours = isWorkingHours(getCurrentKolkataTime());
 
   return (
-    <div className={`max-w-md mx-auto sm:max-w-none ${workingHours ? 'pb-24' : ''}`}>
+    <div className={`max-w-md mx-auto sm:max-w-none bg-slate-50 min-h-screen flex flex-col ${workingHours ? 'pb-20' : ''}`}>
       {workingHours && <LocationTracker />}
-      {/* Mobile-first main content container */}
-      <div className="w-full">
+      
+      {/* Mobile Top Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 h-14 flex items-center justify-between">
+        <div className="flex items-center text-alvoun-blue">
+          <Droplet className="h-6 w-6 fill-current" />
+          <span className="ml-2 font-bold text-slate-900">ALVOUN</span>
+        </div>
+        <form action={async () => { 'use server'; await signOut(); }}>
+          <button className="text-slate-400 hover:text-slate-600">
+            <LogOut className="h-5 w-5" />
+          </button>
+        </form>
+      </header>
+
+      {/* Main content */}
+      <main className="flex-1 w-full p-4">
         {children}
-      </div>
+      </main>
 
       {/* Bottom Navigation */}
       {workingHours && (
-        <>
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 px-6 py-3 flex justify-between items-center sm:hidden">
-            <Link href="/dashboard/salesman" className="flex flex-col items-center text-slate-500 hover:text-alvoun-blue">
-              <Home className="h-6 w-6" />
-              <span className="text-[10px] mt-1 font-medium">Home</span>
-            </Link>
-            <Link href="/dashboard/salesman/customers" className="flex flex-col items-center text-slate-500 hover:text-alvoun-blue">
-              <Users className="h-6 w-6" />
-              <span className="text-[10px] mt-1 font-medium">Customers</span>
-            </Link>
-            <div className="flex flex-col items-center text-slate-300">
-              <ShoppingBag className="h-6 w-6" />
-              <span className="text-[10px] mt-1 font-medium">Sales</span>
-            </div>
-            <div className="flex flex-col items-center text-slate-300">
-              <User className="h-6 w-6" />
-              <span className="text-[10px] mt-1 font-medium">Profile</span>
-            </div>
+        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto sm:max-w-none bg-white border-t border-slate-200 z-50 px-6 py-2 flex justify-between items-center pb-safe">
+          <Link href="/dashboard/salesman" className="flex flex-col items-center text-slate-500 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
+            <Home className="h-6 w-6 mb-1" />
+            <span className="text-[10px] font-semibold">Home</span>
+          </Link>
+          <Link href="/dashboard/salesman/customers" className="flex flex-col items-center text-slate-500 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
+            <Users className="h-6 w-6 mb-1" />
+            <span className="text-[10px] font-semibold">Customers</span>
+          </Link>
+          <div className="flex flex-col items-center text-slate-300">
+            <ShoppingBag className="h-6 w-6 mb-1" />
+            <span className="text-[10px] font-semibold">Sales</span>
           </div>
-          
-          <div className="hidden sm:flex fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 p-4 justify-center gap-8">
-            <Link href="/dashboard/salesman" className="flex items-center gap-2 text-slate-600 hover:text-alvoun-blue font-medium">
-              <Home className="h-5 w-5" /> Home
-            </Link>
-            <Link href="/dashboard/salesman/customers" className="flex items-center gap-2 text-slate-600 hover:text-alvoun-blue font-medium">
-              <Users className="h-5 w-5" /> Customers
-            </Link>
+          <div className="flex flex-col items-center text-slate-300">
+            <User className="h-6 w-6 mb-1" />
+            <span className="text-[10px] font-semibold">Profile</span>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
