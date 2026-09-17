@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/db';
 import { getCurrentKolkataTime } from '@/lib/time';
 import { NextResponse } from 'next/server';
