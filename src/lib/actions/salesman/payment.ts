@@ -24,6 +24,14 @@ export async function createStandalonePayment(data: { customerId: string, amount
     throw new Error('SESSION_ENDED');
   }
 
+  // Verify ownership
+  const customer = await prisma.customer.findUnique({
+    where: { id: data.customerId }
+  });
+  if (!customer || customer.salesmanId !== session.user.id) {
+    throw new Error('Unauthorized customer access');
+  }
+
   // Create payment
   await prisma.payment.create({
     data: {

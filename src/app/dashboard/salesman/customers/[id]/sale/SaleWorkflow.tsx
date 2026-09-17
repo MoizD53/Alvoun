@@ -83,7 +83,7 @@ export default function SaleWorkflow({
       items: cartItems.map(i => ({
         productId: i.product.id,
         crates: i.crates,
-        rate: i.actualRate
+        actualRate: i.actualRate
       })),
       paymentAmount: paymentAmountPaise > 0 ? paymentAmountPaise : undefined,
       paymentMethod: paymentAmountPaise > 0 ? paymentMethod : undefined,
