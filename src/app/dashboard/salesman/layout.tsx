@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth, signOut } from '@/auth';
 import { getCurrentKolkataTime, isWorkingHours } from '@/lib/time';
 import LocationTracker from './components/LocationTracker';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function SalesmanLayout({
   children,
@@ -17,16 +18,19 @@ export default async function SalesmanLayout({
       {workingHours && <LocationTracker />}
       
       {/* Mobile Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 h-14 flex items-center justify-between">
+      <header className="bg-white dark:bg-gray-950 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-30 px-4 h-14 flex items-center justify-between">
         <div className="flex items-center text-alvoun-blue">
           <Droplet className="h-6 w-6 fill-current" />
-          <span className="ml-2 font-bold text-slate-900">ALVOUN</span>
+          <span className="ml-2 font-bold text-slate-900 dark:text-slate-100">ALVOUN</span>
         </div>
-        <form action={async () => { 'use server'; await signOut(); }}>
-          <button className="text-slate-400 hover:text-slate-600">
-            <LogOut className="h-5 w-5" />
-          </button>
-        </form>
+        <div className="flex items-center space-x-3">
+          <ThemeToggle />
+          <form action={async () => { 'use server'; await signOut(); }}>
+            <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+              <LogOut className="h-5 w-5" />
+            </button>
+          </form>
+        </div>
       </header>
 
       {/* Main content */}

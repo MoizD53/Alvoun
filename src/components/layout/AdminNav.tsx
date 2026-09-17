@@ -20,6 +20,7 @@ import {
   Bell
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
@@ -129,16 +130,19 @@ export default function AdminNav({ user }: { user: any }) {
               {user?.name?.charAt(0) || 'U'}
             </div>
             <div className="ml-3 flex-1 overflow-hidden">
-              <p className="text-sm font-medium text-slate-900 truncate">{user?.name}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{user?.name}</p>
               <p className="text-xs text-slate-500 truncate">{user?.role}</p>
             </div>
-            <button 
-              onClick={() => signOut()}
-              className="p-1.5 text-slate-400 hover:text-red-500 rounded-md transition-colors"
-              title="Logout"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            <div className="flex items-center space-x-1">
+              <ThemeToggle />
+              <button 
+                onClick={() => signOut()}
+                className="p-1.5 text-slate-400 hover:text-red-500 rounded-md transition-colors"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

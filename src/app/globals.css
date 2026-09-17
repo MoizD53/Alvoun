@@ -58,3 +58,10 @@ body {
 .animate-ripple { animation: ripple 12s infinite ease-in-out; }
 .animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; opacity: 0; }
 
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --color-alvoun-light: #1e293b;
+  --color-alvoun-dark: #38bdf8;
+}
+
