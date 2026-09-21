@@ -35,10 +35,20 @@ export async function getDashboardStats() {
     })
   ]);
 
+  const assignments = await prisma.salesmanAssignment.findMany({
+    where: { salesmanId: salesman.id },
+    include: { route: true, area: true }
+  });
+
+  const routesCount = new Set(assignments.map(a => a.routeId)).size;
+  const areasCount = new Set(assignments.map(a => a.areaId)).size;
+
   return {
     customersCount,
     visitsCount,
     salesAmount: salesResult._sum.totalAmount || 0,
-    collectionAmount: collectionResult._sum.amount || 0
+    collectionAmount: collectionResult._sum.amount || 0,
+    routesCount,
+    areasCount
   };
 }

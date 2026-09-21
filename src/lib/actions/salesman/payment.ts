@@ -43,5 +43,14 @@ export async function createStandalonePayment(data: { customerId: string, amount
     }
   });
 
+  const { logAndEmitActivity } = await import('@/lib/events');
+  await logAndEmitActivity({
+    salesmanId: session.user.id,
+    salesmanName: session.user.name || 'Salesman',
+    type: 'PAYMENT',
+    description: `Collected ₹${(data.amount / 100).toFixed(2)} at ${customer.customerName}`,
+    metadata: { amount: data.amount }
+  });
+
   return { success: true };
 }

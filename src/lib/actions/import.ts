@@ -10,43 +10,96 @@ export async function processCustomerImport(rows: any[]) {
     errors: [] as string[]
   };
 
-  // Optimization: load all states, cities, routes, salesmen mapping
-  const states = await prisma.state.findMany();
-  const cities = await prisma.city.findMany();
-  const routes = await prisma.route.findMany();
-  const salesmen = await prisma.salesman.findMany();
+  // Get defaults for state and city if not provided
+  let defaultState = await prisma.state.findFirst();
+  let defaultCity = await prisma.city.findFirst();
 
-  const stateMap = new Map(states.map(s => [s.name.toLowerCase().trim(), s.id]));
-  const cityMap = new Map(cities.map(c => [c.name.toLowerCase().trim(), c.id]));
-  const routeMap = new Map(routes.map(r => [r.name.toLowerCase().trim(), r.id]));
-  const salesmanMap = new Map(salesmen.map(s => [s.name.toLowerCase().trim(), s.id]));
+  if (!defaultState) {
+    defaultState = await prisma.state.create({ data: { name: 'Default State' } });
+  }
+  if (!defaultCity) {
+    defaultCity = await prisma.city.create({ data: { name: 'Default City', stateId: defaultState.id } });
+  }
+
+  // Caching routes and areas to minimize DB calls
+  const routesCache = new Map<string, string>(); // name -> id
+  const areasCache = new Map<string, string>(); // routeId_name -> id
+  const areaSalesmanCache = new Map<string, string | null>(); // areaId -> salesmanId
+
+  const existingRoutes = await prisma.route.findMany();
+  for (const r of existingRoutes) {
+    routesCache.set(r.name.toLowerCase().trim(), r.id);
+  }
+
+  const existingAreas = await prisma.area.findMany();
+  for (const a of existingAreas) {
+    areasCache.set(`${a.routeId}_${a.name.toLowerCase().trim()}`, a.id);
+  }
+
+  const assignments = await prisma.salesmanAssignment.findMany();
+  for (const a of assignments) {
+    areaSalesmanCache.set(a.areaId, a.salesmanId);
+  }
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
+    // skip completely blank rows
+    if (!row.customerName && !row.route && !row.area) continue;
+
     try {
-      if (!row.customerName || !row.contact || !row.address) {
-        throw new Error('Missing basic fields');
+      if (!row.customerName || !row.route || !row.area) {
+        throw new Error('Missing basic fields (Customer Name, Route, Area)');
       }
 
-      const stateId = stateMap.get(row.state?.toLowerCase().trim());
-      if (!stateId) throw new Error(`State '${row.state}' not found`);
+      // Handle Route
+      const routeName = row.route.trim();
+      const routeKey = routeName.toLowerCase();
+      let routeId = routesCache.get(routeKey);
 
-      const cityId = cityMap.get(row.city?.toLowerCase().trim());
-      if (!cityId) throw new Error(`City '${row.city}' not found`);
+      if (!routeId) {
+        // Create new route
+        const newRoute = await prisma.route.create({
+          data: {
+            name: routeName,
+            cityId: defaultCity.id,
+            isActive: true,
+          }
+        });
+        routeId = newRoute.id;
+        routesCache.set(routeKey, routeId);
+      }
 
-      const routeId = routeMap.get(row.route?.toLowerCase().trim());
-      if (!routeId) throw new Error(`Route '${row.route}' not found`);
+      // Handle Area
+      const areaName = row.area.trim();
+      const areaKey = `${routeId}_${areaName.toLowerCase()}`;
+      let areaId = areasCache.get(areaKey);
 
-      const salesmanId = salesmanMap.get(row.salesman?.toLowerCase().trim());
-      if (!salesmanId) throw new Error(`Salesman '${row.salesman}' not found`);
+      if (!areaId) {
+        // Create new area
+        const newArea = await prisma.area.create({
+          data: {
+            name: areaName,
+            routeId: routeId
+          }
+        });
+        areaId = newArea.id;
+        areasCache.set(areaKey, areaId);
+      }
+
+      const salesmanId = areaSalesmanCache.get(areaId) || null;
+      const contact = row.contact ? String(row.contact).trim() : 'N/A';
+      const address = row.address ? String(row.address).trim() : 'N/A';
+      const customerName = String(row.customerName).trim();
 
       // Check for exact duplicate (same name & contact)
       const existing = await prisma.customer.findFirst({
-        where: { customerName: row.customerName, contact: row.contact }
+        where: { customerName, contact }
       });
 
       if (existing) {
-        throw new Error('Duplicate customer exists (same name & contact)');
+        // Skip duplicate instead of failing to be idempotent
+        results.success++;
+        continue;
       }
 
       const openingBalance = parseInt(row.openingBalance) || 0;
@@ -59,12 +112,13 @@ export async function processCustomerImport(rows: any[]) {
 
       await prisma.customer.create({
         data: {
-          customerName: row.customerName,
-          contact: String(row.contact),
-          address: String(row.address),
-          stateId,
-          cityId,
+          customerName,
+          contact,
+          address,
+          stateId: defaultState.id,
+          cityId: defaultCity.id,
           routeId,
+          areaId,
           salesmanId,
           openingBalance,
           openingBalanceType,
@@ -74,7 +128,7 @@ export async function processCustomerImport(rows: any[]) {
       results.success++;
     } catch (err: any) {
       results.failed++;
-      results.errors.push(`Row ${i + 1} (${row.customerName}): ${err.message}`);
+      results.errors.push(`Row ${i + 1} (${row.customerName || 'Unknown'}): ${err.message}`);
     }
   }
 

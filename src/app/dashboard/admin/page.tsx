@@ -19,6 +19,8 @@ import {
   UserPlus,
   FileDown
 } from 'lucide-react';
+import AdminCharts from './components/AdminCharts';
+import LiveDashboardManager from './components/LiveDashboardManager';
 
 export default async function AdminDashboard({
   searchParams
@@ -90,12 +92,30 @@ export default async function AdminDashboard({
       visits: 0,
       sales: 0,
       collection: 0,
+      currentCustomer: null,
+      currentAction: ws.logoutAt ? 'Offline' : 'Online'
     });
   });
 
   visits.forEach(v => {
     if (salesmanData.has(v.salesmanId)) {
       salesmanData.get(v.salesmanId).visits++;
+    }
+  });
+
+  // Fetch currently active visits
+  const activeVisits = await prisma.visit.findMany({
+    where: { 
+      status: 'STARTED',
+      salesmanId: { in: Array.from(salesmanData.keys()) }
+    },
+    include: { customer: { include: { area: true, route: true } } }
+  });
+
+  activeVisits.forEach(v => {
+    if (salesmanData.has(v.salesmanId)) {
+      salesmanData.get(v.salesmanId).currentCustomer = v.customer;
+      salesmanData.get(v.salesmanId).currentAction = 'At Customer Visit';
     }
   });
 
@@ -213,6 +233,7 @@ export default async function AdminDashboard({
                   <tr>
                     <th className="px-6 py-3">Salesman</th>
                     <th className="px-6 py-3">Status</th>
+                    <th className="px-6 py-3">Current Activity</th>
                     <th className="px-6 py-3 text-right">Sales</th>
                     <th className="px-6 py-3 text-right">Collection</th>
                   </tr>
@@ -220,7 +241,7 @@ export default async function AdminDashboard({
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {salesmanPerformance.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
                         No field staff active today.
                       </td>
                     </tr>
@@ -229,10 +250,19 @@ export default async function AdminDashboard({
                       <tr key={sp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                         <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{sp.name}</td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-alvoun-green">
-                            <span className="h-1.5 w-1.5 rounded-full bg-alvoun-green"></span>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${sp.status === 'Working' ? 'bg-green-50 dark:bg-green-900/20 text-alvoun-green' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${sp.status === 'Working' ? 'bg-alvoun-green' : 'bg-slate-400'}`}></span>
                             {sp.status}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{sp.currentAction}</div>
+                          {sp.currentCustomer && (
+                            <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                              <MapPin className="h-3 w-3" />
+                              {sp.currentCustomer.customerName} ({sp.currentCustomer.area?.name})
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
                           {formatMoney(sp.sales)}
@@ -251,6 +281,7 @@ export default async function AdminDashboard({
 
         {/* Sidebar Column */}
         <div className="space-y-6">
+          <LiveDashboardManager />
           
           {/* Attention Required */}
           <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -310,6 +341,9 @@ export default async function AdminDashboard({
 
         </div>
       </div>
+      
+      {/* Route & Area Coverage Charts */}
+      <AdminCharts />
     </div>
   );
 }

@@ -90,7 +90,7 @@ export async function GET(request: Request) {
           'State': c.state.name,
           'City': c.city.name,
           'Route': c.route.name,
-          'Salesman': c.salesman.name,
+          'Salesman': c.salesman?.name || 'Unassigned',
           'Opening Balance': (c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance) / 100,
           'Total Sales': totalSales / 100,
           'Total Payments': totalPayments / 100,

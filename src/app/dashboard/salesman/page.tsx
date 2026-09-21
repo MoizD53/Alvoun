@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { getDashboardStats } from '@/lib/actions/salesman/dashboard';
 import Link from 'next/link';
 import { formatMoney, formatNumber } from '@/lib/format';
-import { Store, Navigation, Receipt, IndianRupee, Clock, CheckCircle2, Moon } from 'lucide-react';
+import { Store, Navigation, Receipt, IndianRupee, Clock, CheckCircle2, Moon, MapPin, Map as MapIcon } from 'lucide-react';
 
 export default async function SalesmanDashboard() {
   const session = await auth();
@@ -104,28 +104,28 @@ export default async function SalesmanDashboard() {
         
         <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-3 text-slate-500 dark:text-slate-400">
-            <Store className="h-5 w-5 text-alvoun-blue" />
-            <span className="text-sm font-medium">Sales Amount</span>
+            <MapPin className="h-5 w-5 text-alvoun-blue" />
+            <span className="text-sm font-medium">Assigned Routes</span>
           </div>
           <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-             {formatMoney(stats?.salesAmount || 0)}
+             {formatNumber(stats?.routesCount || 0)}
           </div>
         </div>
         
         <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-3 text-slate-500 dark:text-slate-400">
-            <Receipt className="h-5 w-5 text-indigo-500" />
-            <span className="text-sm font-medium">Sales</span>
+            <MapIcon className="h-5 w-5 text-indigo-500" />
+            <span className="text-sm font-medium">Assigned Areas</span>
           </div>
           <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-            {formatNumber(stats?.salesAmount! > 0 ? 1 : 0)} {/* Dummy if count not available */}
+            {formatNumber(stats?.areasCount || 0)}
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-950 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center gap-2 mb-3 text-slate-500 dark:text-slate-400">
             <IndianRupee className="h-5 w-5 text-emerald-500" />
-            <span className="text-sm font-medium">Collected</span>
+            <span className="text-sm font-medium">Collected Today</span>
           </div>
           <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
              {formatMoney(stats?.collectionAmount || 0)}

@@ -42,6 +42,8 @@ model Salesman {
   payments     Payment[]
   workSessions WorkSession[]
   locations    Location[]
+  assignments  SalesmanAssignment[]
+  activityLogs ActivityLog[]
 }
 
 model State {
@@ -80,9 +82,43 @@ model Route {
   updatedAt  DateTime  @updatedAt
 
   customers  Customer[]
+  areas      Area[]
+  assignments SalesmanAssignment[]
 
   @@index([cityId])
   @@index([salesmanId])
+}
+
+model Area {
+  id        String   @id @default(cuid())
+  name      String
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customers   Customer[]
+  assignments SalesmanAssignment[]
+
+  @@unique([name, routeId])
+  @@index([routeId])
+}
+
+model SalesmanAssignment {
+  id         String   @id @default(cuid())
+  salesmanId String
+  routeId    String
+  areaId     String
+  salesman   Salesman @relation(fields: [salesmanId], references: [id], onDelete: Cascade)
+  route      Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  area       Area     @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([salesmanId, areaId])
+  @@index([salesmanId])
+  @@index([routeId])
+  @@index([areaId])
 }
 
 model Customer {
@@ -96,8 +132,10 @@ model Customer {
   city               City        @relation(fields: [cityId], references: [id], onDelete: Restrict)
   routeId            String
   route              Route       @relation(fields: [routeId], references: [id], onDelete: Restrict)
-  salesmanId         String
-  salesman           Salesman    @relation(fields: [salesmanId], references: [id], onDelete: Restrict)
+  areaId             String?
+  area               Area?       @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  salesmanId         String?
+  salesman           Salesman?   @relation(fields: [salesmanId], references: [id], onDelete: SetNull)
   openingBalance     Int         @default(0)
   openingBalanceType String      @default("DEBIT")
   status             String      @default("ACTIVE")
@@ -111,6 +149,7 @@ model Customer {
   @@index([stateId])
   @@index([cityId])
   @@index([routeId])
+  @@index([areaId])
   @@index([salesmanId])
   @@index([status])
 }
@@ -241,4 +280,17 @@ model Location {
   @@index([salesmanId, recordedAt])
   @@index([workSessionId, recordedAt])
   @@index([recordedAt])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  salesmanId  String
+  salesman    Salesman @relation(fields: [salesmanId], references: [id], onDelete: Cascade)
+  type        String   // e.g., 'VISIT_START', 'VISIT_END', 'SALE', 'PAYMENT', 'ONLINE'
+  description String
+  metadata    String?  // JSON string
+  createdAt   DateTime @default(now())
+
+  @@index([salesmanId])
+  @@index([createdAt])
 }

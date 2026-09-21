@@ -18,6 +18,7 @@ export default function CustomerImporter() {
     state: '',
     city: '',
     route: '',
+    area: '',
     salesman: '',
     openingBalance: '',
     openingBalanceType: '',
@@ -66,7 +67,7 @@ export default function CustomerImporter() {
     reader.readAsBinaryString(file);
   };
 
-  const requiredFields = ['customerName', 'contact', 'address', 'state', 'city', 'route', 'salesman'];
+  const requiredFields = ['customerName', 'route', 'area'];
   
   const proceedToPreview = () => {
     // Validate mappings

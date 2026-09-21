@@ -159,7 +159,7 @@ export default async function CustomersPage({
                       </td>
                       <td className="px-6 py-3">
                         <div className="font-medium text-slate-700 dark:text-slate-300">{c.route.name}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{c.salesman.name}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{c.salesman?.name}</div>
                       </td>
                       <td className="px-6 py-3 text-right">
                         <span className={`font-bold ${isNegative ? 'text-alvoun-red' : 'text-slate-900 dark:text-slate-100'}`}>
@@ -221,7 +221,7 @@ export default async function CustomersPage({
                     <div>
                       <div className="text-xs text-slate-400 font-medium">Route & Salesman</div>
                       <div className="font-medium text-slate-700 dark:text-slate-300">{c.route.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{c.salesman.name}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{c.salesman?.name}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-xs text-slate-400 font-medium">Outstanding</div>

@@ -114,7 +114,7 @@ export default async function OutstandingReportPage({
                     </td>
                     <td className="px-6 py-3">
                       <div className="font-medium text-slate-700 dark:text-slate-300">{c.route.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{c.salesman.name}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{c.salesman?.name}</div>
                     </td>
                     <td className="px-6 py-3 text-right font-medium text-slate-700 dark:text-slate-300">{formatMoney(c.totalSales)}</td>
                     <td className="px-6 py-3 text-right font-medium text-alvoun-green">{formatMoney(c.totalPayments)}</td>

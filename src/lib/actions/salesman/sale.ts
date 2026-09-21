@@ -79,6 +79,7 @@ export async function createSale(data: any) {
     }
 
     // Execute in transaction
+    let createdSaleId = '';
     await prisma.$transaction(async (tx) => {
       const sale = await tx.sale.create({
         data: {
@@ -90,6 +91,7 @@ export async function createSale(data: any) {
           }
         }
       });
+      createdSaleId = sale.id;
 
       if (paymentAmount > 0) {
         if (!paymentMethod) throw new Error('Payment method required when amount > 0');
@@ -103,6 +105,27 @@ export async function createSale(data: any) {
         });
       }
     });
+
+    const { logAndEmitActivity } = await import('@/lib/events');
+    const { salesman } = await requireActiveSalesmanSession();
+    
+    await logAndEmitActivity({
+      salesmanId,
+      salesmanName: salesman.name,
+      type: 'SALE',
+      description: `Created Order worth ₹${(totalAmount / 100).toFixed(2)} at ${customer.customerName}`,
+      metadata: { amount: totalAmount }
+    });
+
+    if (paymentAmount > 0) {
+      await logAndEmitActivity({
+        salesmanId,
+        salesmanName: salesman.name,
+        type: 'PAYMENT',
+        description: `Collected ₹${(paymentAmount / 100).toFixed(2)} at ${customer.customerName}`,
+        metadata: { amount: paymentAmount }
+      });
+    }
 
     return { success: true };
   } catch (error: any) {
