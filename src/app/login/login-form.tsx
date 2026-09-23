@@ -16,18 +16,18 @@ export default function LoginForm() {
     <div className="w-full animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
       <form action={formAction} className="space-y-4">
         <div>
-          <label className="block text-[10px] font-bold text-white/70 tracking-[0.15em] uppercase mb-1" htmlFor="email">
-            Email Address
+          <label className="block text-[10px] font-bold text-white/70 tracking-[0.15em] uppercase mb-1" htmlFor="loginId">
+            Login ID
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/60">
               <Mail className="h-4 w-4" strokeWidth={1.5} />
             </div>
             <input
-              id="email"
-              type="email"
-              name="email"
-              placeholder="Enter your email"
+              id="loginId"
+              type="text"
+              name="loginId"
+              placeholder="Enter your login ID"
               required
               className="block w-full appearance-none rounded-[12px] bg-[#02060D]/40 border border-white dark:border-slate-950/10 pl-10 pr-4 h-[44px] sm:h-[48px] text-[14px] text-white placeholder-white/40 focus:border-[#0099FF] focus:bg-[#02060D]/60 focus:outline-none focus:ring-1 focus:ring-[#0099FF] transition-all"
             />

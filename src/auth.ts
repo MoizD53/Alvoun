@@ -10,18 +10,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: { label: "Email", type: "email" },
+        loginId: { label: "Login ID", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         const parsedCredentials = z
-          .object({ email: z.string().email(), password: z.string().min(6) })
+          .object({ loginId: z.string().min(1), password: z.string().min(1) })
           .safeParse(credentials)
 
         if (parsedCredentials.success) {
-          const { email, password } = parsedCredentials.data
-          const user = await prisma.profile.findUnique({ where: { email } })
-          if (!user || !user.password) return null
+          const { loginId, password } = parsedCredentials.data
+          const user = await prisma.profile.findUnique({ where: { email: loginId } })
+          if (!user || !user.password || !user.isActive) return null
           
           const passwordsMatch = await bcrypt.compare(password, user.password)
           if (passwordsMatch) {

@@ -37,6 +37,7 @@ const masterDataItems = [
   { name: 'Routes', href: '/dashboard/admin/routes', icon: MapPin },
   { name: 'Products', href: '/dashboard/admin/reports/products', icon: Box },
   { name: 'Settings', href: '/dashboard/admin/states', icon: Settings },
+  { name: 'Salesmen Accounts', href: '/dashboard/admin/salesmen', icon: Users },
 ];
 
 export default function AdminNav({ user }: { user: any }) {
