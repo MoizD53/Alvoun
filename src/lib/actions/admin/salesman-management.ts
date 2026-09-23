@@ -9,6 +9,12 @@ export async function getSalesmenAccounts() {
     include: {
       profile: true,
       routes: true,
+      assignments: {
+        include: {
+          route: true,
+          area: true,
+        },
+      },
       workSessions: {
         where: {
           workDate: {
@@ -28,7 +34,7 @@ export async function getSalesmenAccounts() {
 
 export async function createSalesmanAccount(data: any) {
   try {
-    const { name, phone, employeeCode, loginId, password, routeId, isActive } = data;
+    const { name, phone, employeeCode, loginId, password, routeId, areaIds = [], isActive } = data;
 
     // Check if profile (login ID) already exists
     const existingProfile = await prisma.profile.findUnique({
@@ -71,6 +77,7 @@ export async function createSalesmanAccount(data: any) {
       },
     });
 
+    // 1. Assign Primary Route if selected
     if (routeId) {
       await prisma.route.update({
         where: { id: routeId },
@@ -78,7 +85,34 @@ export async function createSalesmanAccount(data: any) {
       });
     }
 
+    // 2. Assign Areas and territory
+    if (areaIds && areaIds.length > 0) {
+      const selectedAreas = await prisma.area.findMany({
+        where: { id: { in: areaIds } },
+      });
+
+      // Clear any conflicting assignments for these areas
+      await prisma.salesmanAssignment.deleteMany({
+        where: { areaId: { in: areaIds } },
+      });
+
+      await prisma.salesmanAssignment.createMany({
+        data: selectedAreas.map(a => ({
+          salesmanId: salesman.id,
+          routeId: a.routeId,
+          areaId: a.id,
+        })),
+      });
+
+      // Automatically attach customers in these assigned areas to this salesman
+      await prisma.customer.updateMany({
+        where: { areaId: { in: areaIds } },
+        data: { salesmanId: salesman.id },
+      });
+    }
+
     revalidatePath('/dashboard/admin/salesmen');
+    revalidatePath('/dashboard/admin/salesmen-access');
     return { success: true, id: salesman.id };
   } catch (error: any) {
     console.error('Error creating salesman:', error);
@@ -88,7 +122,7 @@ export async function createSalesmanAccount(data: any) {
 
 export async function updateSalesmanAccount(id: string, data: any) {
   try {
-    const { name, phone, employeeCode, loginId, routeId, isActive } = data;
+    const { name, phone, employeeCode, loginId, routeId, areaIds, isActive } = data;
 
     const salesman = await prisma.salesman.findUnique({
       where: { id },
@@ -150,10 +184,51 @@ export async function updateSalesmanAccount(id: string, data: any) {
           });
         }
       }
+
+      // Update territory area assignments if provided
+      if (areaIds !== undefined) {
+        await tx.salesmanAssignment.deleteMany({
+          where: { salesmanId: id },
+        });
+
+        // Unlink previous customers
+        await tx.customer.updateMany({
+          where: { salesmanId: id },
+          data: { salesmanId: null },
+        });
+
+        if (areaIds.length > 0) {
+          const selectedAreas = await tx.area.findMany({
+            where: { id: { in: areaIds } },
+          });
+
+          // Unassign other salesmen from these areas
+          await tx.salesmanAssignment.deleteMany({
+            where: {
+              areaId: { in: areaIds },
+              salesmanId: { not: id },
+            },
+          });
+
+          await tx.salesmanAssignment.createMany({
+            data: selectedAreas.map(a => ({
+              salesmanId: id,
+              routeId: a.routeId,
+              areaId: a.id,
+            })),
+          });
+
+          await tx.customer.updateMany({
+            where: { areaId: { in: areaIds } },
+            data: { salesmanId: id },
+          });
+        }
+      }
     });
 
     revalidatePath('/dashboard/admin/salesmen');
     revalidatePath(`/dashboard/admin/salesmen/${id}`);
+    revalidatePath('/dashboard/admin/salesmen-access');
     return { success: true };
   } catch (error: any) {
     console.error('Error updating salesman:', error);
