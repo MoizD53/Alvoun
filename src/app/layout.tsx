@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
-import ServiceWorkerRegister from "@/components/pwa/ServiceWorkerRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,8 +32,6 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-import { ThemeProvider } from "@/components/theme-provider";
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -41,7 +40,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <ServiceWorkerRegister />
+        <Script id="sw-register" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js');
+              });
+            }
+          `}
+        </Script>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
