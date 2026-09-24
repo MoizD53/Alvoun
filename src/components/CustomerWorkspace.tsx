@@ -88,7 +88,7 @@ export default function CustomerWorkspace({ customer }: { customer: any }) {
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-slate-600 dark:text-slate-400">
               <div className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-slate-400" /> {customer.contact}</div>
               <div className="hidden sm:block text-slate-300">•</div>
-              <div className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" /> {customer.address}, {customer.city.name}</div>
+              <div className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" /> {customer.address}, {customer.city?.name || ''}</div>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
@@ -159,15 +159,15 @@ export default function CustomerWorkspace({ customer }: { customer: any }) {
                 <dl className="space-y-4">
                   <div className="grid grid-cols-3">
                     <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Route</dt>
-                    <dd className="col-span-2 text-sm font-medium text-slate-900 dark:text-slate-100">{customer.route.name}</dd>
+                    <dd className="col-span-2 text-sm font-medium text-slate-900 dark:text-slate-100">{customer.route?.name || 'Unassigned'}</dd>
                   </div>
                   <div className="grid grid-cols-3">
                     <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Salesman</dt>
-                    <dd className="col-span-2 text-sm font-medium text-slate-900 dark:text-slate-100">{customer.salesman.name}</dd>
+                    <dd className="col-span-2 text-sm font-medium text-slate-900 dark:text-slate-100">{customer.salesman?.name || 'Unassigned'}</dd>
                   </div>
                   <div className="grid grid-cols-3">
                     <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">Location</dt>
-                    <dd className="col-span-2 text-sm text-slate-900 dark:text-slate-100">{customer.city.name}, {customer.state.name}</dd>
+                    <dd className="col-span-2 text-sm text-slate-900 dark:text-slate-100">{customer.city?.name || 'Unknown'}, {customer.state?.name || 'Unknown'}</dd>
                   </div>
                 </dl>
               </div>
