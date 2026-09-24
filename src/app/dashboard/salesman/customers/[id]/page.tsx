@@ -1,7 +1,8 @@
 import { getCustomerDetail } from '@/lib/actions/salesman/customer';
 import Link from 'next/link';
-import { ArrowLeft, Phone, MapPin, Navigation, IndianRupee } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, IndianRupee } from 'lucide-react';
 import VisitWorkflow from './VisitWorkflow';
+import PhoneManager from './PhoneManager';
 import { notFound } from 'next/navigation';
 import { formatMoney } from '@/lib/format';
 
@@ -45,15 +46,7 @@ export default async function CustomerDetailPage({
 
       {/* Details Card */}
       <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-6">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-             <Phone className="h-5 w-5 text-alvoun-blue" />
-          </div>
-          <div className="flex-1">
-            <div className="font-bold text-slate-900 dark:text-slate-100 text-lg">{customer.contact}</div>
-            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Contact Number</div>
-          </div>
-        </div>
+        <PhoneManager customerId={customer.id} initialPhone={customer.contact} />
         
         <div className="flex items-start gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
           <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
@@ -72,11 +65,6 @@ export default async function CustomerDetailPage({
 
       {/* Actions */}
       <div className="space-y-4">
-        <a href={`tel:${customer.contact}`} className="flex items-center justify-center gap-2 w-full py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold active:bg-slate-50 dark:active:bg-slate-900 transition-colors shadow-sm text-base">
-          <Phone className="h-5 w-5 text-slate-400" />
-          CALL CUSTOMER
-        </a>
-        
         <VisitWorkflow customerId={customer.id} />
         
         <Link 

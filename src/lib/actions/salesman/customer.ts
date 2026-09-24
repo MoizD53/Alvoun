@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db';
 import { requireActiveSalesmanSession } from '@/lib/session';
+import { revalidatePath } from 'next/cache';
 
 export async function getMyCustomers(routeId?: string, search?: string) {
   const { salesman } = await requireActiveSalesmanSession();
@@ -65,4 +66,38 @@ export async function getCustomerDetail(id: string) {
   const outstanding = (customer.openingBalanceType === 'DEBIT' ? customer.openingBalance : -customer.openingBalance) + totalSales - totalPayments;
 
   return { ...customer, outstanding };
+}
+export async function updateCustomerPhone(id: string, phone: string) {
+  try {
+    const { salesman } = await requireActiveSalesmanSession();
+    
+    // Verify customer belongs to salesman
+    const customer = await prisma.customer.findUnique({
+      where: { id }
+    });
+
+    if (!customer) return { error: 'Customer not found' };
+    if (customer.salesmanId !== salesman.id) return { error: 'Unauthorized to update this customer' };
+
+    await prisma.customer.update({
+      where: { id },
+      data: { contact: phone }
+    });
+
+    const { logAndEmitActivity } = await import('@/lib/events');
+    await logAndEmitActivity({
+      salesmanId: salesman.id,
+      salesmanName: salesman.name,
+      type: 'ONLINE', // Generic type or could add new one like PROFILE_UPDATE
+      description: `Updated phone number for ${customer.customerName}`,
+    });
+
+    revalidatePath(`/dashboard/salesman/customers/${id}`);
+    revalidatePath('/dashboard/admin/customers'); // Reflect in admin
+    revalidatePath(`/dashboard/admin/customers/${id}`);
+    
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to update phone number' };
+  }
 }
