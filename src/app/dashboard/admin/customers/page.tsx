@@ -101,25 +101,25 @@ export default async function CustomersPage({
               name="search"
               defaultValue={filters.search}
               placeholder="Search customers..." 
-              className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue transition-colors"
+              className="text-slate-900 dark:text-slate-100 w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue transition-colors"
             />
           </div>
           
           <div className="flex w-full lg:w-auto gap-2 overflow-x-auto pb-1 lg:pb-0">
-            <select name="routeId" defaultValue={filters.routeId} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[140px]">
+            <select name="routeId" defaultValue={filters.routeId} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[140px]">
               <option value="">All Routes</option>
               {routes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
-            <select name="salesmanId" defaultValue={filters.salesmanId} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[140px]">
+            <select name="salesmanId" defaultValue={filters.salesmanId} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[140px]">
               <option value="">All Salesmen</option>
               {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <select name="status" defaultValue={filters.status} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[120px]">
+            <select name="status" defaultValue={filters.status} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[120px]">
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
             </select>
-            <select name="sort" defaultValue={filters.sort} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[120px]">
+            <select name="sort" defaultValue={filters.sort} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[120px]">
               <option value="asc">A to Z</option>
               <option value="desc">Z to A</option>
             </select>
