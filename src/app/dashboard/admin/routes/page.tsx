@@ -18,10 +18,22 @@ export default async function RoutesPage() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Routes</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Routes & Areas</h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">Manage delivery routes and salesman assignments.</p>
           </div>
         </div>
+      </div>
+
+      <div className="flex gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <Link href="/dashboard/admin/routes" className="px-4 py-2 text-sm font-medium border-b-2 border-alvoun-blue text-alvoun-blue">
+          Routes & Areas
+        </Link>
+        <Link href="/dashboard/admin/cities" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+          Cities
+        </Link>
+        <Link href="/dashboard/admin/states" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+          States
+        </Link>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

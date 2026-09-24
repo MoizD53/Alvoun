@@ -17,16 +17,18 @@ import {
   X,
   LogOut,
   Droplet,
-  Bell
+  Bell,
+  Upload,
+  History
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-const navItems = [
+const mainItems = [
   { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
   { name: 'Sales', href: '/dashboard/admin/reports/daily', icon: DollarSign },
   { name: 'Customers', href: '/dashboard/admin/customers', icon: Users },
-  { name: 'Salesmen Access', href: '/dashboard/admin/salesmen-access', icon: Truck },
+  { name: 'Salesmen', href: '/dashboard/admin/salesmen', icon: Users },
   { name: 'Work Sessions', href: '/dashboard/admin/sessions', icon: Truck },
   { name: 'Locations', href: '/dashboard/admin/locations', icon: MapPin },
   { name: 'Dues', href: '/dashboard/admin/reports/outstanding', icon: CreditCard },
@@ -34,10 +36,14 @@ const navItems = [
 ];
 
 const masterDataItems = [
-  { name: 'Routes', href: '/dashboard/admin/routes', icon: MapPin },
-  { name: 'Products', href: '/dashboard/admin/reports/products', icon: Box },
-  { name: 'Settings', href: '/dashboard/admin/states', icon: Settings },
-  { name: 'Salesmen Accounts', href: '/dashboard/admin/salesmen', icon: Users },
+  { name: 'Routes & Areas', href: '/dashboard/admin/routes', icon: MapPin },
+  { name: 'Products & Rates', href: '/dashboard/admin/reports/products', icon: Box },
+  { name: 'Import Data', href: '/dashboard/admin/customers/import', icon: Upload },
+];
+
+const systemItems = [
+  { name: 'Settings', href: '/dashboard/admin/settings', icon: Settings },
+  { name: 'Activity Log', href: '/dashboard/admin/activity', icon: History },
 ];
 
 export default function AdminNav({ user }: { user: any }) {
@@ -80,7 +86,10 @@ export default function AdminNav({ user }: { user: any }) {
 
         {/* Nav Links */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map((item) => {
+          <div className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+            Main
+          </div>
+          {mainItems.map((item) => {
             const active = isActive(item.href);
             return (
               <Link
@@ -106,6 +115,31 @@ export default function AdminNav({ user }: { user: any }) {
           </div>
           
           {masterDataItems.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`
+                  flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors
+                  ${active 
+                    ? 'bg-alvoun-light dark:bg-alvoun-blue/20 text-alvoun-blue dark:text-alvoun-blue' 
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100'
+                  }
+                `}
+              >
+                <item.icon className={`mr-3 h-5 w-5 ${active ? 'text-alvoun-blue' : 'text-slate-400'}`} />
+                {item.name}
+              </Link>
+            );
+          })}
+
+          <div className="pt-6 pb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            System
+          </div>
+          
+          {systemItems.map((item) => {
             const active = isActive(item.href);
             return (
               <Link

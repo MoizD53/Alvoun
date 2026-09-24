@@ -19,9 +19,21 @@ export default async function CitiesPage() {
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Cities</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Routes & Areas</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage operational cities.</p>
         </div>
+      </div>
+
+      <div className="flex gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <a href="/dashboard/admin/routes" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+          Routes & Areas
+        </a>
+        <a href="/dashboard/admin/cities" className="px-4 py-2 text-sm font-medium border-b-2 border-alvoun-blue text-alvoun-blue">
+          Cities
+        </a>
+        <a href="/dashboard/admin/states" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+          States
+        </a>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
