@@ -49,14 +49,14 @@ export default async function SalesmanLayout({
             <Users className="h-6 w-6 mb-1" />
             <span className="text-[10px] font-semibold">Customers</span>
           </Link>
-          <div className="flex flex-col items-center text-slate-300">
+          <Link href="/dashboard/salesman/sales" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
             <ShoppingBag className="h-6 w-6 mb-1" />
             <span className="text-[10px] font-semibold">Sales</span>
-          </div>
-          <div className="flex flex-col items-center text-slate-300">
+          </Link>
+          <Link href="/dashboard/salesman/profile" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
             <User className="h-6 w-6 mb-1" />
             <span className="text-[10px] font-semibold">Profile</span>
-          </div>
+          </Link>
         </div>
       )}
     </div>
