@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown, Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2, X } from 'lucide-react';
 import { 
   getSalesDetails, 
   getCollectionDetails, 
@@ -106,7 +106,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'sales') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TODAY'S SALES</h4>
@@ -147,7 +147,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'collection') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TODAY'S COLLECTION</h4>
@@ -187,7 +187,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'outstanding') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TOTAL OUTSTANDING</h4>
@@ -230,7 +230,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'visits') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TODAY'S VISITS</h4>
@@ -285,7 +285,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'routes') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">ROUTES</h4>
@@ -328,7 +328,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'areas') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">AREAS</h4>
@@ -381,7 +381,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'salesmen') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">SALESMEN</h4>
@@ -456,7 +456,7 @@ export default function InteractiveKPIRow({
 
     if (id === 'customers') {
       return (
-        <div className="p-6 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
+        <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">CUSTOMERS</h4>
@@ -550,6 +550,14 @@ export default function InteractiveKPIRow({
       {/* Expansion Panel (Desktop: Below row, Mobile: Below all cards) */}
       {isExpandedInThisRow && expandedId && (
         <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-lg rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 relative z-0 -mt-5 md:-mt-7 pt-4">
+          <button 
+            onClick={() => setExpandedId(null)} 
+            className="absolute top-[28px] right-4 md:right-6 p-2 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-20 focus:outline-none focus:ring-2 focus:ring-alvoun-blue" 
+            aria-label="Close details" 
+            title="Close details"
+          >
+            <X className="h-5 w-5" />
+          </button>
           {renderDetails(expandedId)}
         </div>
       )}
