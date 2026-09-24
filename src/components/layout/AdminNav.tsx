@@ -29,7 +29,7 @@ const navItems = [
   { name: 'Salesmen Access', href: '/dashboard/admin/salesmen-access', icon: Truck },
   { name: 'Work Sessions', href: '/dashboard/admin/sessions', icon: Truck },
   { name: 'Locations', href: '/dashboard/admin/locations', icon: MapPin },
-  { name: 'Outstanding', href: '/dashboard/admin/reports/outstanding', icon: CreditCard },
+  { name: 'Dues', href: '/dashboard/admin/reports/outstanding', icon: CreditCard },
   { name: 'Reports', href: '/dashboard/admin/reports/monthly', icon: BarChart3 },
 ];
 
