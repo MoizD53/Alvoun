@@ -11,13 +11,16 @@ export async function authenticate(
     await signIn('credentials', Object.fromEntries(formData));
   } catch (error: any) {
     if (error instanceof AuthError) {
+      if (error.cause?.err?.message?.includes('Salesman login is available')) {
+        return error.cause.err.message;
+      }
       if (error.type === 'CredentialsSignin') {
         return 'Invalid credentials.';
       }
-      if (error.cause?.err?.message) {
-        return error.cause.err.message;
-      }
       return 'Something went wrong.';
+    }
+    if (error.message?.includes('Salesman login is available')) {
+      return error.message;
     }
     throw error;
   }

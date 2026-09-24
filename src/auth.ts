@@ -33,7 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               const timeDetails = getKolkataTimeDetails(now);
               
               if (timeDetails.hour < 7 || timeDetails.hour >= 19) {
-                throw new Error("Salesman login is available only between 7:00 AM and 7:00 PM.");
+                throw new Error("Salesman login is available only between 7:00 AM and 7:00 PM. Please try again tomorrow after 7:00 AM.");
               }
               
               const salesman = await prisma.salesman.findUnique({
