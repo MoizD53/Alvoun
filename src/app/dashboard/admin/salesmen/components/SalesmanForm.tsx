@@ -43,6 +43,11 @@ export default function SalesmanForm({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
+    
+    // Clear selected areas when route changes to prevent cross-route territory assignment
+    if (name === 'routeId') {
+      setSelectedAreaIds([]);
+    }
   };
 
   const handleToggleArea = (areaId: string) => {
@@ -309,7 +314,7 @@ export default function SalesmanForm({
                           ) : (
                             <Square className="w-4 h-4 text-slate-400 shrink-0" />
                           )}
-                          <span className="truncate">{area.name}</span>
+                          <span className="truncate">{area.name} — {area._count?.customers || 0} customers</span>
                         </button>
                       );
                     })}

@@ -33,6 +33,11 @@ export default async function EditSalesmanPage({ params }: { params: Promise<{ i
     include: {
       city: true,
       areas: {
+        include: {
+          _count: {
+            select: { customers: true }
+          }
+        },
         orderBy: { name: 'asc' }
       }
     },

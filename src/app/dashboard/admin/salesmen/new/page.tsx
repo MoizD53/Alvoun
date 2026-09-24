@@ -8,6 +8,11 @@ export default async function NewSalesmanPage() {
     include: {
       city: true,
       areas: {
+        include: {
+          _count: {
+            select: { customers: true }
+          }
+        },
         orderBy: { name: 'asc' }
       }
     },

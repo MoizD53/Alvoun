@@ -84,6 +84,12 @@ export async function createSalesmanAccount(data: any) {
         where: { id: { in: areaIds } },
       });
 
+      // 2. Verify every selected Area belongs to that Route
+      const invalidAreas = selectedAreas.filter(a => a.routeId !== routeId);
+      if (invalidAreas.length > 0) {
+        throw new Error('Data integrity error: One or more selected areas do not belong to the selected route.');
+      }
+
       // Clear any conflicting assignments for these areas
       await prisma.salesmanAssignment.deleteMany({
         where: { areaId: { in: areaIds } },
@@ -97,7 +103,18 @@ export async function createSalesmanAccount(data: any) {
         })),
       });
 
-      // Automatically attach customers in these assigned areas to this salesman
+      // 3 & 4. Fetch customers strictly by Area ID and verify
+      const customersInAreas = await prisma.customer.findMany({
+        where: { areaId: { in: areaIds } },
+        include: { area: true }
+      });
+
+      const invalidCustomers = customersInAreas.filter(c => c.area!.routeId !== routeId || (c.routeId && c.routeId !== routeId));
+      if (invalidCustomers.length > 0) {
+        throw new Error('Data integrity error: Customers found with inconsistent route associations.');
+      }
+
+      // 5. Only then perform assignment
       await prisma.customer.updateMany({
         where: { areaId: { in: areaIds } },
         data: { salesmanId: salesman.id },
@@ -119,7 +136,11 @@ export async function updateSalesmanAccount(id: string, data: any) {
 
     const salesman = await prisma.salesman.findUnique({
       where: { id },
-      include: { profile: true },
+      include: { 
+        profile: true,
+        routes: true,
+        assignments: true
+      },
     });
 
     if (!salesman) {
@@ -212,6 +233,16 @@ export async function updateSalesmanAccount(id: string, data: any) {
             where: { id: { in: areaIds } },
           });
 
+          // Verify every selected Area belongs to that Route
+          const validRouteId = routeId !== undefined ? routeId : salesman.assignments?.[0]?.routeId || salesman.routes?.[0]?.id;
+          
+          if (validRouteId) {
+            const invalidAreas = selectedAreas.filter(a => a.routeId !== validRouteId);
+            if (invalidAreas.length > 0) {
+              throw new Error('Data integrity error: One or more selected areas do not belong to the selected route.');
+            }
+          }
+
           // Unassign other salesmen from these areas
           await tx.salesmanAssignment.deleteMany({
             where: {
@@ -227,6 +258,19 @@ export async function updateSalesmanAccount(id: string, data: any) {
               areaId: a.id,
             })),
           });
+
+          // Fetch customers strictly by Area ID and verify
+          const customersInAreas = await tx.customer.findMany({
+            where: { areaId: { in: areaIds } },
+            include: { area: true }
+          });
+
+          if (validRouteId) {
+            const invalidCustomers = customersInAreas.filter(c => c.area!.routeId !== validRouteId || (c.routeId && c.routeId !== validRouteId));
+            if (invalidCustomers.length > 0) {
+              throw new Error('Data integrity error: Customers found with inconsistent route associations.');
+            }
+          }
 
           await tx.customer.updateMany({
             where: { areaId: { in: areaIds } },
