@@ -23,6 +23,7 @@ export default async function CustomersPage({
     routeId: typeof resolvedParams.routeId === 'string' ? resolvedParams.routeId : undefined,
     salesmanId: typeof resolvedParams.salesmanId === 'string' ? resolvedParams.salesmanId : undefined,
     status: typeof resolvedParams.status === 'string' ? resolvedParams.status : undefined,
+    sort: typeof resolvedParams.sort === 'string' ? resolvedParams.sort : 'asc',
     page: typeof resolvedParams.page === 'string' ? parseInt(resolvedParams.page) : 1,
   };
 
@@ -49,7 +50,7 @@ export default async function CustomersPage({
       payments: true,
       visits: { orderBy: { createdAt: 'desc' }, take: 1 }
     },
-    orderBy: { customerName: 'asc' },
+    orderBy: { customerName: filters.sort === 'desc' ? 'desc' : 'asc' },
   });
 
   const states = await getStates();
@@ -117,6 +118,10 @@ export default async function CustomersPage({
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
+            </select>
+            <select name="sort" defaultValue={filters.sort} className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[120px]">
+              <option value="asc">A to Z</option>
+              <option value="desc">Z to A</option>
             </select>
             <button type="submit" className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-200 dark:bg-slate-700 transition-colors whitespace-nowrap border border-slate-200 dark:border-slate-800">
               Apply Filters
