@@ -68,13 +68,13 @@ export default function InstallPWA() {
       <button
         type="button"
         onClick={handleInstallClick}
-        className="group flex w-full justify-center items-center gap-2 rounded-[12px] bg-white border-2 border-[#0874C9] px-4 h-[44px] sm:h-[48px] text-[13px] font-bold tracking-[0.1em] uppercase text-[#0874C9] shadow-sm hover:bg-slate-50 hover:-translate-y-[1px] transition-all duration-200"
+        className="group flex justify-center items-center gap-2 rounded-lg bg-transparent hover:bg-alvoun-blue/5 px-4 h-[44px] text-[14px] font-semibold text-alvoun-blue transition-colors duration-200"
       >
         <Download className="h-4 w-4" strokeWidth={2} />
-        INSTALL ALVOUN APP
+        Install Alvoun App
       </button>
-      <p className="text-slate-500 text-[11px] font-medium mt-2">
-        Install Alvoun for faster access.
+      <p className="text-slate-500 text-[11px] font-medium mt-1">
+        Install for faster access
       </p>
 
       {showManualInstruction && (
