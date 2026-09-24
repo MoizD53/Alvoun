@@ -22,6 +22,8 @@ import {
 import AdminCharts from './components/AdminCharts';
 import LiveDashboardManager from './components/LiveDashboardManager';
 
+import InteractiveKPIRow, { KPIItem } from './components/InteractiveKPIRow';
+
 export default async function AdminDashboard({
   searchParams
 }: {
@@ -133,6 +135,45 @@ export default async function AdminDashboard({
 
   const salesmanPerformance = Array.from(salesmanData.values());
 
+  const topKpis: KPIItem[] = [
+    {
+      id: 'sales',
+      title: 'TOTAL SALES',
+      value: formatMoney(totalSales),
+      subtitle: "Today's Volume",
+      icon: <TrendingUp className="h-4 w-4" />,
+      iconBg: 'bg-alvoun-light',
+      iconColor: 'text-alvoun-blue'
+    },
+    {
+      id: 'collection',
+      title: 'COLLECTION',
+      value: formatMoney(totalCollection),
+      subtitle: 'Received Today',
+      icon: <Wallet className="h-4 w-4" />,
+      iconBg: 'bg-green-50 dark:bg-green-900/20',
+      iconColor: 'text-alvoun-green'
+    },
+    {
+      id: 'outstanding',
+      title: 'OUTSTANDING',
+      value: formatMoney(totalOutstanding),
+      subtitle: 'Across Market',
+      icon: <CreditCard className="h-4 w-4" />,
+      iconBg: 'bg-orange-50 dark:bg-orange-900/20',
+      iconColor: 'text-alvoun-amber'
+    },
+    {
+      id: 'visits',
+      title: 'VISITS',
+      value: formatNumber(visits.length),
+      subtitle: 'Customers Visited Today',
+      icon: <MapPin className="h-4 w-4" />,
+      iconBg: 'bg-slate-100 dark:bg-slate-800',
+      iconColor: 'text-slate-600 dark:text-slate-400'
+    }
+  ];
+
   return (
     <div className="space-y-8 animate-fade-in-up">
       {/* Header */}
@@ -152,71 +193,10 @@ export default async function AdminDashboard({
         </div>
       </div>
 
-      {/* 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">TOTAL SALES</h3>
-            <div className="h-8 w-8 rounded-full bg-alvoun-light flex items-center justify-center text-alvoun-blue">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatMoney(totalSales)}</div>
-            <div className="text-xs font-medium text-alvoun-green mt-2 flex items-center">
-              Today's Volume
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">COLLECTION</h3>
-            <div className="h-8 w-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-alvoun-green">
-              <Wallet className="h-4 w-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatMoney(totalCollection)}</div>
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 flex items-center">
-              Received Today
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">OUTSTANDING</h3>
-            <div className="h-8 w-8 rounded-full bg-orange-50 flex items-center justify-center text-alvoun-amber">
-              <CreditCard className="h-4 w-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatMoney(totalOutstanding)}</div>
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 flex items-center">
-              Across Market
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">VISITS</h3>
-            <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
-              <MapPin className="h-4 w-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{formatNumber(visits.length)}</div>
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 flex items-center">
-              Customers Visited Today
-            </div>
-          </div>
-        </div>
-      </div>
+      <InteractiveKPIRow kpis={topKpis} dateStr={dateStr} />
 
       {/* Route & Area Coverage Charts */}
-      <AdminCharts />
+      <AdminCharts dateStr={dateStr} />
 
       <div className="w-full space-y-8">
         {/* Salesman Activity Table */}
