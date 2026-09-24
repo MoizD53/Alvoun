@@ -86,6 +86,7 @@ export default function AdminNav({ user }: { user: any }) {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`
                   flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors
                   ${active 
@@ -110,6 +111,7 @@ export default function AdminNav({ user }: { user: any }) {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`
                   flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors
                   ${active 
