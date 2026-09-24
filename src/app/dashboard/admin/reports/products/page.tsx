@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
 import Link from 'next/link';
+import ProductManager from './components/ProductManager';
 
 export default async function ProductReportPage({
   searchParams
@@ -16,7 +17,14 @@ export default async function ProductReportPage({
   const end = getKolkataEndOfDay(dateStr);
 
   const [products, saleItems] = await Promise.all([
-    prisma.product.findMany({ orderBy: { bottlesPerCrate: 'asc' } }),
+    prisma.product.findMany({ 
+      orderBy: { bottlesPerCrate: 'asc' },
+      include: {
+        rates: {
+          orderBy: { minQuantity: 'desc' }
+        }
+      }
+    }),
     prisma.saleItem.findMany({
       where: {
         sale: {
@@ -49,47 +57,56 @@ export default async function ProductReportPage({
   const reportData = Array.from(productMap.values());
 
   return (
-    <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Product Sales Report</h2>
-        <div className="flex items-center gap-3">
-          <form className="flex items-center gap-2">
-            <input type="date" name="date" defaultValue={dateStr} className="px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900" />
-            <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium">Filter</button>
-          </form>
-          <a href={`/api/admin/export?type=products&date=${dateStr}`} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap">
-            Export Excel
-          </a>
-        </div>
-      </div>
+    <div className="space-y-8 animate-fade-in-up pb-24">
+      {/* Product Management Section */}
+      <ProductManager initialProducts={products} />
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-medium border-y border-slate-100 dark:border-slate-800">
-            <tr>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3 text-right">Crates Sold</th>
-              <th className="px-4 py-3 text-right">Bottles Sold</th>
-              <th className="px-4 py-3 text-right">Sales Amount</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {reportData.length === 0 ? (
+      {/* Product Sales Report Section */}
+      <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Product Sales Report</h2>
+            <p className="text-sm text-slate-500">Historical sales metrics based on the exact amounts sold.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <form className="flex items-center gap-2">
+              <input type="date" name="date" defaultValue={dateStr} className="px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100" />
+              <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium">Filter</button>
+            </form>
+            <a href={`/api/admin/export?type=products&date=${dateStr}`} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap">
+              Export Excel
+            </a>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-medium border-y border-slate-100 dark:border-slate-800">
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">No products configured.</td>
+                <th className="px-4 py-3">Product</th>
+                <th className="px-4 py-3 text-right">Crates Sold</th>
+                <th className="px-4 py-3 text-right">Bottles Sold</th>
+                <th className="px-4 py-3 text-right">Sales Amount</th>
               </tr>
-            ) : (
-              reportData.map((row) => (
-                <tr key={row.name} className="hover:bg-slate-50 dark:hover:bg-slate-900">
-                  <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">{row.name}</td>
-                  <td className="px-4 py-3 text-right">{formatNumber(row.cratesSold)}</td>
-                  <td className="px-4 py-3 text-right">{formatNumber(row.bottlesSold)}</td>
-                  <td className="px-4 py-3 text-right font-bold text-alvoun-blue">{formatMoney(row.salesAmount)}</td>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+              {reportData.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">No sales data for this date.</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                reportData.map((row) => (
+                  <tr key={row.name} className="hover:bg-slate-50 dark:hover:bg-slate-900">
+                    <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">{row.name}</td>
+                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{formatNumber(row.cratesSold)}</td>
+                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{formatNumber(row.bottlesSold)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-alvoun-blue">{formatMoney(row.salesAmount)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
