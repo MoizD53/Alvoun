@@ -23,6 +23,9 @@ export async function requireActiveSalesmanSession() {
   }
 
   if (timeDetails.hour >= 19) {
+    const exact7pmUTC = Date.UTC(timeDetails.year, timeDetails.month - 1, timeDetails.day, 19, 0, 0, 0);
+    const exact7pmIST = new Date(exact7pmUTC - (5.5 * 60 * 60 * 1000));
+    
     // Force close any active session for today
     await prisma.workSession.updateMany({
       where: {
@@ -32,7 +35,7 @@ export async function requireActiveSalesmanSession() {
       },
       data: {
         status: 'FORCE_CLOSED',
-        logoutAt: now
+        logoutAt: exact7pmIST
       }
     });
     throw new Error('SESSION_ENDED');

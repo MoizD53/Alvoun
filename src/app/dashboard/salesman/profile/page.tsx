@@ -116,37 +116,44 @@ export default async function ProfilePage() {
 
       {/* Today's Work Session */}
       <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-6">
-        <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg border-b border-slate-100 dark:border-slate-800 pb-4">Today's Session</h3>
+        <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg border-b border-slate-100 dark:border-slate-800 pb-4">Today's Work Session</h3>
         
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-            <Briefcase className="h-5 w-5 text-alvoun-blue" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Session Status</div>
-            <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
-              {!workSession ? 'Not started' : workSession.status === 'ACTIVE' ? 'Active' : 'Closed'}
+        <div className="flex flex-col gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
+              <Clock className="h-5 w-5 text-alvoun-blue" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Logged in at</div>
+              <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                {workSession?.loginAt ? new Date(workSession.loginAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-            <Clock className="h-5 w-5 text-alvoun-blue" />
-          </div>
-          <div className="flex-1">
-            <div className="flex justify-between mb-2">
-              <div>
-                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Login Time</div>
-                <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
-                  {workSession?.loginAt ? new Date(workSession.loginAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Not available'}
-                </div>
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
+              <LogOut className="h-5 w-5 text-alvoun-blue" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Logged out at</div>
+              <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                {workSession?.status === 'ACTIVE' ? 'Active' : workSession?.logoutAt ? new Date(workSession.logoutAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
               </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Logout Time</div>
-                <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
-                  {workSession?.logoutAt ? new Date(workSession.logoutAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Not available'}
-                </div>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
+              <Briefcase className="h-5 w-5 text-alvoun-blue" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Status</div>
+              <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
+                {!workSession ? 'Not started' : 
+                  workSession.status === 'ACTIVE' ? 'Active' : 
+                  workSession.status === 'FORCE_CLOSED' ? 'Automatically logged out' : 
+                  'Logged out'}
               </div>
             </div>
           </div>

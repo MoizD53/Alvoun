@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db"
 import bcrypt from "bcryptjs"
 import { authConfig } from "./auth.config"
 
+import { getCurrentKolkataTime, getKolkataTimeDetails, getKolkataDateOnly } from "@/lib/time"
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
@@ -25,6 +27,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           
           const passwordsMatch = await bcrypt.compare(password, user.password)
           if (passwordsMatch) {
+            
+            if (user.role === 'SALESMAN') {
+              const now = getCurrentKolkataTime();
+              const timeDetails = getKolkataTimeDetails(now);
+              
+              if (timeDetails.hour < 7 || timeDetails.hour >= 19) {
+                throw new Error("Salesman login is available only between 7:00 AM and 7:00 PM.");
+              }
+              
+              const salesman = await prisma.salesman.findUnique({
+                where: { profileId: user.id }
+              });
+              
+              if (salesman) {
+                const workDate = getKolkataDateOnly(now);
+                const existingSession = await prisma.workSession.findUnique({
+                  where: {
+                    salesmanId_workDate: {
+                      salesmanId: salesman.id,
+                      workDate: workDate
+                    }
+                  }
+                });
+                
+                if (!existingSession) {
+                  await prisma.workSession.create({
+                    data: {
+                      salesmanId: salesman.id,
+                      workDate: workDate,
+                      loginAt: now,
+                      status: 'ACTIVE'
+                    }
+                  });
+                }
+              }
+            }
+
             return {
               id: user.id,
               email: user.email,

@@ -9,14 +9,15 @@ export async function authenticate(
 ) {
   try {
     await signIn('credentials', Object.fromEntries(formData));
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return 'Invalid credentials.';
-        default:
-          return 'Something went wrong.';
+      if (error.type === 'CredentialsSignin') {
+        return 'Invalid credentials.';
       }
+      if (error.cause?.err?.message) {
+        return error.cause.err.message;
+      }
+      return 'Something went wrong.';
     }
     throw error;
   }
