@@ -215,135 +215,69 @@ export default async function AdminDashboard({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Main Column */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Salesman Activity Table */}
-          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Salesman Activity</h2>
-              <Link href="/dashboard/admin/locations" className="text-sm font-medium text-alvoun-blue hover:underline">
-                View Map
-              </Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
-                  <tr>
-                    <th className="px-6 py-3">Salesman</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Current Activity</th>
-                    <th className="px-6 py-3 text-right">Sales</th>
-                    <th className="px-6 py-3 text-right">Collection</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {salesmanPerformance.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
-                        No field staff active today.
-                      </td>
-                    </tr>
-                  ) : (
-                    salesmanPerformance.map((sp: any) => (
-                      <tr key={sp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{sp.name}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${sp.status === 'Working' ? 'bg-green-50 dark:bg-green-900/20 text-alvoun-green' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${sp.status === 'Working' ? 'bg-alvoun-green' : 'bg-slate-400'}`}></span>
-                            {sp.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{sp.currentAction}</div>
-                          {sp.currentCustomer && (
-                            <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" />
-                              {sp.currentCustomer.customerName} ({sp.currentCustomer.area?.name})
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
-                          {formatMoney(sp.sales)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
-                          {formatMoney(sp.collection)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Column */}
-        <div className="space-y-6">
-          <LiveDashboardManager />
-          
-          {/* Attention Required */}
-          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Attention Required</h2>
-            </div>
-            <div className="p-2">
-              {outstandingCustomersCount > 0 ? (
-                <Link href="/dashboard/admin/customers" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-colors group">
-                  <div className="mt-0.5 text-alvoun-amber"><AlertCircle className="h-5 w-5" /></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-alvoun-blue transition-colors">
-                      {outstandingCustomersCount} customers have outstanding
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Review pending market collections</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-alvoun-blue" />
-                </Link>
-              ) : null}
-              <Link href="/dashboard/admin/locations" className="flex items-start gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-lg transition-colors group">
-                <div className="mt-0.5 text-alvoun-blue"><MapIcon className="h-5 w-5" /></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-alvoun-blue transition-colors">
-                    View Live Locations
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monitor real-time field activity</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-alvoun-blue" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Quick Actions</h2>
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-3">
-              <Link href="/dashboard/admin/customers" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
-                <Users className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Customers</span>
-              </Link>
-              <Link href="/dashboard/admin/sessions" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
-                <UserPlus className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Salesmen</span>
-              </Link>
-              <Link href="/dashboard/admin/routes" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
-                <MapPin className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Routes</span>
-              </Link>
-              <Link href="/dashboard/admin/reports/monthly" className="flex flex-col items-center justify-center gap-2 p-4 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-alvoun-blue hover:bg-alvoun-light/30 transition-all text-center group">
-                <FileDown className="h-6 w-6 text-slate-400 group-hover:text-alvoun-blue" />
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-alvoun-blue">Reports</span>
-              </Link>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      
       {/* Route & Area Coverage Charts */}
       <AdminCharts />
+
+      <div className="w-full space-y-8">
+        {/* Salesman Activity Table */}
+        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Salesman Activity</h2>
+            <Link href="/dashboard/admin/locations" className="text-sm font-medium text-alvoun-blue hover:underline">
+              View Map
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
+                <tr>
+                  <th className="px-6 py-3">Salesman</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Current Activity</th>
+                  <th className="px-6 py-3 text-right">Sales</th>
+                  <th className="px-6 py-3 text-right">Collection</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {salesmanPerformance.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                      No field staff active today.
+                    </td>
+                  </tr>
+                ) : (
+                  salesmanPerformance.map((sp: any) => (
+                    <tr key={sp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{sp.name}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${sp.status === 'Working' ? 'bg-green-50 dark:bg-green-900/20 text-alvoun-green' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${sp.status === 'Working' ? 'bg-alvoun-green' : 'bg-slate-400'}`}></span>
+                          {sp.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{sp.currentAction}</div>
+                        {sp.currentCustomer && (
+                          <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                            <MapPin className="h-3 w-3" />
+                            {sp.currentCustomer.customerName} ({sp.currentCustomer.area?.name})
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
+                        {formatMoney(sp.sales)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
+                        {formatMoney(sp.collection)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
