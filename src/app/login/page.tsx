@@ -9,7 +9,7 @@ export default function LoginPage() {
       {/* Background Image & Overlay */}
       <div className="absolute inset-0 z-0">
         <Image 
-          src="/login-bg.jpg" 
+          src="/real-water-plant-bg.jpg" 
           alt="ALVOUN Background" 
           fill 
           className="object-cover" 
