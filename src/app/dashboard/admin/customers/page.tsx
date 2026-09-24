@@ -4,7 +4,7 @@ import { getCities } from '@/lib/actions/city';
 import { getRoutes } from '@/lib/actions/route';
 import { getSalesmen } from '@/lib/actions/salesman';
 import Link from 'next/link';
-import { Plus, Upload, Filter, Search, Phone, ExternalLink, MoreVertical, ArrowLeft } from 'lucide-react';
+import { Plus, Filter, Search, Phone, ExternalLink, MoreVertical, ArrowLeft } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import { prisma } from '@/lib/db';
@@ -72,13 +72,6 @@ export default async function CustomersPage({
           </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Link 
-            href="/dashboard/admin/customers/import" 
-            className="flex items-center justify-center gap-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors flex-1 sm:flex-none shadow-sm"
-          >
-            <Upload className="h-4 w-4" />
-            Import
-          </Link>
           <Link 
             href="/dashboard/admin/customers/new" 
             className="flex items-center justify-center gap-2 bg-alvoun-blue text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-alvoun-dark transition-colors flex-1 sm:flex-none shadow-sm"

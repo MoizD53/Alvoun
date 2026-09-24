@@ -18,7 +18,6 @@ import {
   LogOut,
   Droplet,
   Bell,
-  Upload,
   History
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
@@ -38,7 +37,6 @@ const mainItems = [
 const masterDataItems = [
   { name: 'Routes & Areas', href: '/dashboard/admin/routes', icon: MapPin },
   { name: 'Products & Rates', href: '/dashboard/admin/reports/products', icon: Box },
-  { name: 'Import Data', href: '/dashboard/admin/customers/import', icon: Upload },
 ];
 
 const systemItems = [
