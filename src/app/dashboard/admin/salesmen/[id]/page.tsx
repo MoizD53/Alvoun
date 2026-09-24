@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import SalesmanForm from '../components/SalesmanForm';
 import CredentialManager from '../components/CredentialManager';
+import DeleteSalesman from '../components/DeleteSalesman';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -60,6 +61,7 @@ export default async function EditSalesmanPage({ params }: { params: Promise<{ i
             loginId={salesman.profile.email} 
             isActive={salesman.profile.isActive} 
           />
+          <DeleteSalesman id={salesman.id} name={salesman.name} />
         </div>
       </div>
     </div>
