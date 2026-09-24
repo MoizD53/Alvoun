@@ -14,6 +14,7 @@ import {
 } from '../actions/kpi-details';
 import { formatMoney, formatNumber } from '@/lib/format';
 import Link from 'next/link';
+import { useKPIContext } from './KPIContext';
 
 export type KPIItem = {
   id: string;
@@ -32,10 +33,12 @@ export default function InteractiveKPIRow({
   kpis: KPIItem[];
   dateStr?: string;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { expandedId, setExpandedId, kpiDataCache, setKpiDataCache } = useKPIContext();
   const [loading, setLoading] = useState(false);
-  const [detailsData, setDetailsData] = useState<any>(null);
   const [error, setError] = useState(false);
+
+  // Check if the globally expanded KPI belongs to this specific row component
+  const isExpandedInThisRow = kpis.some(kpi => kpi.id === expandedId);
 
   const handleExpand = async (id: string) => {
     if (expandedId === id) {
@@ -44,9 +47,14 @@ export default function InteractiveKPIRow({
     }
     
     setExpandedId(id);
+    
+    // If we already have the data, we don't need to fetch it again
+    if (kpiDataCache[id]) {
+      return;
+    }
+
     setLoading(true);
     setError(false);
-    setDetailsData(null);
 
     try {
       let data;
@@ -60,7 +68,7 @@ export default function InteractiveKPIRow({
         case 'salesmen': data = await getSalesmenDetails(dateStr); break;
         case 'customers': data = await getCustomersDetails(); break;
       }
-      setDetailsData(data);
+      setKpiDataCache(id, data);
     } catch (err) {
       console.error(err);
       setError(true);
@@ -70,7 +78,7 @@ export default function InteractiveKPIRow({
   };
 
   const renderDetails = (id: string) => {
-    if (loading) {
+    if (loading && !kpiDataCache[id]) {
       return (
         <div className="p-8 flex flex-col items-center justify-center text-slate-500 animate-pulse">
           <Loader2 className="h-8 w-8 animate-spin mb-4" />
@@ -79,7 +87,7 @@ export default function InteractiveKPIRow({
       );
     }
 
-    if (error) {
+    if (error && !kpiDataCache[id]) {
       return (
         <div className="p-8 flex flex-col items-center justify-center text-red-500">
           <p className="mb-4">Unable to load details.</p>
@@ -93,6 +101,7 @@ export default function InteractiveKPIRow({
       );
     }
 
+    const detailsData = kpiDataCache[id];
     if (!detailsData) return null;
 
     if (id === 'sales') {
@@ -538,8 +547,8 @@ export default function InteractiveKPIRow({
         })}
       </div>
 
-      {/* Expansion Panel (Desktop: Below row, Mobile: Below all cards - Wait, if mobile is 1 col, it should be below the clicked card) */}
-      {expandedId && (
+      {/* Expansion Panel (Desktop: Below row, Mobile: Below all cards) */}
+      {isExpandedInThisRow && expandedId && (
         <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-lg rounded-xl overflow-hidden animate-in fade-in slide-in-from-top-2 relative z-0 -mt-5 md:-mt-7 pt-4">
           {renderDetails(expandedId)}
         </div>
