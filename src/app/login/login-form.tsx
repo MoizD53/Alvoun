@@ -16,11 +16,11 @@ export default function LoginForm() {
     <div className="w-full animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
       <form action={formAction} className="space-y-4">
         <div>
-          <label className="block text-[10px] font-bold text-white/70 tracking-[0.15em] uppercase mb-1" htmlFor="loginId">
+          <label className="block text-[10px] font-bold text-slate-700 tracking-[0.15em] uppercase mb-1" htmlFor="loginId">
             Login ID
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/60">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
               <Mail className="h-4 w-4" strokeWidth={1.5} />
             </div>
             <input
@@ -29,17 +29,17 @@ export default function LoginForm() {
               name="loginId"
               placeholder="Enter your login ID"
               required
-              className="block w-full appearance-none rounded-[12px] bg-[#02060D]/40 border border-white dark:border-slate-950/10 pl-10 pr-4 h-[44px] sm:h-[48px] text-[14px] text-white placeholder-white/40 focus:border-[#0099FF] focus:bg-[#02060D]/60 focus:outline-none focus:ring-1 focus:ring-[#0099FF] transition-all"
+              className="block w-full appearance-none rounded-[12px] bg-white/50 border border-white/60 pl-10 pr-4 h-[44px] sm:h-[48px] text-[14px] text-slate-800 placeholder-slate-400 focus:border-[#0874C9] focus:bg-white/70 focus:outline-none focus:ring-1 focus:ring-[#0874C9] transition-all"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold text-white/70 tracking-[0.15em] uppercase mb-1" htmlFor="password">
+          <label className="block text-[10px] font-bold text-slate-700 tracking-[0.15em] uppercase mb-1" htmlFor="password">
             Password
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/60">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
               <Lock className="h-4 w-4" strokeWidth={1.5} />
             </div>
             <input
@@ -49,12 +49,12 @@ export default function LoginForm() {
               placeholder="••••••••••••"
               required
               minLength={6}
-              className="block w-full appearance-none rounded-[12px] bg-[#02060D]/40 border border-white dark:border-slate-950/10 pl-10 pr-10 h-[44px] sm:h-[48px] text-[14px] text-white placeholder-white/40 focus:border-[#0099FF] focus:bg-[#02060D]/60 focus:outline-none focus:ring-1 focus:ring-[#0099FF] transition-all tracking-[0.2em]"
+              className="block w-full appearance-none rounded-[12px] bg-white/50 border border-white/60 pl-10 pr-10 h-[44px] sm:h-[48px] text-[14px] text-slate-800 placeholder-slate-400 focus:border-[#0874C9] focus:bg-white/70 focus:outline-none focus:ring-1 focus:ring-[#0874C9] transition-all tracking-[0.2em]"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#6C7A89] hover:text-white transition-colors"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700 transition-colors"
             >
               {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={1.5} /> : <Eye className="h-4 w-4" strokeWidth={1.5} />}
             </button>
@@ -73,7 +73,7 @@ export default function LoginForm() {
         </div>
         
         <div className="text-center pt-2">
-           <p className="text-[#6C7A89]/60 text-[10px] font-bold tracking-[0.2em] uppercase">Data is secured</p>
+           <p className="text-slate-600/70 text-[10px] font-bold tracking-[0.2em] uppercase">Data is secured</p>
         </div>
 
         {errorMessage && (
