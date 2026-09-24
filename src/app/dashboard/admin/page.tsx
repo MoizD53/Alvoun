@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { getKolkataStartOfDay, getKolkataEndOfDay } from '@/lib/time';
+import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import Link from 'next/link';
@@ -42,6 +42,26 @@ export default async function AdminDashboard({
   
   const startOfDay = getKolkataStartOfDay(dateStr);
   const endOfDay = getKolkataEndOfDay(dateStr);
+
+  const now = getCurrentKolkataTime();
+  const { hour } = getKolkataTimeDetails(now);
+
+  let greeting = "Good morning";
+  let subtitle = "Here is what's happening with your business today.";
+
+  if (hour >= 5 && hour < 12) {
+    greeting = "Good morning";
+    subtitle = "Here is what's happening with your business today.";
+  } else if (hour >= 12 && hour < 17) {
+    greeting = "Good afternoon";
+    subtitle = "Here's your business update for today.";
+  } else if (hour >= 17 && hour < 21) {
+    greeting = "Good evening";
+    subtitle = "Here's how your business day is looking.";
+  } else {
+    greeting = "Good night";
+    subtitle = "Here's today's business summary.";
+  }
 
   // Fetch today's data
   const [sales, payments, visits, activeWorkSessions, products] = await Promise.all([
@@ -182,9 +202,9 @@ export default async function AdminDashboard({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              Good morning, {session.user.name?.split(' ')[0]}
+              {greeting}, {session.user.name?.split(' ')[0]}
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Here is what's happening with your business today.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>
           </div>
           <div className="flex items-center gap-3">
             <input 
