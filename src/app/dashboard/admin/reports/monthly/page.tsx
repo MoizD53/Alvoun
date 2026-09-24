@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { getKolkataTimeDetails, getCurrentKolkataTime, getKolkataStartOfDay, getKolkataEndOfDay } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export default async function MonthlyReportsPage({
   searchParams
@@ -62,7 +63,12 @@ export default async function MonthlyReportsPage({
   return (
     <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Monthly Sales Report</h2>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/admin" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Monthly Sales Report</h2>
+        </div>
         <div className="flex items-center gap-3">
           <form className="flex items-center gap-2">
             <input type="number" name="year" defaultValue={year} className="w-24 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900" />

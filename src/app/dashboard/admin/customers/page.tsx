@@ -4,7 +4,7 @@ import { getCities } from '@/lib/actions/city';
 import { getRoutes } from '@/lib/actions/route';
 import { getSalesmen } from '@/lib/actions/salesman';
 import Link from 'next/link';
-import { Plus, Upload, Filter, Search, Phone, ExternalLink, MoreVertical } from 'lucide-react';
+import { Plus, Upload, Filter, Search, Phone, ExternalLink, MoreVertical, ArrowLeft } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import { prisma } from '@/lib/db';
@@ -61,9 +61,14 @@ export default async function CustomersPage({
     <div className="space-y-6 animate-fade-in-up">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Customers</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your customer database and assignments.</p>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/admin" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Customers</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your customer database and assignments.</p>
+          </div>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <Link 

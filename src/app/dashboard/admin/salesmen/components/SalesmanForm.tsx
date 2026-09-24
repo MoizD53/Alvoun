@@ -24,7 +24,6 @@ export default function SalesmanForm({
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     phone: initialData?.phone || '',
-    employeeCode: initialData?.employeeCode || '',
     loginId: initialData?.profile?.email || '',
     password: '',
     routeId: initialData?.routes?.[0]?.id || initialData?.assignments?.[0]?.routeId || (routes.length > 0 ? routes[0].id : ''),
@@ -152,20 +151,6 @@ export default function SalesmanForm({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Employee Code *
-              </label>
-              <input
-                type="text"
-                name="employeeCode"
-                required
-                placeholder="e.g. SLM001"
-                value={formData.employeeCode}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-alvoun-blue focus:border-alvoun-blue dark:bg-slate-900 dark:text-white text-sm"
-              />
-            </div>
           </div>
         </section>
 

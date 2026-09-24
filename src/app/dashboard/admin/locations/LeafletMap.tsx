@@ -16,7 +16,6 @@ L.Icon.Default.mergeOptions({
 interface SalesmanLocation {
   id: string;
   name: string;
-  employeeCode: string;
   status: 'Live' | 'Stale' | 'Offline';
   lat?: number;
   lng?: number;
@@ -68,7 +67,6 @@ export default function LeafletMap({ salesmen }: { salesmen: SalesmanLocation[] 
             <Popup>
               <div className="text-sm">
                 <strong className="block text-base mb-1">{salesman.name}</strong>
-                <div className="text-slate-600 dark:text-slate-400 mb-2">Code: {salesman.employeeCode}</div>
                 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                   <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>

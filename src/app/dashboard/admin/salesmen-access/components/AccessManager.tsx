@@ -97,7 +97,6 @@ export default function AccessManager({ initialSalesmen, routes }: { initialSale
               <tr key={salesman.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                 <td className="px-6 py-4">
                   <div className="font-medium text-slate-900 dark:text-slate-100">{salesman.name}</div>
-                  <div className="text-xs text-slate-500">{salesman.employeeCode}</div>
                 </td>
                 <td className="px-6 py-4">
                   {salesman.routes.length > 0 ? (

@@ -34,7 +34,7 @@ export async function getSalesmenAccounts() {
 
 export async function createSalesmanAccount(data: any) {
   try {
-    const { name, phone, employeeCode, loginId, password, routeId, areaIds = [], isActive } = data;
+    const { name, phone, loginId, password, routeId, areaIds = [], isActive } = data;
 
     // Check if profile (login ID) already exists
     const existingProfile = await prisma.profile.findUnique({
@@ -45,14 +45,7 @@ export async function createSalesmanAccount(data: any) {
       return { error: 'Login ID already exists.' };
     }
 
-    // Check if employee code already exists
-    const existingEmployee = await prisma.salesman.findUnique({
-      where: { employeeCode },
-    });
-
-    if (existingEmployee) {
-      return { error: 'Employee code already exists.' };
-    }
+    const employeeCode = `SLM-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -122,7 +115,7 @@ export async function createSalesmanAccount(data: any) {
 
 export async function updateSalesmanAccount(id: string, data: any) {
   try {
-    const { name, phone, employeeCode, loginId, routeId, areaIds, isActive } = data;
+    const { name, phone, loginId, routeId, areaIds, isActive } = data;
 
     const salesman = await prisma.salesman.findUnique({
       where: { id },
@@ -141,14 +134,6 @@ export async function updateSalesmanAccount(id: string, data: any) {
       if (existingProfile) return { error: 'Login ID already exists.' };
     }
 
-    // Check uniqueness if changing employee code
-    if (employeeCode !== salesman.employeeCode) {
-      const existingEmployee = await prisma.salesman.findUnique({
-        where: { employeeCode },
-      });
-      if (existingEmployee) return { error: 'Employee code already exists.' };
-    }
-
     await prisma.$transaction(async (tx) => {
       await tx.profile.update({
         where: { id: salesman.profileId },
@@ -165,7 +150,6 @@ export async function updateSalesmanAccount(id: string, data: any) {
         data: {
           name,
           phone,
-          employeeCode,
           isActive,
         },
       });

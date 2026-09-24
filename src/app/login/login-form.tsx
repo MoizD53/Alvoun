@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import { authenticate } from '@/lib/actions';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import InstallPWA from './install-pwa';
 
 export default function LoginForm() {
   const [errorMessage, formAction, isPending] = useActionState(
@@ -83,6 +84,8 @@ export default function LoginForm() {
           </div>
         )}
       </form>
+
+      <InstallPWA />
     </div>
   );
 }

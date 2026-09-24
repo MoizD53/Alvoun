@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db';
 import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { Activity, Clock, CheckCircle2, UserPlus, AlertCircle } from 'lucide-react';
+import { Activity, Clock, CheckCircle2, UserPlus, AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function AdminSessionsPage() {
@@ -29,9 +29,14 @@ export default async function AdminSessionsPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Work Sessions</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Monitor daily attendance and field staff activity.</p>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/admin" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Work Sessions</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Monitor daily attendance and field staff activity.</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium border border-green-100">

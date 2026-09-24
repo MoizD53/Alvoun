@@ -1,7 +1,9 @@
 import { getRoutes, createRoute } from '@/lib/actions/route';
 import { getCities } from '@/lib/actions/city';
 import { getSalesmen } from '@/lib/actions/salesman';
-import { MapPin, Plus } from 'lucide-react';
+import { MapPin, Plus, ArrowLeft } from 'lucide-react';
+
+import Link from 'next/link';
 
 export default async function RoutesPage() {
   const routes = await getRoutes();
@@ -11,9 +13,14 @@ export default async function RoutesPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Routes</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage delivery routes and salesman assignments.</p>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/admin" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Routes</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Manage delivery routes and salesman assignments.</p>
+          </div>
         </div>
       </div>
       

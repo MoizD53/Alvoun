@@ -79,27 +79,27 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
     }
 
     return (
-      <div className="mt-6 space-y-3 animate-fade-in-up">
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 rounded-xl p-4 flex items-center gap-3 mb-4">
-           <span className="relative flex h-3 w-3">
+      <div className="space-y-3 w-full animate-fade-in-up">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-3 flex items-center gap-2 mb-2">
+           <span className="relative flex h-2.5 w-2.5 ml-1">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-50 dark:bg-green-900/200"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
             </span>
-           <span className="font-bold text-green-800 text-sm">Visit in progress</span>
+           <span className="font-bold text-green-800 dark:text-green-400 text-xs uppercase tracking-wider">Visit Active</span>
         </div>
 
         <button 
           onClick={() => router.push(`/dashboard/salesman/customers/${customerId}/sale`)}
-          className="w-full py-4 bg-alvoun-blue text-white rounded-xl font-bold active:bg-alvoun-dark transition-colors flex items-center justify-center gap-2 text-lg shadow-sm"
+          className="w-full py-3 bg-alvoun-blue text-white rounded-lg font-bold active:bg-alvoun-dark transition-colors flex items-center justify-center gap-2 text-sm shadow-sm"
         >
-          <ShoppingCart className="h-6 w-6" />
+          <ShoppingCart className="h-4 w-4" />
           TAKE ORDER
         </button>
         <button 
           onClick={() => setShowComplete(true)}
-          className="w-full py-4 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-bold active:bg-slate-50 dark:active:bg-slate-900 transition-colors flex items-center justify-center gap-2 shadow-sm"
+          className="w-full py-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-bold active:bg-slate-50 dark:active:bg-slate-900 transition-colors flex items-center justify-center gap-2 shadow-sm text-sm"
         >
-          <CheckCircle2 className="h-5 w-5 text-slate-400" />
+          <CheckCircle2 className="h-4 w-4 text-slate-400" />
           END VISIT
         </button>
       </div>
@@ -107,13 +107,13 @@ export default function VisitWorkflow({ customerId }: { customerId: string }) {
   }
 
   return (
-    <div className="mt-6">
+    <div className="w-full">
       <button 
         onClick={handleStart}
         disabled={loading}
-        className="w-full py-4 bg-alvoun-blue text-white rounded-xl font-bold active:bg-alvoun-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-lg shadow-sm"
+        className="w-full py-3 bg-alvoun-blue text-white rounded-lg font-bold active:bg-alvoun-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm shadow-sm"
       >
-        {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Navigation className="h-6 w-6" />}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
         START VISIT
       </button>
     </div>

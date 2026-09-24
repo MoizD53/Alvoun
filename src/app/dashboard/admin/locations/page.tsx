@@ -3,7 +3,8 @@ import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
 import LiveMap from './LiveMap';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { MapPin, Navigation } from 'lucide-react';
+import { MapPin, Navigation, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default async function AdminLocationsPage() {
   const session = await auth();
@@ -64,7 +65,6 @@ export default async function AdminLocationsPage() {
     return {
       id: s.id,
       name: s.name,
-      employeeCode: s.employeeCode,
       status,
       lat: latestLoc?.latitude,
       lng: latestLoc?.longitude,
@@ -81,9 +81,14 @@ export default async function AdminLocationsPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Live Fleet Map</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time GPS tracking of field salesmen.</p>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/admin" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Live Fleet Map</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Real-time GPS tracking of field salesmen.</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="bg-white dark:bg-slate-950 px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2 text-sm font-medium">
@@ -125,7 +130,6 @@ export default async function AdminLocationsPage() {
                 <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-bold text-slate-900 dark:text-slate-100">{s.name}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{s.employeeCode}</div>
                   </td>
                   <td className="px-6 py-4">
                     {s.isWorking ? (

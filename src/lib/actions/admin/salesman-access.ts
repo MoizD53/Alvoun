@@ -31,7 +31,6 @@ export async function getSalesmenAccess() {
     return {
       id: salesman.id,
       name: salesman.name,
-      employeeCode: salesman.employeeCode,
       routes: Array.from(new Set(salesman.assignments.map(a => a.route.name))),
       areas: Array.from(new Set(salesman.assignments.map(a => a.area.name))),
       totalCustomers

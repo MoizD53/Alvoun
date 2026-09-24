@@ -11,7 +11,6 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
 
   const filteredSalesmen = initialSalesmen.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          s.employeeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           s.profile?.email.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'ALL' || 
@@ -106,7 +105,7 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{salesman.name}</div>
-                        <div className="text-sm text-slate-500">{salesman.employeeCode} &bull; {salesman.phone}</div>
+                        <div className="text-sm text-slate-500">{salesman.phone}</div>
                       </div>
                     </div>
                   </td>

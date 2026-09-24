@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 interface SalesmanLocation {
   id: string;
   name: string;
-  employeeCode: string;
   status: 'Live' | 'Stale' | 'Offline';
   lat?: number;
   lng?: number;
