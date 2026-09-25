@@ -55,7 +55,10 @@ export async function requireActiveSalesmanSession() {
   if (workSession && workSession.status !== 'ACTIVE') {
     workSession = await prisma.workSession.update({
       where: { id: workSession.id },
-      data: { status: 'ACTIVE' }
+      data: { 
+        status: 'ACTIVE',
+        logoutAt: null 
+      }
     });
   }
 

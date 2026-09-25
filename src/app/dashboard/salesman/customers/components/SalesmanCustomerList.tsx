@@ -74,12 +74,12 @@ interface Customer {
 
 export default function SalesmanCustomerList({
   initialCustomers,
-  products,
+  products = [],
   routeId,
   routeName,
 }: {
   initialCustomers: Customer[];
-  products: Product[];
+  products?: Product[];
   routeId?: string;
   routeName?: string;
 }) {
@@ -273,7 +273,10 @@ export default function SalesmanCustomerList({
                       
                       <button 
                         type="button"
-                        onClick={() => setActiveCustomerForVisit(customer)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveCustomerForVisit(customer);
+                        }}
                         className="flex items-center justify-center gap-1.5 py-3 bg-alvoun-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shadow-alvoun-blue/20 hover:bg-alvoun-dark active:bg-alvoun-dark transition-colors"
                       >
                         <ShoppingBag className="h-3.5 w-3.5" />
@@ -429,12 +432,12 @@ export default function SalesmanCustomerList({
 // -------------------------------------------------------------
 function InteractiveVisitModal({
   customer,
-  products,
+  products = [],
   onClose,
   onComplete,
 }: {
   customer: Customer;
-  products: Product[];
+  products?: Product[];
   onClose: () => void;
   onComplete: (visitData: TodayVisit) => void;
 }) {
@@ -453,10 +456,13 @@ function InteractiveVisitModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const safeProducts = Array.isArray(products) ? products : [];
+
   // Computed
-  const orderItems = products.map(p => {
+  const orderItems = safeProducts.map(p => {
     const crates = order[p.id] || 0;
-    const applicableRate = p.rates?.find((r: any) => crates >= r.minQuantity) || p.rates?.[p.rates.length - 1];
+    const rates = Array.isArray(p.rates) ? p.rates : [];
+    const applicableRate = rates.find((r: any) => crates >= r.minQuantity) || rates[rates.length - 1];
     const rateToUse = applicableRate ? applicableRate.rate : 0;
     const amount = crates * rateToUse;
     return { ...p, crates, rateToUse, amount };
@@ -465,7 +471,8 @@ function InteractiveVisitModal({
   const totalSaleAmount = orderItems.reduce((sum, item) => sum + item.amount, 0);
   const receivedNowCents = receivedNowStr ? Math.round(parseFloat(receivedNowStr) * 100) : 0;
   const dueFromSale = Math.max(0, totalSaleAmount - receivedNowCents);
-  const finalOutstanding = customer.outstanding + dueFromSale;
+  const currentOutstanding = customer?.outstanding ?? 0;
+  const finalOutstanding = currentOutstanding + dueFromSale;
 
   const handleCrateChange = (productId: string, delta: number) => {
     setOrder(prev => {
@@ -647,7 +654,7 @@ function InteractiveVisitModal({
           {step === 'ORDER' && (
             <div className="space-y-4">
               <div className="space-y-3">
-                {products.map(p => (
+                {safeProducts.map(p => (
                   <div key={p.id} className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base">{p.name}</h4>

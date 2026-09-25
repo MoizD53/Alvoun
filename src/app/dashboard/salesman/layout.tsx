@@ -4,6 +4,7 @@ import { auth, signOut } from '@/auth';
 import { getCurrentKolkataTime, isWorkingHours } from '@/lib/time';
 import LocationTracker from './components/LocationTracker';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { salesmanLogout } from '@/lib/actions/salesman/session';
 
 export default async function SalesmanLayout({
   children,
@@ -25,8 +26,12 @@ export default async function SalesmanLayout({
         </div>
         <div className="flex items-center space-x-3">
           <ThemeToggle />
-          <form action={async () => { 'use server'; await signOut(); }}>
-            <button className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+          <form action={async () => {
+            'use server';
+            await salesmanLogout();
+            await signOut({ redirectTo: '/login' });
+          }}>
+            <button type="submit" className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
               <LogOut className="h-5 w-5" />
             </button>
           </form>

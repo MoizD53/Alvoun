@@ -96,12 +96,12 @@ export default async function AdminDashboard({
     salesmanData.set(ws.salesmanId, {
       id: ws.salesmanId,
       name: ws.salesman.name,
-      status: ws.logoutAt ? 'Completed' : 'Working',
+      status: ws.status === 'ACTIVE' ? 'Working' : ws.status === 'COMPLETED' ? 'Completed' : 'Force Closed',
       visits: 0,
       sales: 0,
       collection: 0,
       currentCustomer: null,
-      currentAction: ws.logoutAt ? 'Offline' : 'Online'
+      currentAction: ws.status === 'ACTIVE' ? 'Online' : 'Offline'
     });
   });
 

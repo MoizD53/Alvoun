@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { prisma } from '@/lib/db';
 import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
 import { auth } from '@/auth';
@@ -42,7 +44,7 @@ export default async function AdminSessionsPage() {
           <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 px-3 py-1.5 rounded-md text-sm font-medium border border-green-100">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-50 dark:bg-green-900/200"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
             {activeSessionsCount} Active Now
           </div>
@@ -71,7 +73,7 @@ export default async function AdminSessionsPage() {
                     <div className="flex flex-col items-center justify-center text-slate-400">
                       <Clock className="h-8 w-8 mb-3 text-slate-300" />
                       <p className="text-base font-medium text-slate-600 dark:text-slate-400">No sessions today</p>
-                      <p className="text-sm mt-1 text-slate-500 dark:text-slate-400">Salesmen haven't logged in for work yet.</p>
+                      <p className="text-sm mt-1 text-slate-500 dark:text-slate-400">Salesmen haven&apos;t logged in for work yet.</p>
                     </div>
                   </td>
                 </tr>
@@ -83,7 +85,7 @@ export default async function AdminSessionsPage() {
                     const hours = Math.floor(diffMs / (1000 * 60 * 60));
                     const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
                     duration = `${hours}h ${mins}m`;
-                  } else {
+                  } else if (ws.status === 'ACTIVE') {
                     const diffMs = getCurrentKolkataTime().getTime() - ws.loginAt.getTime();
                     const hours = Math.floor(diffMs / (1000 * 60 * 60));
                     const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -95,18 +97,21 @@ export default async function AdminSessionsPage() {
                       <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{ws.salesman.name}</td>
                       <td className="px-6 py-4">
                         {ws.status === 'ACTIVE' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 dark:bg-green-900/20 text-alvoun-green border border-green-100">
-                            <Activity className="h-3 w-3" /> Working
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-green-50 dark:bg-green-900/20 text-emerald-600 dark:text-emerald-400 border border-green-200 dark:border-green-800">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Active
                           </span>
                         )}
                         {ws.status === 'COMPLETED' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
-                            <CheckCircle2 className="h-3 w-3" /> Completed
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-slate-400" />
+                            Logged Out
                           </span>
                         )}
                         {ws.status === 'FORCE_CLOSED' && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 dark:bg-red-900/20 text-alvoun-red border border-red-100">
-                            <AlertCircle className="h-3 w-3" /> Force Closed
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-red-50 dark:bg-red-900/20 text-alvoun-red border border-red-200 dark:border-red-800">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            Force Closed
                           </span>
                         )}
                       </td>

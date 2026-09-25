@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Plus, User, MapPin, Activity, UserCog, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { Search, Plus, User, MapPin, Activity, UserCog, UserCheck, UserX, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toggleSalesmanStatus } from '@/lib/actions/admin/salesman-management';
 
 export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any[] }) {
@@ -199,17 +199,53 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                       )}
                       
                       {/* Today's Work Status */}
-                      {salesman.workSessions && salesman.workSessions.length > 0 && salesman.isActive ? (
-                        <div className="text-xs mt-1.5 text-slate-500 flex items-center">
-                          <Activity className="w-3 h-3 mr-1 text-green-500" />
-                          Working ({salesman.workSessions[0].status})
-                        </div>
-                      ) : (
-                        <div className="text-xs mt-1.5 text-slate-400 flex items-center">
-                          <Activity className="w-3 h-3 mr-1" />
-                          {salesman.isActive ? 'Not started today' : 'Access Disabled'}
-                        </div>
-                      )}
+                      {(() => {
+                        const ws = salesman.workSessions?.[0];
+                        if (!salesman.isActive) {
+                          return (
+                            <div className="text-xs mt-1.5 text-slate-400 flex items-center">
+                              <Activity className="w-3 h-3 mr-1 text-slate-400" />
+                              Access Disabled
+                            </div>
+                          );
+                        }
+                        if (!ws) {
+                          return (
+                            <div className="text-xs mt-1.5 text-slate-400 flex items-center">
+                              <Activity className="w-3 h-3 mr-1 text-slate-400" />
+                              Not started today
+                            </div>
+                          );
+                        }
+                        if (ws.status === 'ACTIVE') {
+                          const loginTime = ws.loginAt ? new Date(ws.loginAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '';
+                          return (
+                            <div className="text-xs mt-1.5 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>
+                              Active {loginTime ? `(since ${loginTime})` : ''}
+                            </div>
+                          );
+                        }
+                        if (ws.status === 'COMPLETED') {
+                          const logoutTime = ws.logoutAt ? new Date(ws.logoutAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '';
+                          return (
+                            <div className="text-xs mt-1.5 text-slate-500 dark:text-slate-400 flex items-center">
+                              <CheckCircle2 className="w-3 h-3 mr-1 text-slate-400" />
+                              Logged Out {logoutTime ? `at ${logoutTime}` : ''}
+                            </div>
+                          );
+                        }
+                        if (ws.status === 'FORCE_CLOSED') {
+                          const logoutTime = ws.logoutAt ? new Date(ws.logoutAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '';
+                          return (
+                            <div className="text-xs mt-1.5 text-amber-600 dark:text-amber-400 flex items-center">
+                              <AlertCircle className="w-3 h-3 mr-1 text-amber-500" />
+                              Force Closed {logoutTime ? `at ${logoutTime}` : ''}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

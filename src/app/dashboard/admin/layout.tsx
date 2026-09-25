@@ -1,6 +1,7 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import AdminNav from '@/components/layout/AdminNav';
+import AdminLiveListener from './components/AdminLiveListener';
 
 export default async function AdminLayout({
   children,
@@ -14,6 +15,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex flex-col bg-slate-50 dark:bg-slate-900 min-h-screen w-full transition-colors">
+      <AdminLiveListener />
       <AdminNav user={session.user} />
       
       <div className="flex flex-col flex-1 w-full min-w-0 lg:pl-64">

@@ -9,7 +9,7 @@ import { ArrowLeft, Box, CheckCircle2, Minus, Plus, ShoppingBag, XCircle, AlertT
 
 type Step = 'START' | 'ORDER' | 'PAYMENT' | 'SUCCESS';
 
-export default function VisitClient({ customer, products }: { customer: any, products: any[] }) {
+export default function VisitClient({ customer, products = [] }: { customer: any, products?: any[] }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>('START');
   const [isNoSale, setIsNoSale] = useState(false);
@@ -25,10 +25,13 @@ export default function VisitClient({ customer, products }: { customer: any, pro
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const safeProducts = Array.isArray(products) ? products : [];
+
   // Computed
-  const orderItems = products.map(p => {
+  const orderItems = safeProducts.map(p => {
     const crates = order[p.id] || 0;
-    const applicableRate = p.rates.find((r: any) => crates >= r.minQuantity) || p.rates[p.rates.length - 1];
+    const rates = Array.isArray(p.rates) ? p.rates : [];
+    const applicableRate = rates.find((r: any) => crates >= r.minQuantity) || rates[rates.length - 1];
     const rateToUse = applicableRate ? applicableRate.rate : 0;
     const amount = crates * rateToUse;
     return { ...p, crates, rateToUse, amount };
@@ -37,7 +40,8 @@ export default function VisitClient({ customer, products }: { customer: any, pro
   const totalSaleAmount = orderItems.reduce((sum, item) => sum + item.amount, 0);
   const receivedNowCents = receivedNowStr ? Math.round(parseFloat(receivedNowStr) * 100) : 0;
   const dueFromSale = Math.max(0, totalSaleAmount - receivedNowCents);
-  const finalOutstanding = customer.outstanding + dueFromSale;
+  const currentOutstanding = customer?.outstanding ?? 0;
+  const finalOutstanding = currentOutstanding + dueFromSale;
 
   const handleCrateChange = (productId: string, delta: number) => {
     setOrder(prev => {
@@ -163,11 +167,11 @@ export default function VisitClient({ customer, products }: { customer: any, pro
             <ShoppingBag className="h-8 w-8 text-alvoun-blue" />
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 mb-1">{customer.customerName}</h1>
-          <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">{customer.route.name}</p>
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">{customer?.route?.name || customer?.address || 'Assigned Route'}</p>
           
           <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 mb-6">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Current Outstanding</p>
-            <p className="text-2xl font-black text-alvoun-red">{formatMoney(customer.outstanding)}</p>
+            <p className="text-2xl font-black text-alvoun-red">{formatMoney(currentOutstanding)}</p>
           </div>
 
           <div className="space-y-3">
@@ -226,7 +230,7 @@ export default function VisitClient({ customer, products }: { customer: any, pro
           <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">Take Order</h2>
         </div>
 
-        {products.map(p => (
+        {safeProducts.map(p => (
           <div key={p.id} className="bg-white dark:bg-slate-950 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div>
               <h3 className="text-xl font-black text-slate-900 dark:text-slate-100 mb-1">{p.name}</h3>
@@ -307,7 +311,7 @@ export default function VisitClient({ customer, products }: { customer: any, pro
         <div className="bg-white dark:bg-slate-950 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-bold text-slate-500">Previous Outstanding</span>
-            <span className="text-base font-black text-slate-900 dark:text-slate-100">{formatMoney(customer.outstanding)}</span>
+            <span className="text-base font-black text-slate-900 dark:text-slate-100">{formatMoney(currentOutstanding)}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm font-bold text-slate-500">Today's Sale</span>

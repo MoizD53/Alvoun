@@ -69,7 +69,6 @@ export default async function SalesmanDashboard() {
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-alvoun-green"></span>
           </span>
           <span className="text-sm font-bold text-slate-600 dark:text-slate-300">Working</span>
-          <span className="text-sm text-slate-400 ml-1">• Started 07:00 AM</span>
         </div>
       </div>
 

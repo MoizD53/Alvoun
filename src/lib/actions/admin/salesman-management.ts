@@ -3,8 +3,11 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
+import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
+import { logAndEmitActivity } from '@/lib/events';
 
 export async function getSalesmenAccounts() {
+  const today = getKolkataDateOnly(getCurrentKolkataTime());
   const salesmen = await prisma.salesman.findMany({
     include: {
       profile: true,
@@ -17,10 +20,7 @@ export async function getSalesmenAccounts() {
       },
       workSessions: {
         where: {
-          workDate: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            lt: new Date(new Date().setHours(23, 59, 59, 999)),
-          },
+          workDate: today,
         },
         orderBy: { createdAt: 'desc' },
         take: 1,
@@ -358,6 +358,16 @@ export async function toggleSalesmanStatus(id: string, isActive: boolean) {
         });
       }
     });
+
+    if (!isActive) {
+      await logAndEmitActivity({
+        salesmanId: id,
+        salesmanName: salesman.name,
+        type: 'FORCE_CLOSED',
+        description: `${salesman.name}'s session was force closed (account disabled).`,
+        metadata: { salesmanId: id, action: 'DISABLED' }
+      }).catch(() => {});
+    }
 
     revalidatePath('/dashboard/admin/salesmen');
     revalidatePath(`/dashboard/admin/salesmen/${id}`);

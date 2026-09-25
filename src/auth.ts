@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs"
 import { authConfig } from "./auth.config"
 
 import { getCurrentKolkataTime, getKolkataTimeDetails, getKolkataDateOnly } from "@/lib/time"
+import { logAndEmitActivity } from "@/lib/events"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -61,7 +62,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                       status: 'ACTIVE'
                     }
                   });
+                } else if (existingSession.status !== 'ACTIVE') {
+                  await prisma.workSession.update({
+                    where: { id: existingSession.id },
+                    data: {
+                      status: 'ACTIVE',
+                      logoutAt: null
+                    }
+                  });
                 }
+
+                await logAndEmitActivity({
+                  salesmanId: salesman.id,
+                  salesmanName: salesman.name,
+                  type: 'LOGIN',
+                  description: `${salesman.name} started work session.`,
+                  metadata: { loginAt: now.toISOString() }
+                }).catch(() => {});
               }
             }
 
