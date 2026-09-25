@@ -13,8 +13,7 @@ type Product = {
   rates: { rate: number }[];
 };
 
-export default function ProductManager({ initialProducts }: { initialProducts: Product[] }) {
-  const [products] = useState<Product[]>(initialProducts);
+export default function ProductManager({ initialProducts: products }: { initialProducts: Product[] }) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
