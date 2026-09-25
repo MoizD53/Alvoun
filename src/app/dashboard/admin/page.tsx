@@ -177,7 +177,7 @@ export default async function AdminDashboard({
     },
     {
       id: 'outstanding',
-      title: 'OUTSTANDING',
+      title: 'DUES',
       value: formatMoney(totalOutstanding),
       subtitle: 'Across Market',
       icon: <CreditCard className="h-4 w-4" />,

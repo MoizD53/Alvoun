@@ -33,7 +33,7 @@ export default async function CustomerDetailPage({
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2 bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 flex flex-col justify-center items-center text-center">
-          <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Outstanding Balance</div>
+          <div className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Dues Balance</div>
           <div className={`text-4xl font-black ${customer.outstanding > 0 ? 'text-alvoun-red' : (customer.outstanding < 0 ? 'text-alvoun-green' : 'text-slate-900 dark:text-slate-100')}`}>
             {outstandingMoney}
             {customer.outstanding !== 0 && (

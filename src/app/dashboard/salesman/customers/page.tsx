@@ -81,7 +81,7 @@ export default async function SalesmanCustomersPage({
                         </div>
                         {c.outstanding > 0 && (
                            <div className="text-alvoun-red font-bold text-base mt-1">
-                             {formatMoney(c.outstanding)} <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Outstanding</span>
+                             {formatMoney(c.outstanding)} <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dues</span>
                            </div>
                         )}
                       </div>

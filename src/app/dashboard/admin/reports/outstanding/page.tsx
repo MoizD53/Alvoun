@@ -54,9 +54,9 @@ export default async function OutstandingReportPage({
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Outstanding Report</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Dues Report</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Total Market Outstanding: <span className="font-bold text-alvoun-red ml-1">{formatMoney(totalMarketOutstanding)}</span>
+            Total Market Dues: <span className="font-bold text-alvoun-red ml-1">{formatMoney(totalMarketOutstanding)}</span>
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -94,7 +94,7 @@ export default async function OutstandingReportPage({
                 <th className="px-6 py-3">Route / Salesman</th>
                 <th className="px-6 py-3 text-right">Total Sales</th>
                 <th className="px-6 py-3 text-right">Total Payments</th>
-                <th className="px-6 py-3 text-right">Outstanding</th>
+                <th className="px-6 py-3 text-right">Dues</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -102,7 +102,7 @@ export default async function OutstandingReportPage({
               {reportData.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                    No outstanding customers found for this criteria.
+                    No customers with dues found for this criteria.
                   </td>
                 </tr>
               ) : (

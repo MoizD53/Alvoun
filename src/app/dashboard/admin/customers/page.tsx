@@ -131,7 +131,7 @@ export default async function CustomersPage({
               <tr>
                 <th className="px-6 py-3">Customer</th>
                 <th className="px-6 py-3">Route & Salesman</th>
-                <th className="px-6 py-3 text-right">Outstanding</th>
+                <th className="px-6 py-3 text-right">Dues</th>
                 <th className="px-6 py-3">Last Visit</th>
                 <th className="px-6 py-3 text-center">Status</th>
                 <th className="px-6 py-3 text-right">Actions</th>
@@ -227,7 +227,7 @@ export default async function CustomersPage({
                       <div className="text-xs text-slate-500 dark:text-slate-400">{c.salesman?.name}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-slate-400 font-medium">Outstanding</div>
+                      <div className="text-xs text-slate-400 font-medium">Dues</div>
                       <div className={`font-bold ${isNegative ? 'text-alvoun-red' : 'text-slate-900 dark:text-slate-100'}`}>
                         {formatMoney(Math.abs(outstanding))}
                       </div>

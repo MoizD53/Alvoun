@@ -190,7 +190,7 @@ export default function InteractiveKPIRow({
         <div className="p-6 pr-14 md:pr-16 bg-slate-50 dark:bg-slate-900 rounded-b-xl border-t border-slate-200 dark:border-slate-800">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TOTAL OUTSTANDING</h4>
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TOTAL DUES</h4>
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <div className="text-sm text-slate-500">Total</div>
@@ -209,11 +209,11 @@ export default function InteractiveKPIRow({
               </div>
 
               <Link href="/dashboard/admin/reports" className="text-sm font-medium text-alvoun-blue hover:underline">
-                View Outstanding &rarr;
+                View Dues &rarr;
               </Link>
             </div>
             <div className="flex-1">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TOP OUTSTANDING</h4>
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">TOP DUES</h4>
               <div className="space-y-3">
                 {detailsData.topCustomers.map((c: any) => (
                   <div key={c.name} className="flex justify-between items-center text-sm">
