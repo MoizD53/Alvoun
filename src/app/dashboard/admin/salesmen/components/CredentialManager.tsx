@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { resetSalesmanPassword, toggleSalesmanLoginAccess } from '@/lib/actions/admin/salesman-management';
 import { Key, Shield, ShieldAlert, Check, X, Loader2, Eye, EyeOff } from 'lucide-react';
 
@@ -13,11 +14,17 @@ export default function CredentialManager({
   loginId: string;
   isActive: boolean;
 }) {
+  const router = useRouter();
+  const [active, setActive] = useState(isActive);
   const [isResetting, setIsResetting] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  useEffect(() => {
+    setActive(isActive);
+  }, [isActive]);
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,12 +53,15 @@ export default function CredentialManager({
   const handleToggleAccess = async () => {
     setIsToggling(true);
     setMessage(null);
+    const nextActive = !active;
 
     try {
-      const result = await toggleSalesmanLoginAccess(profileId, !isActive);
+      const result = await toggleSalesmanLoginAccess(profileId, nextActive);
       if (result.error) throw new Error(result.error);
       
-      setMessage({ type: 'success', text: `Login access ${!isActive ? 'enabled' : 'disabled'}.` });
+      setActive(nextActive);
+      router.refresh();
+      setMessage({ type: 'success', text: `Login access ${nextActive ? 'enabled' : 'disabled'}.` });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message });
     } finally {
@@ -90,21 +100,21 @@ export default function CredentialManager({
         <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
           <div>
             <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Access Status</div>
-            <div className={`text-xs font-semibold mt-1 ${isActive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {isActive ? 'ACTIVE' : 'DISABLED'}
+            <div className={`text-xs font-semibold mt-1 ${active ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {active ? 'ACTIVE' : 'DISABLED'}
             </div>
           </div>
           <button
             onClick={handleToggleAccess}
             disabled={isToggling}
             className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center ${
-              isActive 
+              active 
                 ? 'bg-red-100 text-red-700 hover:bg-red-200 focus:ring-red-500 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50' 
                 : 'bg-green-100 text-green-700 hover:bg-green-200 focus:ring-green-500 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
             }`}
           >
-            {isToggling ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : isActive ? <ShieldAlert className="w-3 h-3 mr-1.5" /> : <Check className="w-3 h-3 mr-1.5" />}
-            {isActive ? 'Disable Login' : 'Enable Login'}
+            {isToggling ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : active ? <ShieldAlert className="w-3 h-3 mr-1.5" /> : <Check className="w-3 h-3 mr-1.5" />}
+            {active ? 'Disable Login' : 'Enable Login'}
           </button>
         </div>
 

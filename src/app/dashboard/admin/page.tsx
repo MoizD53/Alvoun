@@ -3,23 +3,10 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
-import { calculateOutstanding } from '@/lib/outstanding';
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { 
-  TrendingUp, 
-  Wallet, 
-  CreditCard, 
-  MapPin, 
-  AlertCircle, 
-  Users, 
-  Box, 
-  Map as MapIcon, 
-  Plus, 
-  ChevronRight,
-  UserPlus,
-  FileDown
-} from 'lucide-react';
-import AdminCharts from './components/AdminCharts';
+import { TrendingUp, Wallet, CreditCard, MapPin } from 'lucide-react';
+import AdminCharts, { AdminChartsSkeleton } from './components/AdminCharts';
 import LiveDashboardManager from './components/LiveDashboardManager';
 
 import InteractiveKPIRow, { KPIItem } from './components/InteractiveKPIRow';
@@ -63,17 +50,19 @@ export default async function AdminDashboard({
     subtitle = "Here's today's business summary.";
   }
 
-  // Fetch today's data
-  const [sales, payments, visits, activeWorkSessions, products] = await Promise.all([
+  // Fetch today's data and global aggregates in parallel
+  const [sales, payments, visits, activeWorkSessions, allSalesAgg, allPaymentsAgg, customerBalances] = await Promise.all([
     prisma.sale.findMany({
       where: { saleDate: { gte: startOfDay, lte: endOfDay } },
-      include: { items: true }
+      select: { totalAmount: true, salesmanId: true }
     }),
     prisma.payment.findMany({
-      where: { paymentDate: { gte: startOfDay, lte: endOfDay } }
+      where: { paymentDate: { gte: startOfDay, lte: endOfDay } },
+      select: { amount: true, salesmanId: true }
     }),
     prisma.visit.findMany({
-      where: { createdAt: { gte: startOfDay, lte: endOfDay } }
+      where: { createdAt: { gte: startOfDay, lte: endOfDay } },
+      select: { salesmanId: true }
     }),
     prisma.workSession.findMany({
       where: { 
@@ -85,25 +74,21 @@ export default async function AdminDashboard({
         }
       }
     }),
-    prisma.product.findMany()
+    prisma.sale.aggregate({ _sum: { totalAmount: true } }),
+    prisma.payment.aggregate({ _sum: { amount: true } }),
+    prisma.customer.findMany({
+      select: { openingBalance: true, openingBalanceType: true }
+    })
   ]);
 
   // Aggregate Metrics
   const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
   const totalCollection = payments.reduce((sum, payment) => sum + payment.amount, 0);
   
-  const allCustomers = await prisma.customer.findMany({
-    include: { sales: { include: { items: true } }, payments: true }
-  });
-
-  // Calculate global outstanding
-  let totalOutstanding = 0;
-  let outstandingCustomersCount = 0;
-  for (const c of allCustomers) {
-    const out = calculateOutstanding(c as any);
-    totalOutstanding += out;
-    if (out > 0) outstandingCustomersCount++;
-  }
+  const totalOpening = customerBalances.reduce((sum, c) => {
+    return sum + (c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance);
+  }, 0);
+  const totalOutstanding = totalOpening + (allSalesAgg._sum.totalAmount || 0) - (allPaymentsAgg._sum.amount || 0);
 
   // Salesman Performance Map
   const salesmanData = new Map<string, any>();
@@ -218,7 +203,9 @@ export default async function AdminDashboard({
         <InteractiveKPIRow kpis={topKpis} dateStr={dateStr} />
 
         {/* Route & Area Coverage Charts */}
-        <AdminCharts dateStr={dateStr} />
+        <Suspense fallback={<AdminChartsSkeleton />}>
+          <AdminCharts dateStr={dateStr} />
+        </Suspense>
 
         <div className="w-full space-y-8">
           {/* Salesman Activity Table */}

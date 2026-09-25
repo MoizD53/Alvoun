@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { formatMoney } from '@/lib/format';
 import { submitVisitFlow } from '@/lib/actions/salesman/visitFlow';
-import { ArrowLeft, Box, CheckCircle2, Minus, Plus, ShoppingBag, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Box, CheckCircle2, Minus, Plus, ShoppingBag, XCircle, AlertTriangle, Check } from 'lucide-react';
 
 type Step = 'START' | 'ORDER' | 'PAYMENT' | 'SUCCESS';
 
@@ -74,6 +75,84 @@ export default function VisitClient({ customer, products }: { customer: any, pro
       setLoading(false);
     }
   };
+
+  // ALREADY VISITED TODAY VIEW
+  if (customer.isVisitedToday && step === 'START') {
+    const visit = customer.todayVisit;
+    return (
+      <div className="space-y-6 pb-20 animate-fade-in-up">
+        <div className="flex items-center gap-3">
+          <Link 
+            href={customer.routeId ? `/dashboard/salesman/customers?routeId=${customer.routeId}` : '/dashboard/salesman/customers'}
+            className="p-2.5 bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="text-xl font-black text-slate-900 dark:text-slate-100">{customer.customerName}</h1>
+            <p className="text-xs text-slate-500 font-semibold">{customer.route?.name}</p>
+          </div>
+        </div>
+
+        <div className="p-6 bg-white dark:bg-slate-950 rounded-2xl border-2 border-emerald-500/30 dark:border-emerald-500/20 shadow-sm space-y-5">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-3 py-1 rounded-md">
+              <Check className="h-3.5 w-3.5" /> VISITED TODAY
+            </span>
+            <span className="text-xs font-semibold text-slate-500">{visit?.formattedTime || 'Today'}</span>
+          </div>
+
+          {visit?.isNoSale ? (
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl text-center space-y-1">
+              <p className="font-bold text-slate-800 dark:text-slate-200">No Sale Recorded</p>
+              <p className="text-xs text-slate-500">Reason: {visit.noSaleReason || 'No sale'}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visit?.items && visit.items.length > 0 && (
+                <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 space-y-2 text-xs">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Products Purchased</span>
+                  {visit.items.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span className="font-medium text-slate-800 dark:text-slate-200">{item.productName} ({item.crates} crates)</span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100">{formatMoney(item.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl space-y-1.5 text-xs font-medium">
+                <div className="flex justify-between text-slate-500">
+                  <span>Sale Total</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{formatMoney(visit?.saleAmount || 0)}</span>
+                </div>
+                <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                  <span>Payment Received</span>
+                  <span className="font-bold">-{formatMoney(visit?.receivedAmount || 0)}</span>
+                </div>
+                <div className="pt-1.5 border-t border-slate-200 dark:border-slate-800 flex justify-between font-bold">
+                  <span>Due from this sale</span>
+                  <span className="text-alvoun-red font-black">{formatMoney(visit?.dueFromSale || 0)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="p-3 bg-slate-100/70 dark:bg-slate-900/50 rounded-xl flex justify-between items-center text-xs">
+            <span className="font-bold text-slate-500 uppercase">Customer Outstanding</span>
+            <span className="font-black text-base text-slate-900 dark:text-slate-100">{formatMoney(Math.abs(customer.outstanding))}</span>
+          </div>
+
+          <Link
+            href={customer.routeId ? `/dashboard/salesman/customers?routeId=${customer.routeId}` : '/dashboard/salesman/customers'}
+            className="w-full py-3.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold text-sm flex items-center justify-center transition-colors"
+          >
+            BACK TO CUSTOMERS
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // 1. START VISIT SCREEN
   if (step === 'START') {
@@ -292,7 +371,10 @@ export default function VisitClient({ customer, products }: { customer: any, pro
         )}
 
         <button 
-          onClick={() => router.push('/dashboard/salesman')}
+          onClick={() => {
+            router.push(customer.routeId ? `/dashboard/salesman/customers?routeId=${customer.routeId}` : '/dashboard/salesman/customers');
+            router.refresh();
+          }}
           className="w-full max-w-sm py-4 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-all"
         >
           DONE

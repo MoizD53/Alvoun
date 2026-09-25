@@ -18,30 +18,31 @@ export async function requireActiveSalesmanSession() {
   const timeDetails = getKolkataTimeDetails(now);
   const workDate = getKolkataDateOnly(now);
 
-  if (timeDetails.hour < 7) {
-    throw new Error('NOT_STARTED');
-  }
+  // TEMPORARILY DISABLED: 7 AM to 7 PM restriction
+  // if (timeDetails.hour < 7) {
+  //   throw new Error('NOT_STARTED');
+  // }
 
-  if (timeDetails.hour >= 19) {
-    const exact7pmUTC = Date.UTC(timeDetails.year, timeDetails.month - 1, timeDetails.day, 19, 0, 0, 0);
-    const exact7pmIST = new Date(exact7pmUTC - (5.5 * 60 * 60 * 1000));
-    
-    // Force close any active session for today
-    await prisma.workSession.updateMany({
-      where: {
-        salesmanId: salesman.id,
-        workDate: workDate,
-        status: 'ACTIVE'
-      },
-      data: {
-        status: 'FORCE_CLOSED',
-        logoutAt: exact7pmIST
-      }
-    });
-    throw new Error('SESSION_ENDED');
-  }
+  // if (timeDetails.hour >= 19) {
+  //   const exact7pmUTC = Date.UTC(timeDetails.year, timeDetails.month - 1, timeDetails.day, 19, 0, 0, 0);
+  //   const exact7pmIST = new Date(exact7pmUTC - (5.5 * 60 * 60 * 1000));
+  //   
+  //   // Force close any active session for today
+  //   await prisma.workSession.updateMany({
+  //     where: {
+  //       salesmanId: salesman.id,
+  //       workDate: workDate,
+  //       status: 'ACTIVE'
+  //     },
+  //     data: {
+  //       status: 'FORCE_CLOSED',
+  //       logoutAt: exact7pmIST
+  //     }
+  //   });
+  //   throw new Error('SESSION_ENDED');
+  // }
 
-  // It is working hours (07:00 - 18:59)
+  // Ensure active work session for today
   let workSession = await prisma.workSession.findUnique({
     where: {
       salesmanId_workDate: {
@@ -50,6 +51,13 @@ export async function requireActiveSalesmanSession() {
       }
     }
   });
+
+  if (workSession && workSession.status !== 'ACTIVE') {
+    workSession = await prisma.workSession.update({
+      where: { id: workSession.id },
+      data: { status: 'ACTIVE' }
+    });
+  }
 
   if (!workSession) {
     try {

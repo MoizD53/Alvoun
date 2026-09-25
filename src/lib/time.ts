@@ -36,8 +36,10 @@ export function getKolkataTimeDetails(date: Date) {
 }
 
 export function isWorkingHours(date: Date) {
-  const details = getKolkataTimeDetails(date);
-  return details.hour >= 7 && details.hour < 19;
+  // TEMPORARILY DISABLED: Allow 24/7 working hours
+  return true;
+  // const details = getKolkataTimeDetails(date);
+  // return details.hour >= 7 && details.hour < 19;
 }
 
 export function getKolkataDateOnly(date: Date) {
@@ -66,4 +68,16 @@ export function getKolkataMonthBoundaries(year: number, month: number) {
     start: new Date(utcStart - (5.5 * 60 * 60 * 1000)),
     end: new Date(utcEnd - (5.5 * 60 * 60 * 1000))
   };
+}
+
+export function formatKolkataVisitTime(date?: Date | string | null): string {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const timeStr = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).format(d);
+  return `Today, ${timeStr}`;
 }

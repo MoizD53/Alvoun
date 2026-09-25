@@ -308,6 +308,70 @@ export async function resetSalesmanPassword(profileId: string, newPassword: stri
   }
 }
 
+export async function toggleSalesmanStatus(id: string, isActive: boolean) {
+  try {
+    const salesman = await prisma.salesman.findUnique({
+      where: { id },
+      include: { profile: true }
+    });
+
+    if (!salesman) {
+      return { error: 'Salesman not found.' };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.salesman.update({
+        where: { id },
+        data: { isActive },
+      });
+
+      if (salesman.profileId) {
+        await tx.profile.update({
+          where: { id: salesman.profileId },
+          data: { isActive },
+        });
+      }
+
+      if (!isActive) {
+        // Force close active work sessions
+        await tx.workSession.updateMany({
+          where: { 
+            salesmanId: id,
+            logoutAt: null 
+          },
+          data: {
+            logoutAt: new Date(),
+            status: 'FORCE_CLOSED'
+          }
+        });
+
+        // Close active visits
+        await tx.visit.updateMany({
+          where: {
+            salesmanId: id,
+            status: 'STARTED'
+          },
+          data: {
+            status: 'COMPLETED',
+            noSaleReason: 'Account disabled'
+          }
+        });
+      }
+    });
+
+    revalidatePath('/dashboard/admin/salesmen');
+    revalidatePath(`/dashboard/admin/salesmen/${id}`);
+    revalidatePath('/dashboard/admin/salesmen-access');
+    revalidatePath('/dashboard/admin/sessions');
+    revalidatePath('/dashboard/admin');
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error toggling salesman status:', error);
+    return { error: error.message || 'Failed to update salesman status.' };
+  }
+}
+
 export async function toggleSalesmanLoginAccess(profileId: string, isActive: boolean) {
   try {
     await prisma.$transaction(async (tx) => {
@@ -316,12 +380,17 @@ export async function toggleSalesmanLoginAccess(profileId: string, isActive: boo
         data: { isActive },
       });
 
-      if (!isActive) {
-        const salesman = await tx.salesman.findUnique({
-          where: { profileId },
+      const salesman = await tx.salesman.findUnique({
+        where: { profileId },
+      });
+
+      if (salesman) {
+        await tx.salesman.update({
+          where: { id: salesman.id },
+          data: { isActive }
         });
 
-        if (salesman) {
+        if (!isActive) {
           await tx.workSession.updateMany({
             where: { 
               salesmanId: salesman.id,

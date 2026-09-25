@@ -1,15 +1,56 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Plus, User, MapPin, Activity, Settings, UserCog, UserCheck, UserX } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Plus, User, MapPin, Activity, UserCog, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { toggleSalesmanStatus } from '@/lib/actions/admin/salesman-management';
 
 export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any[] }) {
+  const router = useRouter();
+  const [salesmen, setSalesmen] = useState(initialSalesmen);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loginAccessFilter, setLoginAccessFilter] = useState('ALL');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const filteredSalesmen = initialSalesmen.filter(s => {
+  useEffect(() => {
+    setSalesmen(initialSalesmen);
+  }, [initialSalesmen]);
+
+  const handleToggleStatus = async (salesmanId: string, currentActive: boolean) => {
+    setActionError(null);
+    setTogglingId(salesmanId);
+    const nextStatus = !currentActive;
+
+    try {
+      const res = await toggleSalesmanStatus(salesmanId, nextStatus);
+      if (res?.error) {
+        throw new Error(res.error);
+      }
+
+      // Immediately update local state without waiting for F5/browser reload
+      setSalesmen(prev => prev.map(s => {
+        if (s.id === salesmanId) {
+          return {
+            ...s,
+            isActive: nextStatus,
+            profile: s.profile ? { ...s.profile, isActive: nextStatus } : s.profile
+          };
+        }
+        return s;
+      }));
+
+      router.refresh();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to update salesman status.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const filteredSalesmen = salesmen.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           s.profile?.email.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -26,6 +67,13 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
 
   return (
     <div className="space-y-4">
+      {actionError && (
+        <div className="p-3 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-sm flex items-center justify-between">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">✕</button>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <div className="relative flex-1 w-full max-w-md">
@@ -139,37 +187,69 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col">
                       {salesman.isActive ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 w-fit">
-                          Active Business
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 w-fit">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
+                          ACTIVE
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400 w-fit">
-                          Inactive Business
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 w-fit">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
+                          INACTIVE
                         </span>
                       )}
                       
                       {/* Today's Work Status */}
-                      {salesman.workSessions && salesman.workSessions.length > 0 ? (
-                        <div className="text-xs mt-2 text-slate-500 flex items-center">
+                      {salesman.workSessions && salesman.workSessions.length > 0 && salesman.isActive ? (
+                        <div className="text-xs mt-1.5 text-slate-500 flex items-center">
                           <Activity className="w-3 h-3 mr-1 text-green-500" />
                           Working ({salesman.workSessions[0].status})
                         </div>
                       ) : (
-                        <div className="text-xs mt-2 text-slate-400 flex items-center">
+                        <div className="text-xs mt-1.5 text-slate-400 flex items-center">
                           <Activity className="w-3 h-3 mr-1" />
-                          Not started today
+                          {salesman.isActive ? 'Not started today' : 'Access Disabled'}
                         </div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Link
-                      href={`/dashboard/admin/salesmen/${salesman.id}`}
-                      className="text-alvoun-blue hover:text-alvoun-blue/80 bg-alvoun-light dark:bg-alvoun-blue/10 px-3 py-1.5 rounded-md inline-flex items-center transition-colors"
-                    >
-                      <UserCog className="h-4 w-4 mr-1" />
-                      Manage
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleStatus(salesman.id, salesman.isActive)}
+                        disabled={togglingId === salesman.id}
+                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold transition-colors disabled:opacity-50 ${
+                          salesman.isActive
+                            ? 'text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40'
+                            : 'text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40'
+                        }`}
+                      >
+                        {togglingId === salesman.id ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            {salesman.isActive ? 'Disabling...' : 'Activating...'}
+                          </>
+                        ) : salesman.isActive ? (
+                          <>
+                            <UserX className="w-3.5 h-3.5 mr-1.5" />
+                            Disable
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="w-3.5 h-3.5 mr-1.5" />
+                            Activate
+                          </>
+                        )}
+                      </button>
+
+                      <Link
+                        href={`/dashboard/admin/salesmen/${salesman.id}`}
+                        className="text-alvoun-blue hover:text-alvoun-blue/80 bg-alvoun-light dark:bg-alvoun-blue/10 px-3 py-1.5 rounded-md inline-flex items-center text-xs font-semibold transition-colors"
+                      >
+                        <UserCog className="h-3.5 w-3.5 mr-1" />
+                        Manage
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

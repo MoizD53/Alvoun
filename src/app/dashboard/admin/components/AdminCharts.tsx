@@ -3,21 +3,37 @@ import { BarChart3, Map, MapPin, Users } from 'lucide-react';
 import InteractiveKPIRow, { KPIItem } from './InteractiveKPIRow';
 
 export default async function AdminCharts({ dateStr }: { dateStr?: string }) {
-  const [routes, areas, salesmen, customers] = await Promise.all([
-    prisma.route.findMany({ include: { customers: true } }),
-    prisma.area.findMany({ include: { customers: true } }),
-    prisma.salesman.findMany({ include: { assignments: true } }),
-    prisma.customer.findMany()
+  const [routes, areas, salesmen, customerCount] = await Promise.all([
+    prisma.route.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { customers: true } }
+      }
+    }),
+    prisma.area.findMany({
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { customers: true } }
+      }
+    }),
+    prisma.salesman.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        _count: { select: { customers: true } }
+      }
+    }),
+    prisma.customer.count({ where: { status: 'ACTIVE' } })
   ]);
 
   // Process data for charts
-  const routeData = routes.map(r => ({ name: r.name, count: r.customers.length })).sort((a, b) => b.count - a.count);
-  const areaData = areas.map(a => ({ name: a.name, count: a.customers.length })).sort((a, b) => b.count - a.count).slice(0, 10); // Top 10 areas
-  
-  const salesmanData = salesmen.map(s => {
-    const customerCount = customers.filter(c => c.salesmanId === s.id).length;
-    return { name: s.name, count: customerCount };
-  }).sort((a, b) => b.count - a.count);
+  const routeData = routes.map(r => ({ name: r.name, count: r._count.customers })).sort((a, b) => b.count - a.count);
+  const areaData = areas.map(a => ({ name: a.name, count: a._count.customers })).sort((a, b) => b.count - a.count).slice(0, 10);
+  const salesmanData = salesmen.map(s => ({ name: s.name, count: s._count.customers })).sort((a, b) => b.count - a.count);
 
   const maxRoute = Math.max(...routeData.map(d => d.count), 1);
   const maxArea = Math.max(...areaData.map(d => d.count), 1);
@@ -54,7 +70,7 @@ export default async function AdminCharts({ dateStr }: { dateStr?: string }) {
     {
       id: 'customers',
       title: 'TOTAL CUSTOMERS',
-      value: customers.length,
+      value: customerCount,
       subtitle: 'Total Base',
       icon: <BarChart3 className="h-4 w-4" />,
       iconBg: 'bg-indigo-50 dark:bg-indigo-900/20',
@@ -98,6 +114,23 @@ function ChartCard({ title, data, max }: { title: string, data: {name: string, c
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+export function AdminChartsSkeleton() {
+  return (
+    <div className="space-y-6 mt-8 animate-pulse">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-24 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl" />
+        ))}
       </div>
     </div>
   );

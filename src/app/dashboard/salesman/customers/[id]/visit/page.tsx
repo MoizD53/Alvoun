@@ -1,5 +1,5 @@
 import { getProductsWithRates } from '@/lib/actions/salesman/sale';
-import { getCustomerWithOutstanding } from '@/lib/actions/salesman/visitFlow';
+import { getCustomerDetail } from '@/lib/actions/salesman/customer';
 import { notFound } from 'next/navigation';
 import VisitClient from './VisitClient';
 
@@ -12,7 +12,7 @@ export default async function VisitPage({
   
   try {
     const [customer, products] = await Promise.all([
-      getCustomerWithOutstanding(resolvedParams.id),
+      getCustomerDetail(resolvedParams.id),
       getProductsWithRates()
     ]);
     

@@ -1,6 +1,6 @@
 import { getCustomerDetail } from '@/lib/actions/salesman/customer';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Navigation, IndianRupee } from 'lucide-react';
+import { ArrowLeft, MapPin, Navigation, IndianRupee, Check, Eye } from 'lucide-react';
 import PhoneManager from './PhoneManager';
 import { notFound } from 'next/navigation';
 import { formatMoney } from '@/lib/format';
@@ -64,12 +64,50 @@ export default async function CustomerDetailPage({
 
       {/* Actions */}
       <div className="space-y-4">
-        <Link 
-          href={`/dashboard/salesman/customers/${customer.id}/visit`}
-          className="flex items-center justify-center gap-2 w-full py-4 bg-alvoun-blue text-white rounded-xl font-black text-lg shadow-lg shadow-alvoun-blue/20 hover:bg-alvoun-dark active:bg-alvoun-dark transition-colors"
-        >
-          START VISIT
-        </Link>
+        {customer.isVisitedToday ? (
+          <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border-2 border-emerald-500/30 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-1 rounded-md">
+                <Check className="h-3.5 w-3.5" /> VISITED TODAY
+              </span>
+              <span className="text-xs text-slate-500">{customer.todayVisit?.formattedTime}</span>
+            </div>
+            {customer.todayVisit?.isNoSale ? (
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Visit completed • No sale ({customer.todayVisit.noSaleReason || 'No sale'})
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 text-xs font-semibold pt-1 border-t border-emerald-100 dark:border-emerald-900/30">
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase">Sale</span>
+                  <p className="font-bold text-slate-900 dark:text-slate-100">{formatMoney(customer.todayVisit?.saleAmount || 0)}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase">Received</span>
+                  <p className="font-bold text-alvoun-green">{formatMoney(customer.todayVisit?.receivedAmount || 0)}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase">Due</span>
+                  <p className="font-bold text-alvoun-red">{formatMoney(customer.todayVisit?.dueFromSale || 0)}</p>
+                </div>
+              </div>
+            )}
+            <Link 
+              href={`/dashboard/salesman/customers/${customer.id}/visit`}
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 rounded-xl font-bold text-sm transition-colors"
+            >
+              <Eye className="h-4 w-4" />
+              VIEW VISIT DETAILS
+            </Link>
+          </div>
+        ) : (
+          <Link 
+            href={`/dashboard/salesman/customers/${customer.id}/visit`}
+            className="flex items-center justify-center gap-2 w-full py-4 bg-alvoun-blue text-white rounded-xl font-black text-lg shadow-lg shadow-alvoun-blue/20 hover:bg-alvoun-dark active:bg-alvoun-dark transition-colors"
+          >
+            START VISIT
+          </Link>
+        )}
         
         <Link 
           href={`/dashboard/salesman/customers/${customer.id}/payment`}

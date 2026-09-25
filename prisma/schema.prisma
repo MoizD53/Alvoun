@@ -194,6 +194,8 @@ model Visit {
 
   @@index([customerId])
   @@index([salesmanId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model Sale {
@@ -211,6 +213,7 @@ model Sale {
 
   @@index([customerId])
   @@index([salesmanId])
+  @@index([saleDate])
 }
 
 model SaleItem {
@@ -246,6 +249,7 @@ model Payment {
 
   @@index([customerId])
   @@index([salesmanId])
+  @@index([paymentDate])
 }
 
 model WorkSession {
@@ -262,6 +266,7 @@ model WorkSession {
 
   @@unique([salesmanId, workDate])
   @@index([salesmanId])
+  @@index([workDate])
 }
 
 model Location {

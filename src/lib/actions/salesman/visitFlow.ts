@@ -6,6 +6,8 @@ import { logAndEmitActivity } from '@/lib/events';
 import { z } from 'zod';
 import { getProductsWithRates } from './sale';
 import { calculateOutstanding } from '@/lib/outstanding';
+import { revalidatePath } from 'next/cache';
+import { formatKolkataVisitTime } from '@/lib/time';
 
 const VisitFlowSchema = z.object({
   customerId: z.string(),
@@ -72,10 +74,13 @@ export async function submitVisitFlow(data: any) {
       throw new Error('Received amount cannot be greater than today\'s sale amount in this flow. Please use the standalone collection for previous dues if this exceeds the current sale.');
     }
 
+    let createdVisit: any = null;
+    let productsList: any[] = [];
+
     // Execute in transaction
     await prisma.$transaction(async (tx) => {
       // 1. Create Visit
-      const visit = await tx.visit.create({
+      createdVisit = await tx.visit.create({
         data: {
           customerId,
           salesmanId,
@@ -112,6 +117,15 @@ export async function submitVisitFlow(data: any) {
       }
     });
 
+    if (!isNoSale && validItems.length > 0) {
+      productsList = await getProductsWithRates();
+    }
+
+    revalidatePath('/dashboard/salesman');
+    revalidatePath('/dashboard/salesman/customers');
+    revalidatePath(`/dashboard/salesman/customers/${customerId}`);
+    revalidatePath('/dashboard/admin/activity');
+
     // Logging outside transaction for side-effects
     if (isNoSale) {
       await logAndEmitActivity({
@@ -139,7 +153,32 @@ export async function submitVisitFlow(data: any) {
       }
     }
 
-    return { success: true };
+    const dueFromSale = Math.max(0, totalAmount - receivedNow);
+
+    return { 
+      success: true,
+      visit: {
+        visitId: createdVisit.id,
+        visitedAt: createdVisit.createdAt.toISOString(),
+        formattedTime: formatKolkataVisitTime(createdVisit.createdAt),
+        isNoSale,
+        noSaleReason: isNoSale ? (noSaleReason || 'No sale') : null,
+        saleAmount: totalAmount,
+        receivedAmount: receivedNow,
+        dueFromSale,
+        items: saleItemsData.map(item => {
+          const product = productsList.find(p => p.id === item.productId);
+          return {
+            productId: item.productId,
+            productName: product?.name || 'Product',
+            crates: item.crates,
+            looseBottles: 0,
+            rate: item.actualRate,
+            amount: item.amount
+          };
+        })
+      }
+    };
   } catch (error: any) {
     return { error: error.message || 'Failed to complete visit' };
   }

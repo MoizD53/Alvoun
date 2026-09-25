@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { assignTerritory, deleteAssignment, getSalesmanAssignments } from '@/lib/actions/admin/salesman-access';
 
 export default function AccessManager({ initialSalesmen, routes }: { initialSalesmen: any[], routes: any[] }) {
+  const router = useRouter();
   const [salesmen, setSalesmen] = useState(initialSalesmen);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSalesman, setEditingSalesman] = useState<any>(null);
@@ -76,7 +78,7 @@ export default function AccessManager({ initialSalesmen, routes }: { initialSale
     setIsModalOpen(false);
     setIsSaving(false);
     // Refresh page to get accurate totalCustomers count
-    window.location.reload();
+    router.refresh();
   };
 
   return (
