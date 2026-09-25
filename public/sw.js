@@ -1,4 +1,4 @@
-const CACHE_NAME = 'alvoun-pwa-v2';
+const CACHE_NAME = 'alvoun-pwa-v3';
 const PRECACHE_ASSETS = [
   '/',
   '/login',
@@ -34,11 +34,23 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     fetch(event.request).catch(async (err) => {
-      const response = await caches.match(event.request);
-      if (response) {
-        return response;
+      try {
+        const response = await caches.match(event.request);
+        if (response) {
+          return response;
+        }
+      } catch (cacheErr) {
+        console.warn('Cache error:', cacheErr);
       }
-      throw err;
+      
+      // If we reach here, network failed and it's not in cache.
+      // Return a 503 Response instead of throwing an unhandled rejection
+      // which causes the browser to log "FetchEvent resulted in a network error"
+      return new Response('Offline or Network Error', {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: new Headers({ 'Content-Type': 'text/plain' })
+      });
     })
   );
 });

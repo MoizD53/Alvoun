@@ -104,22 +104,22 @@ export default function RouteListClient({ routes, cities, salesmen }: { routes: 
                           <div className="flex-1 space-y-3">
                             <div className="flex gap-4">
                               <div className="flex-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase">Route Name</label>
+                                <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">Route Name</label>
                                 <input 
                                   autoFocus
                                   type="text" 
                                   value={editForm.name}
                                   onChange={e => setEditForm({...editForm, name: e.target.value})}
-                                  className="w-full mt-1 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+                                  className="w-full border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
                                   required
                                 />
                               </div>
                               <div className="flex-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase">City</label>
+                                <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">City</label>
                                 <select 
                                   value={editForm.cityId}
                                   onChange={e => setEditForm({...editForm, cityId: e.target.value})}
-                                  className="w-full mt-1 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+                                  className="w-full border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
                                   required
                                 >
                                   {cities.map(city => (
@@ -128,11 +128,11 @@ export default function RouteListClient({ routes, cities, salesmen }: { routes: 
                                 </select>
                               </div>
                               <div className="flex-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase">Salesman</label>
+                                <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">Salesman</label>
                                 <select 
                                   value={editForm.salesmanId}
                                   onChange={e => setEditForm({...editForm, salesmanId: e.target.value})}
-                                  className="w-full mt-1 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
+                                  className="w-full border border-slate-200 dark:border-slate-700 rounded-md px-3 py-1.5 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100"
                                 >
                                   <option value="">Unassigned</option>
                                   {salesmen.map(s => (
@@ -141,8 +141,8 @@ export default function RouteListClient({ routes, cities, salesmen }: { routes: 
                                 </select>
                               </div>
                               <div className="w-24">
-                                <label className="text-xs font-bold text-slate-500 uppercase">Status</label>
-                                <div className="mt-2 flex items-center">
+                                <label className="block mb-1 text-xs font-bold text-slate-500 uppercase">Status</label>
+                                <div className="flex items-center h-[34px]">
                                   <input 
                                     type="checkbox"
                                     checked={editForm.isActive}
