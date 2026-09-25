@@ -69,3 +69,33 @@ export async function updateRoute(id: string, data: FormData) {
     return { error: error.message || 'Failed to update route' };
   }
 }
+
+export async function deactivateRoute(id: string) {
+  try {
+    await prisma.route.update({
+      where: { id },
+      data: { isActive: false }
+    });
+    revalidatePath('/dashboard/admin/routes');
+    return { success: true };
+  } catch (error: any) {
+    return { error: 'Failed to deactivate route' };
+  }
+}
+
+export async function deleteRoute(id: string) {
+  try {
+    const r = await prisma.route.findUnique({
+      where: { id },
+      include: { _count: { select: { customers: true } } }
+    });
+    if (!r) return { error: 'Route not found' };
+    if (r._count.customers > 0) return { error: 'Cannot delete route with existing customers. Deactivate it instead.' };
+    
+    await prisma.route.delete({ where: { id } });
+    revalidatePath('/dashboard/admin/routes');
+    return { success: true };
+  } catch (error: any) {
+    return { error: 'Failed to delete route. Dependencies may exist.' };
+  }
+}

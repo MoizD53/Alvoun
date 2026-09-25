@@ -11,7 +11,8 @@ const CustomerSchema = z.object({
   stateId: z.string().min(1, "State is required"),
   cityId: z.string().min(1, "City is required"),
   routeId: z.string().min(1, "Route is required"),
-  salesmanId: z.string().min(1, "Salesman is required"),
+  areaId: z.string().optional(),
+  salesmanId: z.string().optional(),
   openingBalance: z.number().min(0, "Balance must be >= 0"),
   openingBalanceType: z.enum(['DEBIT', 'CREDIT']),
   status: z.enum(['ACTIVE', 'INACTIVE']),
@@ -65,6 +66,7 @@ export async function createCustomer(data: any) {
   try {
     const customer = await prisma.customer.create({ data: result.data });
     revalidatePath('/dashboard/admin/customers');
+    revalidatePath(`/dashboard/admin/routes/${result.data.routeId}`);
     return { success: true, id: customer.id };
   } catch (error: any) {
     return { error: error.message || 'Failed to create customer' };
@@ -85,10 +87,43 @@ export async function updateCustomer(id: string, data: any) {
       data: result.data
     });
     revalidatePath('/dashboard/admin/customers');
-    revalidatePath(`/dashboard/admin/customers/${id}`);
+    revalidatePath(`/dashboard/admin/routes/${result.data.routeId}`);
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to update customer' };
+  }
+}
+
+export async function moveCustomer(customerId: string, areaId: string | null, routeId: string, cityId: string, stateId: string, salesmanId: string | null) {
+  try {
+    await prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        areaId,
+        routeId,
+        cityId,
+        stateId,
+        salesmanId
+      }
+    });
+    revalidatePath(`/dashboard/admin/routes/${routeId}`);
+    return { success: true };
+  } catch (error: any) {
+    return { error: 'Failed to move customer' };
+  }
+}
+
+export async function deactivateCustomer(id: string, routeId: string) {
+  try {
+    await prisma.customer.update({
+      where: { id },
+      data: { status: 'INACTIVE' }
+    });
+    revalidatePath(`/dashboard/admin/routes/${routeId}`);
+    revalidatePath('/dashboard/admin/customers');
+    return { success: true };
+  } catch (error: any) {
+    return { error: 'Failed to deactivate customer' };
   }
 }
 
