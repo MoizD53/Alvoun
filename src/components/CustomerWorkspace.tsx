@@ -105,7 +105,7 @@ export default function CustomerWorkspace({ customer }: { customer: any }) {
         {/* KPI Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
           <div className="p-4 md:p-6">
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Outstanding</div>
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Dues</div>
             <div className={`text-2xl font-bold ${isNegative ? 'text-alvoun-red' : 'text-slate-900 dark:text-slate-100'}`}>
               {formatMoney(Math.abs(outstanding))}
             </div>
