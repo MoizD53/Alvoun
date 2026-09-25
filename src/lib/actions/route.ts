@@ -83,6 +83,19 @@ export async function deactivateRoute(id: string) {
   }
 }
 
+export async function activateRoute(id: string) {
+  try {
+    await prisma.route.update({
+      where: { id },
+      data: { isActive: true }
+    });
+    revalidatePath('/dashboard/admin/routes');
+    return { success: true };
+  } catch (error: any) {
+    return { error: 'Failed to activate route' };
+  }
+}
+
 export async function deleteRoute(id: string) {
   try {
     const r = await prisma.route.findUnique({
