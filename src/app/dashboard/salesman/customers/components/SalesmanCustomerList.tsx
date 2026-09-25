@@ -206,85 +206,99 @@ export default function SalesmanCustomerList({
               </div>
 
               <div className="space-y-4">
-                {pendingCustomers.map((customer) => (
-                  <div 
-                    key={customer.id} 
-                    className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1 mr-2">
-                        <Link 
-                          href={`/dashboard/salesman/customers/${customer.id}`}
-                          className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight hover:text-alvoun-blue transition-colors block mb-1"
-                        >
-                          {customer.customerName}
-                        </Link>
-                        <div className="flex items-center text-xs font-semibold text-slate-500 dark:text-slate-400 gap-2 mb-2">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-slate-400" />
-                            {customer.route?.name || 'Assigned Area'}
-                          </span>
-                          {customer.contact && (
-                            <span className="flex items-center gap-1 text-slate-400">
-                              • <Phone className="h-3 w-3" /> {customer.contact}
+                {pendingCustomers.map((customer) => {
+                  if (activeCustomerForVisit?.id === customer.id) {
+                    return (
+                      <InteractiveVisitFlow
+                        key={customer.id}
+                        customer={customer}
+                        products={products}
+                        onClose={() => setActiveCustomerForVisit(null)}
+                        onComplete={(visitData) => handleVisitComplete(customer.id, visitData)}
+                      />
+                    );
+                  }
+
+                  return (
+                    <div 
+                      key={customer.id} 
+                      className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1 mr-2">
+                          <Link 
+                            href={`/dashboard/salesman/customers/${customer.id}`}
+                            className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight hover:text-alvoun-blue transition-colors block mb-1"
+                          >
+                            {customer.customerName}
+                          </Link>
+                          <div className="flex items-center text-xs font-semibold text-slate-500 dark:text-slate-400 gap-2 mb-2">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3 text-slate-400" />
+                              {customer.route?.name || 'Assigned Area'}
                             </span>
-                          )}
+                            {customer.contact && (
+                              <span className="flex items-center gap-1 text-slate-400">
+                                • <Phone className="h-3 w-3" /> {customer.contact}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Outstanding dues */}
+                          <div className="text-sm font-bold mt-1">
+                            <span className="text-slate-500 dark:text-slate-400">Outstanding: </span>
+                            <span className={customer.outstanding > 0 ? 'text-alvoun-red font-black' : 'text-slate-900 dark:text-slate-100'}>
+                              {formatMoney(Math.abs(customer.outstanding))}
+                              {customer.outstanding !== 0 && (
+                                <span className="text-[10px] ml-1 uppercase">{customer.outstanding > 0 ? 'Dr' : 'Cr'}</span>
+                              )}
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Outstanding dues */}
-                        <div className="text-sm font-bold mt-1">
-                          <span className="text-slate-500 dark:text-slate-400">Outstanding: </span>
-                          <span className={customer.outstanding > 0 ? 'text-alvoun-red font-black' : 'text-slate-900 dark:text-slate-100'}>
-                            {formatMoney(Math.abs(customer.outstanding))}
-                            {customer.outstanding !== 0 && (
-                              <span className="text-[10px] ml-1 uppercase">{customer.outstanding > 0 ? 'Dr' : 'Cr'}</span>
-                            )}
+                        {/* Status Badge: NOT VISITED */}
+                        <div>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                            <CircleDot className="h-3 w-3 text-slate-400" />
+                            NOT VISITED
                           </span>
                         </div>
                       </div>
 
-                      {/* Status Badge: NOT VISITED */}
-                      <div>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                          <CircleDot className="h-3 w-3 text-slate-400" />
-                          NOT VISITED
-                        </span>
+                      {/* Actions */}
+                      <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/80">
+                        {customer.contact ? (
+                          <a 
+                            href={`tel:${customer.contact}`} 
+                            className="flex items-center justify-center gap-2 py-3 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider active:bg-slate-100 transition-colors"
+                          >
+                            <Phone className="h-3.5 w-3.5 text-slate-400" />
+                            CALL
+                          </a>
+                        ) : (
+                          <Link 
+                            href={`/dashboard/salesman/customers/${customer.id}`} 
+                            className="flex items-center justify-center gap-1.5 py-3 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider active:bg-slate-100 transition-colors"
+                          >
+                            + ADD PHONE
+                          </Link>
+                        )}
+                        
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveCustomerForVisit(customer);
+                          }}
+                          className="flex items-center justify-center gap-1.5 py-3 bg-alvoun-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shadow-alvoun-blue/20 hover:bg-alvoun-dark active:bg-alvoun-dark transition-colors"
+                        >
+                          <ShoppingBag className="h-3.5 w-3.5" />
+                          START VISIT
+                        </button>
                       </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/80">
-                      {customer.contact ? (
-                        <a 
-                          href={`tel:${customer.contact}`} 
-                          className="flex items-center justify-center gap-2 py-3 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider active:bg-slate-100 transition-colors"
-                        >
-                          <Phone className="h-3.5 w-3.5 text-slate-400" />
-                          CALL
-                        </a>
-                      ) : (
-                        <Link 
-                          href={`/dashboard/salesman/customers/${customer.id}`} 
-                          className="flex items-center justify-center gap-1.5 py-3 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider active:bg-slate-100 transition-colors"
-                        >
-                          + ADD PHONE
-                        </Link>
-                      )}
-                      
-                      <button 
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveCustomerForVisit(customer);
-                        }}
-                        className="flex items-center justify-center gap-1.5 py-3 bg-alvoun-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shadow-alvoun-blue/20 hover:bg-alvoun-dark active:bg-alvoun-dark transition-colors"
-                      >
-                        <ShoppingBag className="h-3.5 w-3.5" />
-                        START VISIT
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -406,16 +420,6 @@ export default function SalesmanCustomerList({
         </div>
       )}
 
-      {/* MODAL 1: START VISIT FLOW */}
-      {activeCustomerForVisit && (
-        <InteractiveVisitModal
-          customer={activeCustomerForVisit}
-          products={products}
-          onClose={() => setActiveCustomerForVisit(null)}
-          onComplete={(visitData) => handleVisitComplete(activeCustomerForVisit.id, visitData)}
-        />
-      )}
-
       {/* MODAL 2: VIEW VISIT DETAILS (READ ONLY) */}
       {activeCustomerForView && (
         <ViewVisitModal
@@ -428,9 +432,9 @@ export default function SalesmanCustomerList({
 }
 
 // -------------------------------------------------------------
-// Interactive Visit Modal (Start Visit -> Order -> Payment)
+// Interactive Visit Flow (Start Visit -> Order -> Payment)
 // -------------------------------------------------------------
-function InteractiveVisitModal({
+function InteractiveVisitFlow({
   customer,
   products = [],
   onClose,
@@ -536,32 +540,31 @@ function InteractiveVisitModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
-      <div 
-        className="w-full max-w-lg bg-white dark:bg-slate-950 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[92vh] flex flex-col overflow-hidden animate-slide-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-          <div>
-            <span className="text-[10px] font-bold text-alvoun-blue uppercase tracking-wider block">
-              {step === 'START' ? 'Customer Visit' : step === 'ORDER' ? 'Step 2: Take Order' : 'Step 3: Collect Payment'}
-            </span>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate max-w-[280px]">
-              {customer.customerName}
-            </h2>
-          </div>
-          <button 
-            type="button" 
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <div 
+      className="bg-white dark:bg-slate-950 rounded-xl shadow-lg border-2 border-alvoun-blue/50 overflow-hidden animate-fade-in flex flex-col"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Top Bar */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-blue-50/50 dark:bg-blue-900/10">
+        <div>
+          <span className="text-[10px] font-bold text-alvoun-blue uppercase tracking-wider block">
+            {step === 'START' ? 'Customer Visit' : step === 'ORDER' ? 'Step 2: Take Order' : 'Step 3: Collect Payment'}
+          </span>
+          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate max-w-[280px]">
+            {customer.customerName}
+          </h2>
         </div>
+        <button 
+          type="button" 
+          onClick={onClose}
+          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
-        {/* Modal Content */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+      {/* Content */}
+      <div className="p-5 flex-1 space-y-5">
           {error && (
             <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -782,7 +785,6 @@ function InteractiveVisitModal({
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }
