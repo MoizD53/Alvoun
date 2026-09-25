@@ -1,7 +1,6 @@
 import { getCustomerDetail } from '@/lib/actions/salesman/customer';
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Navigation, IndianRupee } from 'lucide-react';
-import VisitWorkflow from './VisitWorkflow';
 import PhoneManager from './PhoneManager';
 import { notFound } from 'next/navigation';
 import { formatMoney } from '@/lib/format';
@@ -65,7 +64,12 @@ export default async function CustomerDetailPage({
 
       {/* Actions */}
       <div className="space-y-4">
-        <VisitWorkflow customerId={customer.id} />
+        <Link 
+          href={`/dashboard/salesman/customers/${customer.id}/visit`}
+          className="flex items-center justify-center gap-2 w-full py-4 bg-alvoun-blue text-white rounded-xl font-black text-lg shadow-lg shadow-alvoun-blue/20 hover:bg-alvoun-dark active:bg-alvoun-dark transition-colors"
+        >
+          START VISIT
+        </Link>
         
         <Link 
           href={`/dashboard/salesman/customers/${customer.id}/payment`}
