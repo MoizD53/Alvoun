@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useRef, useTransition } from 'react';
 
 export default function CustomerFilterBar({
   initialFilters,
@@ -23,6 +23,35 @@ export default function CustomerFilterBar({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [searchVal, setSearchVal] = useState(initialFilters.search || '');
+  const isFirstMount = useRef(true);
+
+  // Sync state if initialFilters.search changes externally
+  useEffect(() => {
+    setSearchVal(initialFilters.search || '');
+  }, [initialFilters.search]);
+
+  // Debounced search effect (200ms) to ensure smooth fast typing without lag
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (searchVal.trim()) {
+        params.set('search', searchVal.trim());
+      } else {
+        params.delete('search');
+      }
+      params.delete('page');
+      startTransition(() => {
+        router.push(`/dashboard/admin/customers?${params.toString()}`);
+      });
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchVal]);
 
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -37,22 +66,21 @@ export default function CustomerFilterBar({
     });
   };
 
-  const handleSearchChange = (val: string) => {
-    setSearchVal(val);
-    updateParam('search', val);
-  };
-
   return (
     <div className="bg-white dark:bg-slate-950 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
       <div className="flex flex-col lg:flex-row gap-3 items-center">
         <div className="relative w-full lg:w-96 flex-shrink-0">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-slate-400" />
+            {isPending ? (
+              <div className="h-4 w-4 border-2 border-alvoun-blue border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Search className="h-4 w-4 text-slate-400" />
+            )}
           </div>
           <input 
             type="text" 
             value={searchVal}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e) => setSearchVal(e.target.value)}
             placeholder="Search customers..." 
             className="text-slate-900 dark:text-slate-100 w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue transition-colors"
           />

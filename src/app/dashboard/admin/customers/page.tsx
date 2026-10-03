@@ -47,9 +47,9 @@ export default async function CustomersPage({
       city: true,
       route: true,
       salesman: true,
-      sales: { include: { items: true } },
-      payments: true,
-      visits: { orderBy: { createdAt: 'desc' }, take: 1 }
+      sales: { select: { totalAmount: true } },
+      payments: { select: { amount: true } },
+      visits: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 }
     },
     orderBy: { customerName: filters.sort === 'desc' ? 'desc' : 'asc' },
   });
