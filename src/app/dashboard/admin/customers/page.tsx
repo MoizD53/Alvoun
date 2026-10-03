@@ -8,6 +8,7 @@ import { Plus, Filter, Search, Phone, ExternalLink, MoreVertical, ArrowLeft } fr
 import { formatMoney } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import { prisma } from '@/lib/db';
+import CustomerFilterBar from './components/CustomerFilterBar';
 
 export default async function CustomersPage({
   searchParams,
@@ -83,45 +84,11 @@ export default async function CustomersPage({
       </div>
 
       {/* Reusable Filter Bar */}
-      <div className="bg-white dark:bg-slate-950 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <form className="flex flex-col lg:flex-row gap-3 items-center">
-          <div className="relative w-full lg:w-96 flex-shrink-0">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-slate-400" />
-            </div>
-            <input 
-              type="text" 
-              name="search"
-              defaultValue={filters.search}
-              placeholder="Search customers..." 
-              className="text-slate-900 dark:text-slate-100 w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue transition-colors"
-            />
-          </div>
-          
-          <div className="flex w-full lg:w-auto gap-2 overflow-x-auto pb-1 lg:pb-0">
-            <select name="routeId" defaultValue={filters.routeId} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[140px]">
-              <option value="">All Routes</option>
-              {routes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-            <select name="salesmanId" defaultValue={filters.salesmanId} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[140px]">
-              <option value="">All Salesmen</option>
-              {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            <select name="status" defaultValue={filters.status} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[120px]">
-              <option value="">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-            <select name="sort" defaultValue={filters.sort} className="text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-alvoun-blue/20 focus:border-alvoun-blue min-w-[120px]">
-              <option value="asc">A to Z</option>
-              <option value="desc">Z to A</option>
-            </select>
-            <button type="submit" className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-200 dark:bg-slate-700 transition-colors whitespace-nowrap border border-slate-200 dark:border-slate-800">
-              Apply Filters
-            </button>
-          </div>
-        </form>
-      </div>
+      <CustomerFilterBar 
+        initialFilters={filters} 
+        routes={routes} 
+        salesmen={salesmen} 
+      />
 
       {/* Main Table */}
       <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">

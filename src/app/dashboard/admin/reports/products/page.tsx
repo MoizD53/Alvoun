@@ -3,6 +3,7 @@ import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKol
 import { formatMoney, formatNumber } from '@/lib/format';
 import Link from 'next/link';
 import ProductManager from './components/ProductManager';
+import AdminDatePicker from '../../components/AdminDatePicker';
 
 export default async function ProductReportPage({
   searchParams
@@ -69,10 +70,7 @@ export default async function ProductReportPage({
             <p className="text-sm text-slate-500">Historical sales metrics based on the exact amounts sold.</p>
           </div>
           <div className="flex items-center gap-3">
-            <form className="flex items-center gap-2">
-              <input type="date" name="date" defaultValue={dateStr} className="px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100" />
-              <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium">Filter</button>
-            </form>
+            <AdminDatePicker currentDate={dateStr} basePath="/dashboard/admin/reports/products" />
             <a href={`/api/admin/export?type=products&date=${dateStr}`} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap">
               Export Excel
             </a>

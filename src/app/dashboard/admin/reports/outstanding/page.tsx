@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db';
 import { formatMoney } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import Link from 'next/link';
+import OutstandingFilterBar from './OutstandingFilterBar';
 
 export default async function OutstandingReportPage({
   searchParams
@@ -106,45 +107,15 @@ export default async function OutstandingReportPage({
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <form className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center gap-1.5 px-2">
-              <span className="text-xs font-semibold text-slate-400">From</span>
-              <input 
-                type="date" 
-                name="from" 
-                defaultValue={fromDate} 
-                className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100" 
-              />
-            </div>
-            <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-            <div className="flex items-center gap-1.5 px-2">
-              <span className="text-xs font-semibold text-slate-400">To</span>
-              <input 
-                type="date" 
-                name="to" 
-                defaultValue={toDate} 
-                className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100" 
-              />
-            </div>
-            <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-            <select name="salesmanId" defaultValue={salesmanId || ''} className="px-2 py-1 text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100">
-              <option value="">All Salesmen</option>
-              {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-            <select name="routeId" defaultValue={routeId || ''} className="px-2 py-1 text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100">
-              <option value="">All Routes</option>
-              {routes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-            <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 px-2 cursor-pointer">
-              <input type="checkbox" name="outstandingOnly" value="true" defaultChecked={outstandingOnly} className="rounded border-slate-300 dark:border-slate-700 text-alvoun-blue focus:ring-alvoun-blue" />
-              Owing Only
-            </label>
-            <button type="submit" className="px-3 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:opacity-90 rounded-lg text-xs font-bold transition-all">
-              Filter
-            </button>
-          </form>
+          <OutstandingFilterBar 
+            fromDate={fromDate}
+            toDate={toDate}
+            salesmanId={salesmanId}
+            routeId={routeId}
+            outstandingOnly={outstandingOnly}
+            salesmen={salesmen}
+            routes={routes}
+          />
           <a href={`/api/admin/export?type=outstanding&salesmanId=${salesmanId||''}&routeId=${routeId||''}&outstandingOnly=${outstandingOnly}`} className="px-4 py-2 bg-alvoun-green/10 text-alvoun-green border border-alvoun-green/20 hover:bg-alvoun-green/20 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
             Export CSV
           </a>
