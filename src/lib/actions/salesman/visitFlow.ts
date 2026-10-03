@@ -17,7 +17,9 @@ const VisitFlowSchema = z.object({
     productId: z.string(),
     crates: z.number().min(0)
   })).optional(),
-  receivedNow: z.number().min(0)
+  receivedNow: z.number().min(0).optional(),
+  cashReceived: z.number().min(0).optional(),
+  upiReceived: z.number().min(0).optional(),
 });
 
 export async function submitVisitFlow(data: any) {
@@ -34,7 +36,20 @@ export async function submitVisitFlow(data: any) {
   const parsed = VisitFlowSchema.safeParse(data);
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   
-  const { customerId, isNoSale, noSaleReason, items = [], receivedNow } = parsed.data;
+  const { 
+    customerId, 
+    isNoSale, 
+    noSaleReason, 
+    items = [], 
+    receivedNow = 0,
+    cashReceived = 0,
+    upiReceived = 0
+  } = parsed.data;
+
+  // Determine split payments
+  const effectiveCash = cashReceived > 0 ? cashReceived : (upiReceived === 0 && receivedNow > 0 ? receivedNow : 0);
+  const effectiveUpi = upiReceived > 0 ? upiReceived : 0;
+  const totalReceived = effectiveCash + effectiveUpi;
 
   // Verify ownership
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
@@ -70,7 +85,7 @@ export async function submitVisitFlow(data: any) {
       }
     }
 
-    if (receivedNow > totalAmount) {
+    if (totalReceived > totalAmount) {
       throw new Error('Received amount cannot be greater than today\'s sale amount in this flow. Please use the standalone collection for previous dues if this exceeds the current sale.');
     }
 
@@ -104,14 +119,24 @@ export async function submitVisitFlow(data: any) {
         });
       }
 
-      // 3. Create Payment (if applicable)
-      if (receivedNow > 0) {
+      // 3. Create Payments (if applicable)
+      if (effectiveCash > 0) {
         await tx.payment.create({
           data: {
             customerId,
             salesmanId,
-            amount: receivedNow,
-            paymentMethod: 'CASH'
+            amount: effectiveCash,
+            paymentMethod: 'Cash'
+          }
+        });
+      }
+      if (effectiveUpi > 0) {
+        await tx.payment.create({
+          data: {
+            customerId,
+            salesmanId,
+            amount: effectiveUpi,
+            paymentMethod: 'UPI'
           }
         });
       }
@@ -142,18 +167,27 @@ export async function submitVisitFlow(data: any) {
         description: `Completed visit and sale worth ₹${(totalAmount / 100).toFixed(2)} at ${customer.customerName}`,
         metadata: { amount: totalAmount }
       });
-      if (receivedNow > 0) {
+      if (effectiveCash > 0) {
         await logAndEmitActivity({
           salesmanId,
           salesmanName,
           type: 'PAYMENT',
-          description: `Collected ₹${(receivedNow / 100).toFixed(2)} at ${customer.customerName}`,
-          metadata: { amount: receivedNow }
+          description: `Collected ₹${(effectiveCash / 100).toFixed(2)} (Cash) at ${customer.customerName}`,
+          metadata: { amount: effectiveCash, method: 'Cash' }
+        });
+      }
+      if (effectiveUpi > 0) {
+        await logAndEmitActivity({
+          salesmanId,
+          salesmanName,
+          type: 'PAYMENT',
+          description: `Collected ₹${(effectiveUpi / 100).toFixed(2)} (UPI) at ${customer.customerName}`,
+          metadata: { amount: effectiveUpi, method: 'UPI' }
         });
       }
     }
 
-    const dueFromSale = Math.max(0, totalAmount - receivedNow);
+    const dueFromSale = Math.max(0, totalAmount - totalReceived);
 
     return { 
       success: true,

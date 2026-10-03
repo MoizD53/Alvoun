@@ -1,5 +1,6 @@
-import { Home, Users, ShoppingBag, User, Droplet, LogOut } from 'lucide-react';
+import { Home, Users, ShoppingBag, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { auth, signOut } from '@/auth';
 import { getCurrentKolkataTime, isWorkingHours } from '@/lib/time';
 import LocationTracker from './components/LocationTracker';
@@ -20,9 +21,18 @@ export default async function SalesmanLayout({
       
       {/* Mobile Top Header */}
       <header className="bg-white dark:bg-gray-950 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-30 px-4 h-14 flex items-center justify-between shadow-sm">
-        <div className="flex items-center text-alvoun-blue">
-          <Droplet className="h-6 w-6 fill-current" />
-          <span className="ml-2 font-bold text-slate-900 dark:text-slate-100 tracking-tight">ALVOUN</span>
+        <div className="flex items-center gap-2">
+          <div className="relative h-7 w-7 rounded-lg overflow-hidden flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-center">
+            <Image 
+              src="/alvoun-logo-icon.png" 
+              alt="ALVOUN" 
+              width={28} 
+              height={28} 
+              className="object-contain p-0.5" 
+              priority 
+            />
+          </div>
+          <span className="font-bold text-slate-900 dark:text-slate-100 tracking-tight">ALVOUN</span>
         </div>
         <div className="flex items-center space-x-3">
           <ThemeToggle />

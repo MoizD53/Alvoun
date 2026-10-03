@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
@@ -16,7 +17,6 @@ import {
   Menu,
   X,
   LogOut,
-  Droplet,
   Bell,
   History
 } from 'lucide-react';
@@ -70,9 +70,18 @@ export default function AdminNav({ user }: { user: any }) {
       `}>
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-          <Link href="/dashboard/admin" className="flex items-center text-alvoun-blue">
-            <Droplet className="h-7 w-7 fill-current" />
-            <span className="ml-2 text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">ALVOUN</span>
+          <Link href="/dashboard/admin" className="flex items-center gap-2.5">
+            <div className="relative h-8 w-8 rounded-lg overflow-hidden flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-center">
+              <Image 
+                src="/alvoun-logo-icon.png" 
+                alt="ALVOUN" 
+                width={32} 
+                height={32} 
+                className="object-contain p-0.5" 
+                priority 
+              />
+            </div>
+            <span className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">ALVOUN</span>
           </Link>
           <button 
             onClick={() => setSidebarOpen(false)}
@@ -192,9 +201,18 @@ export default function AdminNav({ user }: { user: any }) {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="flex items-center text-alvoun-blue">
-            <Droplet className="h-6 w-6 fill-current" />
-            <span className="ml-2 font-bold text-slate-900 dark:text-slate-100">ALVOUN</span>
+          <div className="flex items-center gap-2">
+            <div className="relative h-7 w-7 rounded-lg overflow-hidden flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-center">
+              <Image 
+                src="/alvoun-logo-icon.png" 
+                alt="ALVOUN" 
+                width={28} 
+                height={28} 
+                className="object-contain p-0.5" 
+                priority 
+              />
+            </div>
+            <span className="font-bold text-slate-900 dark:text-slate-100">ALVOUN</span>
           </div>
         </div>
         

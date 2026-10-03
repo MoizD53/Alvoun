@@ -3,6 +3,7 @@ import { getKolkataTimeDetails, getCurrentKolkataTime, getKolkataStartOfDay, get
 import { formatMoney, formatNumber } from '@/lib/format';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import MonthlyFilterBar from './MonthlyFilterBar';
 
 export default async function MonthlyReportsPage({
   searchParams
@@ -14,10 +15,22 @@ export default async function MonthlyReportsPage({
   const currentDetails = getKolkataTimeDetails(now);
   
   const year = parseInt(resolvedParams.year || String(currentDetails.year));
+  const selectedMonth = resolvedParams.month; // undefined or e.g. "10"
 
-  // Get boundaries for the entire year
-  const start = getKolkataStartOfDay(`${year}-01-01`);
-  const end = getKolkataEndOfDay(`${year}-12-31`);
+  // Get boundaries for the query: if month selected, filter down to that month, else entire year
+  let start: Date;
+  let end: Date;
+
+  if (selectedMonth) {
+    const formattedMonth = selectedMonth.padStart(2, '0');
+    // Calculate last day of that month
+    const lastDay = new Date(year, parseInt(formattedMonth), 0).getDate();
+    start = getKolkataStartOfDay(`${year}-${formattedMonth}-01`);
+    end = getKolkataEndOfDay(`${year}-${formattedMonth}-${String(lastDay).padStart(2, '0')}`);
+  } else {
+    start = getKolkataStartOfDay(`${year}-01-01`);
+    end = getKolkataEndOfDay(`${year}-12-31`);
+  }
 
   const [products, sales, payments] = await Promise.all([
     prisma.product.findMany({
@@ -78,11 +91,8 @@ export default async function MonthlyReportsPage({
           </Link>
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Monthly Sales Report</h2>
         </div>
-        <div className="flex items-center gap-3">
-          <form className="flex items-center gap-2">
-            <input type="number" name="year" defaultValue={year} className="w-24 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100" />
-            <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium">Filter</button>
-          </form>
+        <div>
+          <MonthlyFilterBar year={year} month={selectedMonth} />
         </div>
       </div>
 

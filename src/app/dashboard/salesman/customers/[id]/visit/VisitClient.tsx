@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatMoney } from '@/lib/format';
 import { submitVisitFlow } from '@/lib/actions/salesman/visitFlow';
-import { ArrowLeft, Box, CheckCircle2, Minus, Plus, ShoppingBag, XCircle, AlertTriangle, Check } from 'lucide-react';
+import { ArrowLeft, Box, CheckCircle2, Minus, Plus, ShoppingBag, XCircle, AlertTriangle, Check, Banknote, QrCode } from 'lucide-react';
 
 type Step = 'START' | 'ORDER' | 'PAYMENT' | 'SUCCESS';
 
@@ -18,8 +18,9 @@ export default function VisitClient({ customer, products = [] }: { customer: any
   // Order State: productId -> crates
   const [order, setOrder] = useState<Record<string, number>>({});
   
-  // Payment State
-  const [receivedNowStr, setReceivedNowStr] = useState<string>('');
+  // Payment State: separate Cash and UPI
+  const [cashReceivedStr, setCashReceivedStr] = useState<string>('');
+  const [upiReceivedStr, setUpiReceivedStr] = useState<string>('');
   
   // Form status
   const [loading, setLoading] = useState(false);
@@ -38,8 +39,10 @@ export default function VisitClient({ customer, products = [] }: { customer: any
   }).filter(p => p.crates > 0);
 
   const totalSaleAmount = orderItems.reduce((sum, item) => sum + item.amount, 0);
-  const receivedNowCents = receivedNowStr ? Math.round(parseFloat(receivedNowStr) * 100) : 0;
-  const dueFromSale = Math.max(0, totalSaleAmount - receivedNowCents);
+  const cashReceivedCents = cashReceivedStr ? Math.round(parseFloat(cashReceivedStr) * 100) : 0;
+  const upiReceivedCents = upiReceivedStr ? Math.round(parseFloat(upiReceivedStr) * 100) : 0;
+  const totalReceivedCents = cashReceivedCents + upiReceivedCents;
+  const dueFromSale = Math.max(0, totalSaleAmount - totalReceivedCents);
   const currentOutstanding = customer?.outstanding ?? 0;
   const finalOutstanding = currentOutstanding + dueFromSale;
 
@@ -55,8 +58,8 @@ export default function VisitClient({ customer, products = [] }: { customer: any
     setLoading(true);
     setError(null);
     
-    if (!isNoSaleFlow && receivedNowCents > totalSaleAmount) {
-      setError("Received amount cannot exceed today's sale amount.");
+    if (!isNoSaleFlow && totalReceivedCents > totalSaleAmount) {
+      setError("Total received amount (Cash + UPI) cannot exceed today's sale amount.");
       setLoading(false);
       return;
     }
@@ -66,7 +69,9 @@ export default function VisitClient({ customer, products = [] }: { customer: any
       isNoSale: isNoSaleFlow,
       noSaleReason: isNoSaleFlow ? noSaleReason : undefined,
       items: isNoSaleFlow ? [] : orderItems.map(i => ({ productId: i.id, crates: i.crates })),
-      receivedNow: isNoSaleFlow ? 0 : receivedNowCents
+      receivedNow: isNoSaleFlow ? 0 : totalReceivedCents,
+      cashReceived: isNoSaleFlow ? 0 : cashReceivedCents,
+      upiReceived: isNoSaleFlow ? 0 : upiReceivedCents
     };
 
     const res = await submitVisitFlow(payload);
@@ -291,38 +296,81 @@ export default function VisitClient({ customer, products = [] }: { customer: any
           <h2 className="text-xl font-black text-slate-900 dark:text-slate-100">Payment</h2>
         </div>
 
-        <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sale Today</p>
-          <p className="text-4xl font-black mb-6">{formatMoney(totalSaleAmount)}</p>
+        <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl space-y-4">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Sale Today</p>
+            <p className="text-4xl font-black">{formatMoney(totalSaleAmount)}</p>
+          </div>
           
-          <div className="bg-white/10 rounded-2xl p-4">
-            <p className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Received Now (₹)</p>
-            <input 
-              type="number" 
-              inputMode="decimal"
-              placeholder="0"
-              value={receivedNowStr}
-              onChange={(e) => setReceivedNowStr(e.target.value)}
-              className="w-full bg-transparent text-3xl font-black placeholder-white/20 focus:outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            {/* Cash Input */}
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+              <div className="flex items-center gap-2 mb-2 text-emerald-400">
+                <Banknote className="h-4 w-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">Cash Collected (₹)</span>
+              </div>
+              <input 
+                type="number" 
+                inputMode="decimal"
+                placeholder="0"
+                value={cashReceivedStr}
+                onChange={(e) => setCashReceivedStr(e.target.value)}
+                className="w-full bg-transparent text-2xl font-black placeholder-white/20 focus:outline-none"
+              />
+            </div>
+
+            {/* UPI Input */}
+            <div className="bg-white/10 rounded-2xl p-4 border border-white/10">
+              <div className="flex items-center gap-2 mb-2 text-sky-400">
+                <QrCode className="h-4 w-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">UPI Collected (₹)</span>
+              </div>
+              <input 
+                type="number" 
+                inputMode="decimal"
+                placeholder="0"
+                value={upiReceivedStr}
+                onChange={(e) => setUpiReceivedStr(e.target.value)}
+                className="w-full bg-transparent text-2xl font-black placeholder-white/20 focus:outline-none"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-950 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-bold text-slate-500">Previous Outstanding</span>
-            <span className="text-base font-black text-slate-900 dark:text-slate-100">{formatMoney(currentOutstanding)}</span>
+        <div className="bg-white dark:bg-slate-950 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="flex justify-between items-center text-sm">
+            <span className="font-bold text-slate-500">Previous Outstanding</span>
+            <span className="font-black text-slate-900 dark:text-slate-100">{formatMoney(currentOutstanding)}</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-bold text-slate-500">Today's Sale</span>
-            <span className="text-base font-black text-slate-900 dark:text-slate-100">+{formatMoney(totalSaleAmount)}</span>
+          <div className="flex justify-between items-center text-sm">
+            <span className="font-bold text-slate-500">Today's Sale</span>
+            <span className="font-black text-slate-900 dark:text-slate-100">+{formatMoney(totalSaleAmount)}</span>
           </div>
-          <div className="flex justify-between items-center text-alvoun-green">
-            <span className="text-sm font-bold">Received Now</span>
-            <span className="text-base font-black">-{formatMoney(receivedNowCents)}</span>
+
+          {/* Breakdown if entered */}
+          {cashReceivedCents > 0 && (
+            <div className="flex justify-between items-center text-sm text-emerald-600 dark:text-emerald-400">
+              <span className="font-bold flex items-center gap-1.5"><Banknote className="h-3.5 w-3.5" /> Cash Collected</span>
+              <span className="font-black">-{formatMoney(cashReceivedCents)}</span>
+            </div>
+          )}
+          {upiReceivedCents > 0 && (
+            <div className="flex justify-between items-center text-sm text-sky-600 dark:text-sky-400">
+              <span className="font-bold flex items-center gap-1.5"><QrCode className="h-3.5 w-3.5" /> UPI Collected</span>
+              <span className="font-black">-{formatMoney(upiReceivedCents)}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center text-sm text-alvoun-green font-bold pt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
+            <span>Total Collected Now</span>
+            <span className="font-black">-{formatMoney(totalReceivedCents)}</span>
           </div>
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-            <span className="text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">Total Outstanding</span>
+
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <div>
+              <span className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider block">New Total Outstanding</span>
+              <span className="text-[11px] text-slate-400 font-semibold">(Automatically Calculated)</span>
+            </div>
             <span className="text-2xl font-black text-alvoun-red">{formatMoney(finalOutstanding)}</span>
           </div>
         </div>
@@ -363,9 +411,21 @@ export default function VisitClient({ customer, products = [] }: { customer: any
               <span className="text-sm font-bold text-slate-500">Sale</span>
               <span className="text-base font-black text-slate-900 dark:text-slate-100">{formatMoney(totalSaleAmount)}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-bold text-slate-500">Received</span>
-              <span className="text-base font-black text-alvoun-green">{formatMoney(receivedNowCents)}</span>
+            {cashReceivedCents > 0 && (
+              <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                <span className="text-sm font-bold flex items-center gap-1.5"><Banknote className="h-4 w-4" /> Cash</span>
+                <span className="text-base font-black">{formatMoney(cashReceivedCents)}</span>
+              </div>
+            )}
+            {upiReceivedCents > 0 && (
+              <div className="flex justify-between items-center text-sky-600 dark:text-sky-400">
+                <span className="text-sm font-bold flex items-center gap-1.5"><QrCode className="h-4 w-4" /> UPI</span>
+                <span className="text-base font-black">{formatMoney(upiReceivedCents)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-sm font-bold text-slate-500">Total Received</span>
+              <span className="text-base font-black text-alvoun-green">{formatMoney(totalReceivedCents)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm font-bold text-slate-500">New Due from Sale</span>
