@@ -33,10 +33,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               const now = getCurrentKolkataTime();
               const timeDetails = getKolkataTimeDetails(now);
               
-              // TEMPORARILY DISABLED: 7 AM to 7 PM login restriction
-              // if (timeDetails.hour < 7 || timeDetails.hour >= 19) {
-              //   throw new Error("Salesman login is available only between 7:00 AM and 7:00 PM. Please try again tomorrow after 7:00 AM.");
-              // }
+              if (timeDetails.hour < 7 || timeDetails.hour >= 19) {
+                throw new Error("Salesman login is available only between 7:00 AM and 7:00 PM. Please try again tomorrow after 7:00 AM.");
+              }
               
               const salesman = await prisma.salesman.findUnique({
                 where: { profileId: user.id }

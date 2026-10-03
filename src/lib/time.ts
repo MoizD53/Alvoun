@@ -36,10 +36,8 @@ export function getKolkataTimeDetails(date: Date) {
 }
 
 export function isWorkingHours(date: Date) {
-  // TEMPORARILY DISABLED: Allow 24/7 working hours
-  return true;
-  // const details = getKolkataTimeDetails(date);
-  // return details.hour >= 7 && details.hour < 19;
+  const details = getKolkataTimeDetails(date);
+  return details.hour >= 7 && details.hour < 19;
 }
 
 export function getKolkataDateOnly(date: Date) {
