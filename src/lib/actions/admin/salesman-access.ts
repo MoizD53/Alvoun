@@ -81,15 +81,6 @@ export async function assignTerritory(salesmanId: string, assignments: { routeId
       // 4. Assign customers in those areas to this salesman
       const areaIds = assignments.map(a => a.areaId);
       
-      // Ensure no other salesman claims these areas (territory is exclusive)
-      // Remove other salesmen from these areas if they exist
-      await tx.salesmanAssignment.deleteMany({
-        where: {
-          areaId: { in: areaIds },
-          salesmanId: { not: salesmanId }
-        }
-      });
-      
       await tx.customer.updateMany({
         where: { areaId: { in: areaIds } },
         data: { salesmanId }

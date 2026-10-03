@@ -27,7 +27,7 @@ export default function CustomerWorkspace({ customer }: { customer: any }) {
   const totalPayments = customer.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
   
   const lastVisit = customer.visits?.[0]?.createdAt ? new Date(customer.visits[0].createdAt).toLocaleDateString() : 'Never';
-  const lastPayment = customer.payments?.[0]?.date ? new Date(customer.payments[0].date).toLocaleDateString() : 'None';
+  const lastPayment = customer.payments?.[0]?.paymentDate ? new Date(customer.payments[0].paymentDate).toLocaleDateString() : 'None';
 
   // Build Ledger
   const ledgerEntries = [
@@ -41,7 +41,7 @@ export default function CustomerWorkspace({ customer }: { customer: any }) {
     },
     ...customer.sales.map((s: any) => ({
       id: `sale-${s.id}`,
-      date: s.date,
+      date: s.saleDate || s.createdAt,
       type: 'SALE',
       description: `Sale #${s.id.slice(-6)}`,
       amount: s.totalAmount,
@@ -49,9 +49,9 @@ export default function CustomerWorkspace({ customer }: { customer: any }) {
     })),
     ...customer.payments.map((p: any) => ({
       id: `payment-${p.id}`,
-      date: p.date,
+      date: p.paymentDate || p.createdAt,
       type: 'PAYMENT',
-      description: `Payment (${p.method})`,
+      description: `Payment (${p.paymentMethod || 'Cash'})`,
       amount: p.amount,
       isCredit: true,
     }))

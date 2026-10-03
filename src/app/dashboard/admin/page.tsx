@@ -1,13 +1,14 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
+import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKolkataTimeDetails, getKolkataDateString } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { TrendingUp, Wallet, CreditCard, MapPin } from 'lucide-react';
 import AdminCharts, { AdminChartsSkeleton } from './components/AdminCharts';
 import LiveDashboardManager from './components/LiveDashboardManager';
+import AdminDatePicker from './components/AdminDatePicker';
 
 import InteractiveKPIRow, { KPIItem } from './components/InteractiveKPIRow';
 import { KPIProvider } from './components/KPIContext';
@@ -192,11 +193,7 @@ export default async function AdminDashboard({
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>
           </div>
           <div className="flex items-center gap-3">
-            <input 
-              type="date" 
-              defaultValue={startOfDay.toISOString().split('T')[0]}
-              className="text-sm border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-alvoun-blue/20 outline-none"
-            />
+            <AdminDatePicker currentDate={dateStr || getKolkataDateString(now)} />
           </div>
         </div>
 

@@ -45,6 +45,13 @@ export function getKolkataDateOnly(date: Date) {
   return new Date(Date.UTC(details.year, details.month - 1, details.day));
 }
 
+export function getKolkataDateString(date: Date = getCurrentKolkataTime()): string {
+  const details = getKolkataTimeDetails(date);
+  const mm = String(details.month).padStart(2, '0');
+  const dd = String(details.day).padStart(2, '0');
+  return `${details.year}-${mm}-${dd}`;
+}
+
 export function getKolkataStartOfDay(date?: Date | string) {
   const d = date ? new Date(date) : getCurrentKolkataTime();
   const details = getKolkataTimeDetails(d);

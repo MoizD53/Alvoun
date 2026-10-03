@@ -19,7 +19,10 @@ export default async function MonthlyReportsPage({
   const start = getKolkataStartOfDay(`${year}-01-01`);
   const end = getKolkataEndOfDay(`${year}-12-31`);
 
-  const [sales, payments] = await Promise.all([
+  const [products, sales, payments] = await Promise.all([
+    prisma.product.findMany({
+      orderBy: { bottlesPerCrate: 'asc' } // 1L (12), 500ml (24), 250ml (48)
+    }),
     prisma.sale.findMany({
       where: { saleDate: { gte: start, lte: end } },
       include: { items: true }
@@ -35,12 +38,15 @@ export default async function MonthlyReportsPage({
     // YYYY-MM
     const dateStr = date.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }).substring(0, 7); 
     if (!monthsMap.has(dateStr)) {
+      const productCrates: Record<string, number> = {};
+      products.forEach(p => { productCrates[p.id] = 0; });
       monthsMap.set(dateStr, {
         monthStr: dateStr,
         salesAmount: 0,
         collectionAmount: 0,
         numSales: 0,
-        crates: 0
+        crates: 0,
+        productCrates
       });
     }
     return monthsMap.get(dateStr);
@@ -50,7 +56,10 @@ export default async function MonthlyReportsPage({
     const m = ensureMonth(s.saleDate);
     m.salesAmount += s.totalAmount;
     m.numSales++;
-    s.items.forEach(i => m.crates += i.crates);
+    s.items.forEach(i => {
+      m.crates += i.crates;
+      m.productCrates[i.productId] = (m.productCrates[i.productId] || 0) + i.crates;
+    });
   });
 
   payments.forEach(p => {
@@ -71,7 +80,7 @@ export default async function MonthlyReportsPage({
         </div>
         <div className="flex items-center gap-3">
           <form className="flex items-center gap-2">
-            <input type="number" name="year" defaultValue={year} className="w-24 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900" />
+            <input type="number" name="year" defaultValue={year} className="w-24 px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg text-sm bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100" />
             <button type="submit" className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium">Filter</button>
           </form>
         </div>
@@ -88,7 +97,7 @@ export default async function MonthlyReportsPage({
               <th className="px-4 py-3 text-right">Crates Sold</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
             {reportData.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">No data for this year.</td>
@@ -102,8 +111,20 @@ export default async function MonthlyReportsPage({
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{monthName} {y}</td>
                     <td className="px-4 py-3 text-right font-bold text-alvoun-blue">{formatMoney(row.salesAmount)}</td>
                     <td className="px-4 py-3 text-right font-bold text-green-600">{formatMoney(row.collectionAmount)}</td>
-                    <td className="px-4 py-3 text-right">{formatNumber(row.numSales)}</td>
-                    <td className="px-4 py-3 text-right">{formatNumber(row.crates)}</td>
+                    <td className="px-4 py-3 text-right font-medium">{formatNumber(row.numSales)}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">{formatNumber(row.crates)}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap justify-end gap-x-2 gap-y-0.5 mt-0.5">
+                        {products.map(p => {
+                          const count = row.productCrates[p.id] || 0;
+                          return (
+                            <span key={p.id} className="whitespace-nowrap">
+                              <span className="font-semibold text-slate-700 dark:text-slate-300">{p.name}:</span> {count}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </td>
                   </tr>
                 );
               })

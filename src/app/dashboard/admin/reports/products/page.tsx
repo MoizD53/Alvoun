@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime } from '@/lib/time';
+import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
 import Link from 'next/link';
 import ProductManager from './components/ProductManager';
@@ -11,7 +11,7 @@ export default async function ProductReportPage({
 }) {
   const resolvedParams = await searchParams;
   const now = getCurrentKolkataTime();
-  const dateStr = resolvedParams.date || now.toISOString().split('T')[0];
+  const dateStr = resolvedParams.date || getKolkataDateString(now);
   
   const start = getKolkataStartOfDay(dateStr);
   const end = getKolkataEndOfDay(dateStr);

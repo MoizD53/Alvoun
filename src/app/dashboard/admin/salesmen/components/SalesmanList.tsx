@@ -172,17 +172,30 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {salesman.routes && salesman.routes.length > 0 ? (
-                      <div className="flex flex-col">
-                        {salesman.routes.map((r: any) => (
-                          <div key={r.id} className="text-sm text-slate-900 dark:text-slate-100 flex items-center">
-                            <MapPin className="w-3 h-3 mr-1 text-slate-400" /> {r.name}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-slate-500">Unassigned</span>
-                    )}
+                    {(() => {
+                      const allRoutesMap = new Map();
+                      if (salesman.routes) {
+                        salesman.routes.forEach((r: any) => allRoutesMap.set(r.id, r.name));
+                      }
+                      if (salesman.assignments) {
+                        salesman.assignments.forEach((a: any) => {
+                          if (a.route) allRoutesMap.set(a.route.id, a.route.name);
+                        });
+                      }
+                      const uniqueRoutes = Array.from(allRoutesMap.entries());
+
+                      return uniqueRoutes.length > 0 ? (
+                        <div className="flex flex-col gap-1">
+                          {uniqueRoutes.map(([id, name]) => (
+                            <div key={id} className="text-sm text-slate-900 dark:text-slate-100 flex items-center">
+                              <MapPin className="w-3 h-3 mr-1 text-slate-400" /> {name}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500">Unassigned</span>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col">

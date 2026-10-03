@@ -12,10 +12,23 @@ export default async function OutstandingReportPage({
   const salesmanId = resolvedParams.salesmanId;
   const routeId = resolvedParams.routeId;
   const outstandingOnly = resolvedParams.outstandingOnly !== 'false';
+  const fromDate = resolvedParams.from || '';
+  const toDate = resolvedParams.to || '';
 
   const where: any = { status: 'ACTIVE' };
   if (salesmanId) where.salesmanId = salesmanId;
   if (routeId) where.routeId = routeId;
+
+  const salesDateFilter: any = {};
+  const paymentsDateFilter: any = {};
+  if (fromDate) {
+    salesDateFilter.gte = new Date(`${fromDate}T00:00:00+05:30`);
+    paymentsDateFilter.gte = new Date(`${fromDate}T00:00:00+05:30`);
+  }
+  if (toDate) {
+    salesDateFilter.lte = new Date(`${toDate}T23:59:59+05:30`);
+    paymentsDateFilter.lte = new Date(`${toDate}T23:59:59+05:30`);
+  }
 
   const customers = await prisma.customer.findMany({
     where,
@@ -24,23 +37,48 @@ export default async function OutstandingReportPage({
       route: true,
       city: true,
       state: true,
-      sales: { select: { totalAmount: true } },
-      payments: { select: { amount: true } }
+      sales: { 
+        where: Object.keys(salesDateFilter).length > 0 ? { saleDate: salesDateFilter } : undefined,
+        select: { totalAmount: true, saleDate: true },
+        orderBy: { saleDate: 'desc' }
+      },
+      payments: { 
+        where: Object.keys(paymentsDateFilter).length > 0 ? { paymentDate: paymentsDateFilter } : undefined,
+        select: { amount: true, paymentDate: true },
+        orderBy: { paymentDate: 'desc' }
+      }
     }
   });
 
   let reportData = customers.map(c => {
-    // Note: This relies on the sum calculation version of calculateOutstanding. 
-    // In actual production we might fetch all sales/payments if the calculation is more complex, 
-    // but totalAmount/amount is enough for the simple sum method.
     const outstanding = calculateOutstanding(c as any);
     const totalSales = c.sales.reduce((sum, s) => sum + s.totalAmount, 0);
     const totalPayments = c.payments.reduce((sum, p) => sum + p.amount, 0);
-    return { ...c, outstanding, totalSales, totalPayments };
+    const periodDues = totalSales - totalPayments;
+
+    // Get last active transaction date in this period or overall
+    const lastSaleDate = c.sales[0]?.saleDate ? new Date(c.sales[0].saleDate) : null;
+    const lastPaymentDate = c.payments[0]?.paymentDate ? new Date(c.payments[0].paymentDate) : null;
+    
+    let lastDate: Date | null = null;
+    if (lastSaleDate && lastPaymentDate) {
+      lastDate = lastSaleDate > lastPaymentDate ? lastSaleDate : lastPaymentDate;
+    } else {
+      lastDate = lastSaleDate || lastPaymentDate;
+    }
+
+    return { 
+      ...c, 
+      outstanding, 
+      totalSales, 
+      totalPayments, 
+      periodDues,
+      lastDate: lastDate ? lastDate.toLocaleDateString('en-IN') : '-'
+    };
   });
 
   if (outstandingOnly) {
-    reportData = reportData.filter(c => c.outstanding > 0);
+    reportData = reportData.filter(c => fromDate || toDate ? c.periodDues > 0 || c.outstanding > 0 : c.outstanding > 0);
   }
 
   reportData.sort((a, b) => b.outstanding - a.outstanding);
@@ -49,37 +87,65 @@ export default async function OutstandingReportPage({
   const routes = await prisma.route.findMany({ where: { isActive: true } });
 
   const totalMarketOutstanding = reportData.reduce((sum, c) => sum + c.outstanding, 0);
+  const totalPeriodDues = reportData.reduce((sum, c) => sum + c.periodDues, 0);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Dues Report</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Total Market Dues: <span className="font-bold text-alvoun-red ml-1">{formatMoney(totalMarketOutstanding)}</span>
-          </p>
+          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <span>
+              Total Market Dues: <span className="font-bold text-alvoun-red ml-1">{formatMoney(totalMarketOutstanding)}</span>
+            </span>
+            {(fromDate || toDate) && (
+              <span>
+                • Period Net Dues: <span className="font-bold text-amber-600 ml-1">{formatMoney(totalPeriodDues)}</span>
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <form className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-950 p-1 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
-            <select name="salesmanId" defaultValue={salesmanId || ''} className="px-2 py-1.5 text-sm bg-transparent border-none focus:ring-0 focus:outline-none">
+          <form className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center gap-1.5 px-2">
+              <span className="text-xs font-semibold text-slate-400">From</span>
+              <input 
+                type="date" 
+                name="from" 
+                defaultValue={fromDate} 
+                className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100" 
+              />
+            </div>
+            <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+            <div className="flex items-center gap-1.5 px-2">
+              <span className="text-xs font-semibold text-slate-400">To</span>
+              <input 
+                type="date" 
+                name="to" 
+                defaultValue={toDate} 
+                className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100" 
+              />
+            </div>
+            <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+            <select name="salesmanId" defaultValue={salesmanId || ''} className="px-2 py-1 text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100">
               <option value="">All Salesmen</option>
               {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
             <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-            <select name="routeId" defaultValue={routeId || ''} className="px-2 py-1.5 text-sm bg-transparent border-none focus:ring-0 focus:outline-none">
+            <select name="routeId" defaultValue={routeId || ''} className="px-2 py-1 text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100">
               <option value="">All Routes</option>
               {routes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
             <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 px-2 cursor-pointer">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 px-2 cursor-pointer">
               <input type="checkbox" name="outstandingOnly" value="true" defaultChecked={outstandingOnly} className="rounded border-slate-300 dark:border-slate-700 text-alvoun-blue focus:ring-alvoun-blue" />
               Owing Only
             </label>
-            <button type="submit" className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:bg-slate-700 rounded text-sm font-medium transition-colors">
+            <button type="submit" className="px-3 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:opacity-90 rounded-lg text-xs font-bold transition-all">
               Filter
             </button>
           </form>
-          <a href={`/api/admin/export?type=outstanding&salesmanId=${salesmanId||''}&routeId=${routeId||''}&outstandingOnly=${outstandingOnly}`} className="px-4 py-2 bg-alvoun-green/10 text-alvoun-green border border-alvoun-green/20 hover:bg-alvoun-green/20 rounded-md text-sm font-medium transition-colors whitespace-nowrap">
+          <a href={`/api/admin/export?type=outstanding&salesmanId=${salesmanId||''}&routeId=${routeId||''}&outstandingOnly=${outstandingOnly}`} className="px-4 py-2 bg-alvoun-green/10 text-alvoun-green border border-alvoun-green/20 hover:bg-alvoun-green/20 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
             Export CSV
           </a>
         </div>
@@ -94,14 +160,15 @@ export default async function OutstandingReportPage({
                 <th className="px-6 py-3">Route / Salesman</th>
                 <th className="px-6 py-3 text-right">Total Sales</th>
                 <th className="px-6 py-3 text-right">Total Payments</th>
-                <th className="px-6 py-3 text-right">Dues</th>
+                <th className="px-6 py-3 text-center">Last Active Date</th>
+                <th className="px-6 py-3 text-right">Total Dues</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {reportData.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     No customers with dues found for this criteria.
                   </td>
                 </tr>
@@ -118,7 +185,15 @@ export default async function OutstandingReportPage({
                     </td>
                     <td className="px-6 py-3 text-right font-medium text-slate-700 dark:text-slate-300">{formatMoney(c.totalSales)}</td>
                     <td className="px-6 py-3 text-right font-medium text-alvoun-green">{formatMoney(c.totalPayments)}</td>
-                    <td className="px-6 py-3 text-right font-bold text-alvoun-red">{formatMoney(c.outstanding)}</td>
+                    <td className="px-6 py-3 text-center text-xs text-slate-500 dark:text-slate-400">{c.lastDate}</td>
+                    <td className="px-6 py-3 text-right font-bold text-alvoun-red">
+                      <div>{formatMoney(c.outstanding)}</div>
+                      {(fromDate || toDate) && (
+                        <div className="text-[11px] font-normal text-slate-400">
+                          Period: {formatMoney(c.periodDues)}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-3 text-right">
                       <Link href={`/dashboard/admin/customers/${c.id}`} className="text-alvoun-blue hover:text-alvoun-dark font-medium text-xs opacity-0 group-hover:opacity-100 transition-opacity">
                         View Profile

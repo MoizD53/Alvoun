@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getKolkataTimeDetails, getCurrentKolkataTime } from '@/lib/time';
+import { getKolkataTimeDetails, getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
 import DailyRegisterClient from './DailyRegisterClient';
 
 export default async function DailyReportsPage({
@@ -11,7 +11,7 @@ export default async function DailyReportsPage({
   const now = getCurrentKolkataTime();
   
   // Parse date range
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = getKolkataDateString(now);
   const fromDate = resolvedParams.from || todayStr;
   const toDate = resolvedParams.to || todayStr;
 

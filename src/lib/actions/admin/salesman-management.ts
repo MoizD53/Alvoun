@@ -90,11 +90,6 @@ export async function createSalesmanAccount(data: any) {
         throw new Error('Data integrity error: One or more selected areas do not belong to the selected route.');
       }
 
-      // Clear any conflicting assignments for these areas
-      await prisma.salesmanAssignment.deleteMany({
-        where: { areaId: { in: areaIds } },
-      });
-
       await prisma.salesmanAssignment.createMany({
         data: selectedAreas.map(a => ({
           salesmanId: salesman.id,
@@ -242,14 +237,6 @@ export async function updateSalesmanAccount(id: string, data: any) {
               throw new Error('Data integrity error: One or more selected areas do not belong to the selected route.');
             }
           }
-
-          // Unassign other salesmen from these areas
-          await tx.salesmanAssignment.deleteMany({
-            where: {
-              areaId: { in: areaIds },
-              salesmanId: { not: id },
-            },
-          });
 
           await tx.salesmanAssignment.createMany({
             data: selectedAreas.map(a => ({
