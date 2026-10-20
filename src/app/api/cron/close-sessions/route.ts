@@ -1,14 +1,31 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/db';
 import { getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
+import { auth } from '@/auth';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
   
-  // A simple cron secret check
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new NextResponse('Unauthorized', { status: 401 });
+  // 1. Check Bearer CRON_SECRET if configured
+  const hasValidCronSecret = Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`);
+  
+  // 2. Or check if authenticated as OWNER / ADMIN
+  let isAuthorizedAdmin = false;
+  if (!hasValidCronSecret) {
+    try {
+      const session = await auth();
+      if (session?.user && (session.user.role === 'OWNER' || session.user.role === 'ADMIN')) {
+        isAuthorizedAdmin = true;
+      }
+    } catch {
+      // Ignore auth parsing error
+    }
+  }
+
+  if (!hasValidCronSecret && !isAuthorizedAdmin) {
+    return new NextResponse('Unauthorized: Valid Bearer CRON_SECRET or Admin session required', { status: 401 });
   }
 
   const now = getCurrentKolkataTime();

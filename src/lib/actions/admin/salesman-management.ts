@@ -5,8 +5,10 @@ import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
 import { logAndEmitActivity } from '@/lib/events';
+import { requireAdminSession } from '@/lib/session';
 
 export async function getSalesmenAccounts() {
+  await requireAdminSession();
   const today = getKolkataDateOnly(getCurrentKolkataTime());
   const salesmen = await prisma.salesman.findMany({
     include: {
@@ -34,6 +36,7 @@ export async function getSalesmenAccounts() {
 
 export async function createSalesmanAccount(data: any) {
   try {
+    await requireAdminSession();
     const { name, phone, loginId, password, routeId, areaIds = [], isActive } = data;
 
     // Check if profile (login ID) already exists
@@ -127,6 +130,7 @@ export async function createSalesmanAccount(data: any) {
 
 export async function updateSalesmanAccount(id: string, data: any) {
   try {
+    await requireAdminSession();
     const { name, phone, loginId, routeId, areaIds, isActive } = data;
 
     const salesman = await prisma.salesman.findUnique({
@@ -281,6 +285,24 @@ export async function updateSalesmanAccount(id: string, data: any) {
 
 export async function resetSalesmanPassword(profileId: string, newPassword: string) {
   try {
+    const session = await requireAdminSession();
+    
+    if (!newPassword || newPassword.length < 6) {
+      return { error: 'Password must be at least 6 characters.' };
+    }
+
+    const targetProfile = await prisma.profile.findUnique({
+      where: { id: profileId }
+    });
+    if (!targetProfile) {
+      return { error: 'Profile not found.' };
+    }
+
+    // Prevent non-owners from resetting an Owner account password
+    if (targetProfile.role === 'OWNER' && session.user.role !== 'OWNER') {
+      return { error: 'Only an Owner can reset an Owner account password.' };
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     
     await prisma.profile.update({
@@ -291,12 +313,13 @@ export async function resetSalesmanPassword(profileId: string, newPassword: stri
     return { success: true };
   } catch (error: any) {
     console.error('Error resetting password:', error);
-    return { error: 'Failed to reset password.' };
+    return { error: error.message || 'Failed to reset password.' };
   }
 }
 
 export async function toggleSalesmanStatus(id: string, isActive: boolean) {
   try {
+    await requireAdminSession();
     const salesman = await prisma.salesman.findUnique({
       where: { id },
       include: { profile: true }
@@ -371,6 +394,7 @@ export async function toggleSalesmanStatus(id: string, isActive: boolean) {
 
 export async function toggleSalesmanLoginAccess(profileId: string, isActive: boolean) {
   try {
+    await requireAdminSession();
     await prisma.$transaction(async (tx) => {
       await tx.profile.update({
         where: { id: profileId },
@@ -419,11 +443,13 @@ export async function toggleSalesmanLoginAccess(profileId: string, isActive: boo
     return { success: true };
   } catch (error: any) {
     console.error('Error toggling login access:', error);
-    return { error: 'Failed to toggle login access.' };
+    return { error: error.message || 'Failed to toggle login access.' };
   }
 }
+
 export async function deleteSalesman(id: string) {
   try {
+    await requireAdminSession();
     const salesman = await prisma.salesman.findUnique({
       where: { id },
     });
@@ -433,6 +459,23 @@ export async function deleteSalesman(id: string) {
     }
 
     await prisma.$transaction(async (tx) => {
+      // 1. Unlink assigned customers and routes so foreign key constraints are preserved
+      await tx.customer.updateMany({
+        where: { salesmanId: id },
+        data: { salesmanId: null }
+      });
+
+      await tx.route.updateMany({
+        where: { salesmanId: id },
+        data: { salesmanId: null }
+      });
+
+      // 2. Remove territory assignments
+      await tx.salesmanAssignment.deleteMany({
+        where: { salesmanId: id }
+      });
+
+      // 3. Remove transactions & operations
       await tx.sale.deleteMany({
         where: { salesmanId: id }
       });
@@ -445,10 +488,19 @@ export async function deleteSalesman(id: string) {
         where: { salesmanId: id }
       });
 
+      await tx.location.deleteMany({
+        where: { salesmanId: id }
+      });
+
       await tx.workSession.deleteMany({
         where: { salesmanId: id }
       });
 
+      await tx.activityLog.deleteMany({
+        where: { salesmanId: id }
+      });
+
+      // 4. Delete profile (cascades to salesman)
       await tx.profile.delete({
         where: { id: salesman.profileId }
       });

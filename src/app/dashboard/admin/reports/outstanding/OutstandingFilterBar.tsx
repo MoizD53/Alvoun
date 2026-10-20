@@ -33,51 +33,59 @@ export default function OutstandingFilterBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div className="flex items-center gap-1.5 px-2">
-        <span className="text-xs font-semibold text-slate-400">From</span>
+    <div className="flex flex-wrap items-center gap-2 bg-surface-inset shadow-inset px-3 py-1.5 rounded-2xl border border-border/40">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">From</span>
         <input 
           type="date" 
           defaultValue={fromDate} 
           onChange={(e) => updateParam('from', e.target.value)}
-          className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100 cursor-pointer" 
+          className="text-xs bg-transparent border-none focus:outline-none text-foreground font-semibold cursor-pointer w-[115px]" 
         />
       </div>
-      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-      <div className="flex items-center gap-1.5 px-2">
-        <span className="text-xs font-semibold text-slate-400">To</span>
+
+      <div className="w-px h-5 bg-border/40"></div>
+
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">To</span>
         <input 
           type="date" 
           defaultValue={toDate} 
           onChange={(e) => updateParam('to', e.target.value)}
-          className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100 cursor-pointer" 
+          className="text-xs bg-transparent border-none focus:outline-none text-foreground font-semibold cursor-pointer w-[115px]" 
         />
       </div>
-      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+
+      <div className="w-px h-5 bg-border/40"></div>
+
       <select 
         defaultValue={salesmanId || ''} 
         onChange={(e) => updateParam('salesmanId', e.target.value)}
-        className="px-2 py-1 text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100 cursor-pointer"
+        className="text-xs bg-transparent border-none focus:outline-none text-foreground font-semibold cursor-pointer"
       >
-        <option value="">All Salesmen</option>
-        {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        <option value="" className="bg-surface-raised text-foreground">All Salesmen</option>
+        {salesmen.map(s => <option key={s.id} value={s.id} className="bg-surface-raised text-foreground">{s.name}</option>)}
       </select>
-      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+
+      <div className="w-px h-5 bg-border/40"></div>
+
       <select 
         defaultValue={routeId || ''} 
         onChange={(e) => updateParam('routeId', e.target.value)}
-        className="px-2 py-1 text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100 cursor-pointer"
+        className="text-xs bg-transparent border-none focus:outline-none text-foreground font-semibold cursor-pointer"
       >
-        <option value="">All Routes</option>
-        {routes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        <option value="" className="bg-surface-raised text-foreground">All Routes</option>
+        {routes.map(r => <option key={r.id} value={r.id} className="bg-surface-raised text-foreground">{r.name}</option>)}
       </select>
-      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
-      <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 px-2 cursor-pointer">
+
+      <div className="w-px h-5 bg-border/40"></div>
+
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground cursor-pointer select-none">
         <input 
           type="checkbox" 
           defaultChecked={outstandingOnly} 
           onChange={(e) => updateParam('outstandingOnly', e.target.checked ? 'true' : 'false')}
-          className="rounded border-slate-300 dark:border-slate-700 text-alvoun-blue focus:ring-alvoun-blue" 
+          className="rounded border-border text-primary focus:ring-primary cursor-pointer" 
         />
         Owing Only
       </label>

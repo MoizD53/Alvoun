@@ -3,8 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createSalesmanAccount, updateSalesmanAccount } from '@/lib/actions/admin/salesman-management';
-import { Save, ArrowLeft, Loader2, EyeOff, Eye, MapPin, CheckSquare, Square, ShieldCheck, Map } from 'lucide-react';
+import { 
+  Save, ArrowLeft, EyeOff, Eye, MapPin, 
+  CheckSquare, Square, ShieldCheck, Map, User, Phone 
+} from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AlertBanner } from '@/components/ui/alert-banner';
 
 export default function SalesmanForm({ 
   initialData, 
@@ -79,284 +85,274 @@ export default function SalesmanForm({
     try {
       if (isEditing) {
         const result = await updateSalesmanAccount(initialData.id, payload);
-        if (result.error) throw new Error(result.error);
+        if (result?.error) throw new Error(result.error);
         router.push(`/dashboard/admin/salesmen/${initialData.id}`);
       } else {
         const result = await createSalesmanAccount(payload);
-        if (result.error) throw new Error(result.error);
+        if (result?.error) throw new Error(result.error);
         router.push('/dashboard/admin/salesmen');
       }
+      router.refresh();
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'An error occurred while saving.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-3xl bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            {isEditing ? 'Edit Salesman Profile & Territory' : 'Create Salesman Account & Territory'}
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Admin credentials and territory allocation configured in one place
-          </p>
-        </div>
-        <Link 
-          href={isEditing ? `/dashboard/admin/salesmen/${initialData.id}` : "/dashboard/admin/salesmen"} 
-          className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center"
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <AlertBanner
+          variant="danger"
+          title="Could not save salesman"
+          onClose={() => setError(null)}
         >
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back
-        </Link>
+          {error}
+        </AlertBanner>
+      )}
+
+      {/* 1. Basic Info */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
+        <div className="flex items-center gap-2 pb-3 border-b border-border/40">
+          <User className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">1. Personal Details</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Full Name <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              required
+              placeholder="e.g. Ramesh Patel"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Phone Number <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="text"
+              name="phone"
+              required
+              placeholder="e.g. 9876543210"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+            />
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-8">
-        {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400">
-            {error}
+      {/* 2. Login Credentials */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
+        <div className="flex items-center justify-between pb-3 border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+              2. Mobile App Credentials
+            </h2>
           </div>
-        )}
+          <Badge variant="teal" size="sm">
+            Admin Managed
+          </Badge>
+        </div>
 
-        {/* 1. Basic Info */}
-        <section className="space-y-4">
-          <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-            1. Salesman Personal Details
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Full Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                required
-                placeholder="e.g. Ramesh Patel"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-alvoun-blue focus:border-alvoun-blue dark:bg-slate-900 dark:text-white text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Phone Number *
-              </label>
-              <input
-                type="text"
-                name="phone"
-                required
-                placeholder="e.g. 9876543210"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-alvoun-blue focus:border-alvoun-blue dark:bg-slate-900 dark:text-white text-sm"
-              />
-            </div>
-
-          </div>
-        </section>
-
-        <hr className="border-slate-200 dark:border-slate-800" />
-
-        {/* 2. Login Credentials (Admin-Controlled ID & Pass) */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-alvoun-blue" />
-              2. Salesman App Credentials (Login ID & Password)
-            </h3>
-            <span className="text-xs text-alvoun-blue bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full font-medium">
-              Admin Managed
-            </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Login ID <span className="text-destructive">*</span>
+            </label>
+            <input
+              type="text"
+              name="loginId"
+              required
+              placeholder="e.g. ramesh / ramesh@alvoun.com"
+              value={formData.loginId}
+              onChange={handleChange}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">Exact identifier used on the salesman mobile login page</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Login ID *
+          {!isEditing ? (
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                Password <span className="text-destructive">*</span>
               </label>
-              <input
-                type="text"
-                name="loginId"
-                required
-                placeholder="e.g. ramesh / ramesh@alvoun.com"
-                value={formData.loginId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-alvoun-blue focus:border-alvoun-blue dark:bg-slate-900 dark:text-white text-sm"
-              />
-              <p className="text-xs text-slate-400">The salesman will use this exact Login ID on the /login page</p>
-            </div>
-
-            {!isEditing ? (
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Password *
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    required
-                    placeholder="Enter login password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-alvoun-blue focus:border-alvoun-blue dark:bg-slate-900 dark:text-white pr-10 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                <p className="text-xs text-slate-400">Secure password created by Admin</p>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  required
+                  placeholder="Enter login password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 pr-10 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
-            ) : (
-              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-medium text-slate-700 dark:text-slate-300">Password</div>
-                  <div className="text-xs text-slate-400">Encrypted in database</div>
-                </div>
-                <span className="text-xs text-slate-500">Change via right-side panel</span>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <hr className="border-slate-200 dark:border-slate-800" />
-
-        {/* 3. Territory: Route & Area Assignment */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-500" />
-              3. Territory Allocation (Routes & Areas)
-            </h3>
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">
-              {selectedAreaIds.length} {selectedAreaIds.length === 1 ? 'Area' : 'Areas'} Allocated
-            </span>
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Select Route *
-              </label>
-              <select
-                name="routeId"
-                value={formData.routeId}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-alvoun-blue focus:border-alvoun-blue dark:bg-slate-900 dark:text-white text-sm"
-              >
-                <option value="">-- Choose a Route --</option>
-                {routes.map(r => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} {r.city?.name ? `(${r.city.name})` : ''} - {r.areas?.length || 0} Areas
-                  </option>
-                ))}
-              </select>
+              <p className="text-xs text-muted-foreground mt-1.5">Initial password provisioned by Admin</p>
             </div>
+          ) : (
+            <div className="p-3.5 bg-surface-inset shadow-inset rounded-xl border border-border/40 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Password</div>
+                <div className="text-xs text-foreground font-medium mt-0.5">Encrypted in database</div>
+              </div>
+              <span className="text-xs text-muted-foreground">Reset via sidebar panel</span>
+            </div>
+          )}
+        </div>
+      </div>
 
-            {/* Areas under selected Route */}
-            {currentRoute && (
-              <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <Map className="w-4 h-4 text-alvoun-blue" />
-                    Areas in {currentRoute.name}
-                  </div>
-                  {currentRouteAreas.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleSelectAllCurrentRouteAreas}
-                        className="text-xs font-medium text-alvoun-blue hover:underline"
-                      >
-                        Select All
-                      </button>
-                      <span className="text-slate-300 dark:text-slate-700">|</span>
-                      <button
-                        type="button"
-                        onClick={handleDeselectAllCurrentRouteAreas}
-                        className="text-xs font-medium text-slate-500 hover:underline"
-                      >
-                        Clear Route
-                      </button>
-                    </div>
-                  )}
+      {/* 3. Territory Allocation */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
+        <div className="flex items-center justify-between pb-3 border-b border-border/40">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+              3. Territory Allocation
+            </h2>
+          </div>
+          <Badge variant="neutral" styleType="outline" size="sm">
+            {selectedAreaIds.length} {selectedAreaIds.length === 1 ? 'Area' : 'Areas'} Allocated
+          </Badge>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Assigned Route <span className="text-destructive">*</span>
+            </label>
+            <select
+              name="routeId"
+              value={formData.routeId}
+              onChange={handleChange}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+            >
+              <option value="">-- Choose a Route --</option>
+              {routes.map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.name} {r.city?.name ? `(${r.city.name})` : ''} — {r.areas?.length || 0} Areas
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Areas under selected Route */}
+          {currentRoute && (
+            <div className="p-4 border border-border/40 rounded-xl bg-surface-inset/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                  <Map className="w-4 h-4 text-primary" />
+                  Areas in {currentRoute.name}
                 </div>
-
-                {currentRouteAreas.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-950 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
-                    No areas created under this route yet. You can create areas under Master Data &gt; Routes.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
-                    {currentRouteAreas.map((area: any) => {
-                      const isChecked = selectedAreaIds.includes(area.id);
-                      return (
-                        <button
-                          key={area.id}
-                          type="button"
-                          onClick={() => handleToggleArea(area.id)}
-                          className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs transition-colors border ${
-                            isChecked
-                              ? 'bg-alvoun-blue/10 border-alvoun-blue text-alvoun-blue font-semibold'
-                              : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
-                          }`}
-                        >
-                          {isChecked ? (
-                            <CheckSquare className="w-4 h-4 text-alvoun-blue shrink-0" />
-                          ) : (
-                            <Square className="w-4 h-4 text-slate-400 shrink-0" />
-                          )}
-                          <span className="truncate">{area.name} — {area._count?.customers || 0} customers</span>
-                        </button>
-                      );
-                    })}
+                {currentRouteAreas.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllCurrentRouteAreas}
+                      className="text-xs font-semibold text-primary hover:underline"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-border">•</span>
+                    <button
+                      type="button"
+                      onClick={handleDeselectAllCurrentRouteAreas}
+                      className="text-xs font-medium text-muted-foreground hover:underline"
+                    >
+                      Clear Route
+                    </button>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </section>
 
-        <hr className="border-slate-200 dark:border-slate-800" />
-
-        {/* 4. Active Status */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="isActive"
-            name="isActive"
-            checked={formData.isActive}
-            onChange={handleChange}
-            className="h-4 w-4 text-alvoun-blue border-gray-300 rounded focus:ring-alvoun-blue"
-          />
-          <label htmlFor="isActive" className="ml-2 block text-sm font-medium text-slate-900 dark:text-slate-100">
-            Active Status (Enables Login & Field Access)
-          </label>
+              {currentRouteAreas.length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground bg-surface-raised rounded-xl border border-dashed border-border/60">
+                  No areas created under this route yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                  {currentRouteAreas.map((area: any) => {
+                    const isChecked = selectedAreaIds.includes(area.id);
+                    return (
+                      <button
+                        key={area.id}
+                        type="button"
+                        onClick={() => handleToggleArea(area.id)}
+                        className={`flex items-center gap-2 p-2.5 rounded-xl text-left text-xs transition-all border ${
+                          isChecked
+                            ? 'bg-primary/10 border-primary text-primary font-semibold shadow-inset'
+                            : 'bg-surface-raised shadow-raised-sm border-border/40 text-foreground hover:border-primary/40'
+                        }`}
+                      >
+                        {isChecked ? (
+                          <CheckSquare className="w-4 h-4 text-primary shrink-0" />
+                        ) : (
+                          <Square className="w-4 h-4 text-muted-foreground shrink-0" />
+                        )}
+                        <span className="truncate">{area.name} ({area._count?.customers || 0})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+      </div>
 
-        {/* Submit */}
-        <div className="pt-2 flex justify-end">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-alvoun-blue hover:bg-alvoun-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-alvoun-blue transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving Salesman...</>
-            ) : (
-              <><Save className="w-4 h-4 mr-2" /> {isEditing ? 'Save Changes' : 'Create Salesman & Assign Territory'}</>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
+      {/* 4. Active Status Switch / Box */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl p-4 border border-border/40 flex items-center gap-3">
+        <input
+          type="checkbox"
+          id="isActive"
+          name="isActive"
+          checked={formData.isActive}
+          onChange={handleChange}
+          className="h-4 w-4 rounded text-primary border-border focus:ring-primary cursor-pointer"
+        />
+        <label htmlFor="isActive" className="text-sm font-semibold text-foreground cursor-pointer">
+          Active Salesman Status (Enables Mobile App Login & Territory Operations)
+        </label>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-end gap-3 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={isSubmitting}
+          className="shadow-raised hover:shadow-raised-sm press-active"
+        >
+          <Save className="w-4 h-4 mr-1.5" />
+          {isSubmitting ? 'Saving Salesman...' : (isEditing ? 'Save Changes' : 'Create Salesman & Assign Territory')}
+        </Button>
+      </div>
+    </form>
   );
 }

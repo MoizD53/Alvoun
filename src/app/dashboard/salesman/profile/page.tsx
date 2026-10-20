@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
-import { User, Phone, Briefcase, MapPin, Navigation, Clock, LogOut, CheckCircle2, XCircle } from 'lucide-react';
+import { User, Phone, Briefcase, MapPin, Navigation, Clock, LogOut, CheckCircle2 } from 'lucide-react';
 import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
 import LogoutButton from './LogoutButton';
 
@@ -43,113 +43,147 @@ export default async function ProfilePage() {
   const assignedAreas = Array.from(new Set(salesman.assignments.map(a => a.area.name)));
 
   return (
-    <div className="space-y-6 pb-24 animate-fade-in-up">
+    <div className="space-y-6 pb-28 animate-fade-in-up">
       {/* Top Nav */}
-      <div className="bg-slate-50 dark:bg-slate-900 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sticky top-0 z-20">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">My Profile</h1>
+      <div className="bg-surface/90 backdrop-blur-md pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sticky top-0 z-20 border-b border-border-subtle/40">
+        <h1 className="text-2xl font-black text-text-primary tracking-tight">My Profile</h1>
       </div>
 
-      <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-alvoun-blue/10 flex items-center justify-center shrink-0">
-            <User className="h-7 w-7 text-alvoun-blue" />
+      {/* Main Profile Info */}
+      <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle overflow-hidden">
+        <div className="p-6 border-b border-border-subtle flex items-center gap-4 bg-brand-teal/5">
+          <div className="w-16 h-16 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center text-brand-teal shrink-0">
+            <User className="h-8 w-8" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{salesman.name}</h2>
-            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Employee ID: {salesman.employeeCode}</div>
+            <h2 className="text-xl font-black text-text-primary tracking-tight">{salesman.name}</h2>
+            <div className="text-xs font-bold text-text-muted mt-0.5">
+              Employee ID: <span className="font-mono text-text-secondary">{salesman.employeeCode}</span>
+            </div>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-              <Phone className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+            <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center shrink-0 text-text-secondary">
+              <Phone className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Phone Number</div>
-              <div className="font-bold text-slate-900 dark:text-slate-100 text-base">{salesman.phone || 'Not available'}</div>
+              <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-0.5">Phone Number</div>
+              <div className="font-black text-text-primary text-base">{salesman.phone || 'Not available'}</div>
             </div>
           </div>
 
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+          <div className="flex items-start gap-4 pt-4 border-t border-border-subtle">
+            <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center shrink-0 text-text-secondary">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Account Status</div>
-              <div className={`font-bold text-base ${salesman.isActive ? 'text-alvoun-green' : 'text-alvoun-red'}`}>
+              <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">Account Status</div>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black shadow-raised-sm ${
+                salesman.isActive 
+                  ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30' 
+                  : 'bg-red-500/15 text-accent-terracotta border border-red-500/30'
+              }`}>
+                <span className={`h-2 w-2 rounded-full ${salesman.isActive ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                 {salesman.isActive ? 'Active' : 'Disabled'}
-              </div>
+              </span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Territory Details */}
-      <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-6">
-        <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg border-b border-slate-100 dark:border-slate-800 pb-4">Assigned Territory</h3>
+      <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle p-6 space-y-6">
+        <h3 className="font-black text-text-primary text-lg border-b border-border-subtle pb-3 tracking-tight">
+          Assigned Territory
+        </h3>
         
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-            <Navigation className="h-5 w-5 text-alvoun-blue" />
+          <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center shrink-0 text-brand-teal">
+            <Navigation className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Routes</div>
-            <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
-              {assignedRoutes.length > 0 ? assignedRoutes.join(', ') : 'Not available'}
-            </div>
+          <div className="flex-1">
+            <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Routes</div>
+            {assignedRoutes.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {assignedRoutes.map((routeName, idx) => (
+                  <span 
+                    key={idx} 
+                    className="inline-flex items-center px-3 py-1 bg-surface-sunken shadow-inset-sm rounded-full text-xs font-bold text-text-secondary border border-border-subtle"
+                  >
+                    {routeName}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="font-bold text-text-muted text-sm">Not available</div>
+            )}
           </div>
         </div>
 
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-            <MapPin className="h-5 w-5 text-alvoun-blue" />
+        <div className="flex items-start gap-4 pt-4 border-t border-border-subtle">
+          <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center shrink-0 text-brand-teal">
+            <MapPin className="h-4 w-4" />
           </div>
-          <div>
-            <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Areas</div>
-            <div className="font-bold text-slate-900 dark:text-slate-100 text-base leading-snug">
-              {assignedAreas.length > 0 ? assignedAreas.join(', ') : 'Not available'}
-            </div>
+          <div className="flex-1">
+            <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Areas</div>
+            {assignedAreas.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {assignedAreas.map((areaName, idx) => (
+                  <span 
+                    key={idx} 
+                    className="inline-flex items-center px-3 py-1 bg-surface-sunken shadow-inset-sm rounded-full text-xs font-bold text-text-secondary border border-border-subtle"
+                  >
+                    {areaName}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="font-bold text-text-muted text-sm">Not available</div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Today's Work Session */}
-      <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-6">
-        <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg border-b border-slate-100 dark:border-slate-800 pb-4">Today's Work Session</h3>
+      <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle p-6 space-y-6">
+        <h3 className="font-black text-text-primary text-lg border-b border-border-subtle pb-3 tracking-tight">
+          Today&apos;s Work Session
+        </h3>
         
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-              <Clock className="h-5 w-5 text-alvoun-blue" />
+            <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center shrink-0 text-brand-teal">
+              <Clock className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Logged in at</div>
-              <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
+              <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-0.5">Logged in at</div>
+              <div className="font-black text-text-primary text-base">
                 {workSession?.loginAt ? new Date(workSession.loginAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
               </div>
             </div>
           </div>
 
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-              <LogOut className="h-5 w-5 text-alvoun-blue" />
+          <div className="flex items-start gap-4 pt-4 border-t border-border-subtle">
+            <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center shrink-0 text-brand-teal">
+              <LogOut className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Logged out at</div>
-              <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
+              <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-0.5">Logged out at</div>
+              <div className="font-black text-text-primary text-base">
                 {workSession?.status === 'ACTIVE' ? 'Active' : workSession?.logoutAt ? new Date(workSession.logoutAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '-'}
               </div>
             </div>
           </div>
 
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0">
-              <Briefcase className="h-5 w-5 text-alvoun-blue" />
+          <div className="flex items-start gap-4 pt-4 border-t border-border-subtle">
+            <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center shrink-0 text-brand-teal">
+              <Briefcase className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-500 dark:text-slate-400">Status</div>
-              <div className="font-bold text-slate-900 dark:text-slate-100 text-base">
+              <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-0.5">Status</div>
+              <div className="font-black text-text-primary text-base">
                 {!workSession ? 'Not started' : 
                   workSession.status === 'ACTIVE' ? 'Active' : 
                   workSession.status === 'FORCE_CLOSED' ? 'Automatically logged out' : 

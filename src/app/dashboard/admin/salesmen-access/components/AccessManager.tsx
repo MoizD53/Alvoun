@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { assignTerritory, deleteAssignment, getSalesmanAssignments } from '@/lib/actions/admin/salesman-access';
+import { X, Navigation, Plus, Trash2, MapPin } from 'lucide-react';
 
 export default function AccessManager({ initialSalesmen, routes }: { initialSalesmen: any[], routes: any[] }) {
   const router = useRouter();
@@ -77,62 +78,61 @@ export default function AccessManager({ initialSalesmen, routes }: { initialSale
     
     setIsModalOpen(false);
     setIsSaving(false);
-    // Refresh page to get accurate totalCustomers count
     router.refresh();
   };
 
   return (
-    <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="bg-surface-raised rounded-3xl border border-border-subtle shadow-raised overflow-hidden">
+      <div className="overflow-x-auto min-h-[300px]">
         <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-600 dark:text-slate-400">
+          <thead className="bg-surface/80 text-text-muted font-bold text-xs uppercase tracking-wider border-b border-border-subtle">
             <tr>
-              <th className="px-6 py-4 font-medium">Salesman</th>
-              <th className="px-6 py-4 font-medium">Assigned Routes</th>
-              <th className="px-6 py-4 font-medium">Assigned Areas</th>
-              <th className="px-6 py-4 font-medium">Total Customers</th>
-              <th className="px-6 py-4 font-medium text-right">Actions</th>
+              <th className="px-6 py-4">Salesman</th>
+              <th className="px-6 py-4">Assigned Routes</th>
+              <th className="px-6 py-4">Assigned Areas</th>
+              <th className="px-6 py-4 text-center">Total Customers</th>
+              <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-border-subtle">
             {salesmen.map((salesman) => (
-              <tr key={salesman.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+              <tr key={salesman.id} className="hover:bg-surface-sunken/40 transition-colors">
                 <td className="px-6 py-4">
-                  <div className="font-medium text-slate-900 dark:text-slate-100">{salesman.name}</div>
+                  <div className="font-black text-text-primary text-base">{salesman.name}</div>
                 </td>
                 <td className="px-6 py-4">
                   {salesman.routes.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {salesman.routes.map((r: string) => (
-                        <span key={r} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                        <span key={r} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-teal/10 text-brand-teal border border-brand-teal/20 shadow-raised-sm">
                           {r}
                         </span>
                       ))}
                     </div>
-                  ) : <span className="text-slate-400">None</span>}
+                  ) : <span className="text-text-muted italic text-xs font-medium">None assigned</span>}
                 </td>
-                <td className="px-6 py-4 max-w-xs truncate">
+                <td className="px-6 py-4 max-w-xs truncate text-xs font-semibold text-text-secondary">
                   {salesman.areas.length > 0 ? (
                     salesman.areas.join(', ')
-                  ) : <span className="text-slate-400">None</span>}
+                  ) : <span className="text-text-muted italic font-medium">None</span>}
                 </td>
-                <td className="px-6 py-4">
-                  <span className="inline-flex items-center justify-center px-2 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 min-w-8">
+                <td className="px-6 py-4 text-center">
+                  <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-black bg-surface-sunken shadow-inset-sm text-text-primary border border-border-subtle min-w-[2rem]">
                     {salesman.totalCustomers}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right space-x-3">
+                <td className="px-6 py-4 text-right space-x-2">
                   <button 
                     onClick={() => openEditModal(salesman)}
-                    className="text-alvoun-blue hover:text-alvoun-dark font-medium"
+                    className="px-3.5 py-1.5 bg-brand-teal/10 hover:bg-brand-teal/20 text-brand-teal border border-brand-teal/20 rounded-xl text-xs font-bold shadow-raised-sm active:scale-95 transition-all"
                   >
-                    Edit Assignment
+                    Edit Territory
                   </button>
                   <button 
                     onClick={() => handleDelete(salesman.id)}
-                    className="text-red-600 hover:text-red-700 font-medium"
+                    className="px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-accent-terracotta border border-red-500/20 rounded-xl text-xs font-bold shadow-raised-sm active:scale-95 transition-all"
                   >
-                    Delete Assignment
+                    Clear Access
                   </button>
                 </td>
               </tr>
@@ -141,26 +141,38 @@ export default function AccessManager({ initialSalesmen, routes }: { initialSale
         </table>
       </div>
 
+      {/* Assignment Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-950 rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-              <h2 className="text-xl font-bold">Assign Territory to {editingSalesman?.name}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-surface-raised rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-raised-lg border border-border-subtle animate-scale-up">
+            <div className="p-6 border-b border-border-subtle flex justify-between items-center bg-surface/80">
+              <div className="flex items-center gap-2">
+                <Navigation className="h-5 w-5 text-brand-teal" />
+                <h2 className="text-lg font-black text-text-primary">
+                  Assign Territory to <span className="text-brand-teal">{editingSalesman?.name}</span>
+                </h2>
+              </div>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised text-text-muted hover:text-text-primary shadow-raised-sm active:shadow-inset transition-colors"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
             
             <div className="p-6 flex-1 overflow-y-auto space-y-6">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Select Route</label>
+                  <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Select Route</label>
                   <select 
                     value={selectedRouteId} 
                     onChange={e => {
                       setSelectedRouteId(e.target.value);
                       setSelectedAreas([]);
                     }}
-                    className="w-full border border-slate-300 dark:border-slate-700 rounded-md p-2 bg-white dark:bg-slate-900"
+                    className="w-full border border-border-subtle rounded-2xl p-3 bg-surface-sunken shadow-inset text-sm font-semibold text-text-primary focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none"
                   >
                     <option value="">-- Select Route --</option>
                     {routes.map(r => (
@@ -170,7 +182,7 @@ export default function AccessManager({ initialSalesmen, routes }: { initialSale
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Select Area(s)</label>
+                  <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Select Area(s)</label>
                   <select 
                     multiple
                     value={selectedAreas} 
@@ -179,65 +191,68 @@ export default function AccessManager({ initialSalesmen, routes }: { initialSale
                       setSelectedAreas(options);
                     }}
                     disabled={!selectedRouteId}
-                    className="w-full border border-slate-300 dark:border-slate-700 rounded-md p-2 bg-white dark:bg-slate-900 h-24"
+                    className="w-full border border-border-subtle rounded-2xl p-2.5 bg-surface-sunken shadow-inset text-sm font-semibold text-text-primary h-28 focus:border-brand-teal outline-none disabled:opacity-50"
                   >
                     {routes.find(r => r.id === selectedRouteId)?.areas.map((a: any) => (
                       <option key={a.id} value={a.id}>{a.name}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-slate-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                  <p className="text-[11px] text-text-muted font-medium mt-1">Hold Ctrl/Cmd to select multiple areas</p>
                 </div>
               </div>
 
               <button 
                 onClick={handleAddArea}
                 disabled={!selectedRouteId || selectedAreas.length === 0}
-                className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50"
+                className="flex items-center gap-1.5 bg-brand-teal hover:bg-brand-teal-dark text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-raised disabled:opacity-50 active:scale-95 transition-all"
               >
-                Add Selected Areas
+                <Plus className="h-4 w-4" /> Add Selected Areas
               </button>
 
               <div className="mt-8">
-                <h3 className="font-semibold mb-3">Staged Assignments</h3>
+                <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Staged Assignments</h3>
                 {stagedAssignments.length === 0 ? (
-                  <p className="text-sm text-slate-500">No areas assigned yet.</p>
+                  <div className="p-4 bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle text-center text-xs font-medium text-text-muted">
+                    No areas assigned yet. Select a route and areas above to stage them.
+                  </div>
                 ) : (
-                  <ul className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-md">
+                  <div className="bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle divide-y divide-border-subtle overflow-hidden">
                     {stagedAssignments.map((a, idx) => {
                       const route = routes.find(r => r.id === a.routeId);
                       const area = route?.areas.find((ar: any) => ar.id === a.areaId);
                       return (
-                        <li key={idx} className="p-3 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                          <div>
-                            <span className="font-medium">{route?.name}</span>
-                            <span className="mx-2 text-slate-400">/</span>
-                            <span className="text-slate-600 dark:text-slate-300">{area?.name}</span>
+                        <div key={idx} className="p-3.5 flex justify-between items-center text-xs">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3.5 w-3.5 text-brand-teal" />
+                            <span className="font-bold text-text-primary">{route?.name}</span>
+                            <span className="text-text-muted">/</span>
+                            <span className="font-medium text-text-secondary">{area?.name}</span>
                           </div>
                           <button 
                             onClick={() => handleRemoveAssignment(a.areaId)}
-                            className="text-red-500 hover:text-red-700 text-sm font-medium"
+                            className="text-accent-terracotta hover:underline font-bold text-xs"
                           >
                             Remove
                           </button>
-                        </li>
+                        </div>
                       )
                     })}
-                  </ul>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
+            <div className="p-5 border-t border-border-subtle bg-surface/80 flex justify-end gap-3">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 border border-slate-300 rounded-md hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+                className="px-4 py-2.5 border border-border-subtle rounded-2xl text-xs font-bold text-text-secondary bg-surface-raised shadow-raised-sm active:scale-95 transition-all"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-4 py-2 bg-alvoun-blue text-white rounded-md hover:bg-alvoun-dark disabled:opacity-50"
+                className="px-5 py-2.5 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-2xl text-xs font-black shadow-raised disabled:opacity-50 active:scale-95 transition-all"
               >
                 {isSaving ? 'Saving...' : 'Save Assignments'}
               </button>

@@ -94,3 +94,22 @@ export async function requireActiveSalesmanSession() {
 
   return { salesman, workSession };
 }
+
+export async function requireAdminSession() {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error('NOT_AUTHENTICATED');
+  }
+  if (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN') {
+    throw new Error('NOT_AUTHORIZED');
+  }
+  return session;
+}
+
+export async function requireAuthSession() {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error('NOT_AUTHENTICATED');
+  }
+  return session;
+}

@@ -31,14 +31,19 @@ export default async function EditCustomerPage({
   }
 
   return (
-    <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-4 sm:p-8">
-      <div className="flex items-center gap-4 mb-8">
-        <Link href={`/dashboard/admin/customers/${customer.id}`} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Page Header */}
+      <div className="flex items-center gap-4">
+        <Link 
+          href={`/dashboard/admin/customers/${customer.id}`} 
+          className="p-2.5 bg-surface-raised shadow-raised hover:shadow-raised-sm press-active rounded-xl text-muted-foreground hover:text-foreground transition-all border border-border/40"
+          aria-label="Back to Customer Profile"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Edit Customer</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{customer.customerName}</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Edit Customer</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Modifying account details for <span className="font-semibold text-primary">{customer.customerName}</span></p>
         </div>
       </div>
       

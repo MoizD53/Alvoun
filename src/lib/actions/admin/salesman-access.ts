@@ -2,8 +2,10 @@
 
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { requireAdminSession } from '@/lib/session';
 
 export async function getSalesmenAccess() {
+  await requireAdminSession();
   const salesmen = await prisma.salesman.findMany({
     include: {
       assignments: {
@@ -41,6 +43,7 @@ export async function getSalesmenAccess() {
 }
 
 export async function getRoutesAndAreas() {
+  await requireAdminSession();
   return await prisma.route.findMany({
     include: {
       areas: true
@@ -49,12 +52,14 @@ export async function getRoutesAndAreas() {
 }
 
 export async function getSalesmanAssignments(salesmanId: string) {
+  await requireAdminSession();
   return await prisma.salesmanAssignment.findMany({
     where: { salesmanId }
   });
 }
 
 export async function assignTerritory(salesmanId: string, assignments: { routeId: string, areaId: string }[]) {
+  await requireAdminSession();
   // Use a transaction to ensure atomic updates
   await prisma.$transaction(async (tx) => {
     // 1. Delete existing assignments
@@ -95,6 +100,7 @@ export async function assignTerritory(salesmanId: string, assignments: { routeId
 }
 
 export async function deleteAssignment(salesmanId: string) {
+  await requireAdminSession();
   await prisma.$transaction(async (tx) => {
     await tx.salesmanAssignment.deleteMany({
       where: { salesmanId }

@@ -1,22 +1,21 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/db';
-import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKolkataTimeDetails, getKolkataDateString } from '@/lib/time';
-import { formatMoney, formatNumber } from '@/lib/format';
-import { Suspense } from 'react';
-import Link from 'next/link';
-import { TrendingUp, Wallet, CreditCard, MapPin } from 'lucide-react';
-import AdminCharts, { AdminChartsSkeleton } from './components/AdminCharts';
-import LiveDashboardManager from './components/LiveDashboardManager';
-import AdminDatePicker from './components/AdminDatePicker';
+import { getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
+import { getDashboardExecutiveData } from '@/lib/dashboard-data';
 
-import InteractiveKPIRow, { KPIItem } from './components/InteractiveKPIRow';
-import { KPIProvider } from './components/KPIContext';
+import ExecutiveHeader from './components/ExecutiveHeader';
+import ExecutiveKPIRow from './components/ExecutiveKPIRow';
+import SecondaryMetricsBar from './components/SecondaryMetricsBar';
+import SalesTrendChart from './components/SalesTrendChart';
+import ProductSalesDonut from './components/ProductSalesDonut';
+import OperationalAlertsCard from './components/OperationalAlertsCard';
+import QuickActionsRail from './components/QuickActionsRail';
+import LowerInformationGrid from './components/LowerInformationGrid';
 
 export default async function AdminDashboard({
-  searchParams
+  searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | undefined }>
+  searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
   const session = await auth();
 
@@ -27,244 +26,92 @@ export default async function AdminDashboard({
 
   const resolvedParams = await searchParams;
   const dateStr = resolvedParams.date;
-  
-  const startOfDay = getKolkataStartOfDay(dateStr);
-  const endOfDay = getKolkataEndOfDay(dateStr);
 
+  // Determine time-appropriate greeting
   const now = getCurrentKolkataTime();
   const { hour } = getKolkataTimeDetails(now);
 
   let greeting = "Good morning";
-  let subtitle = "Here is what's happening with your business today.";
-
-  if (hour >= 5 && hour < 12) {
-    greeting = "Good morning";
-    subtitle = "Here is what's happening with your business today.";
-  } else if (hour >= 12 && hour < 17) {
+  if (hour >= 12 && hour < 17) {
     greeting = "Good afternoon";
-    subtitle = "Here's your business update for today.";
   } else if (hour >= 17 && hour < 21) {
     greeting = "Good evening";
-    subtitle = "Here's how your business day is looking.";
-  } else {
+  } else if (hour >= 21 || hour < 5) {
     greeting = "Good night";
-    subtitle = "Here's today's business summary.";
   }
 
-  // Fetch today's data and global aggregates in parallel
-  const [sales, payments, visits, activeWorkSessions, allSalesAgg, allPaymentsAgg, customerBalances] = await Promise.all([
-    prisma.sale.findMany({
-      where: { saleDate: { gte: startOfDay, lte: endOfDay } },
-      select: { totalAmount: true, salesmanId: true }
-    }),
-    prisma.payment.findMany({
-      where: { paymentDate: { gte: startOfDay, lte: endOfDay } },
-      select: { amount: true, salesmanId: true }
-    }),
-    prisma.visit.findMany({
-      where: { createdAt: { gte: startOfDay, lte: endOfDay } },
-      select: { salesmanId: true }
-    }),
-    prisma.workSession.findMany({
-      where: { 
-        workDate: { gte: startOfDay, lte: endOfDay }
-      },
-      include: {
-        salesman: {
-          include: { profile: true }
-        }
-      }
-    }),
-    prisma.sale.aggregate({ _sum: { totalAmount: true } }),
-    prisma.payment.aggregate({ _sum: { amount: true } }),
-    prisma.customer.findMany({
-      select: { openingBalance: true, openingBalanceType: true }
-    })
-  ]);
-
-  // Aggregate Metrics
-  const totalSales = sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-  const totalCollection = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  
-  const totalOpening = customerBalances.reduce((sum, c) => {
-    return sum + (c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance);
-  }, 0);
-  const totalOutstanding = totalOpening + (allSalesAgg._sum.totalAmount || 0) - (allPaymentsAgg._sum.amount || 0);
-
-  // Salesman Performance Map
-  const salesmanData = new Map<string, any>();
-  activeWorkSessions.forEach(ws => {
-    salesmanData.set(ws.salesmanId, {
-      id: ws.salesmanId,
-      name: ws.salesman.name,
-      status: ws.status === 'ACTIVE' ? 'Working' : ws.status === 'COMPLETED' ? 'Completed' : 'Force Closed',
-      visits: 0,
-      sales: 0,
-      collection: 0,
-      currentCustomer: null,
-      currentAction: ws.status === 'ACTIVE' ? 'Online' : 'Offline'
-    });
-  });
-
-  visits.forEach(v => {
-    if (salesmanData.has(v.salesmanId)) {
-      salesmanData.get(v.salesmanId).visits++;
-    }
-  });
-
-  // Fetch currently active visits
-  const activeVisits = await prisma.visit.findMany({
-    where: { 
-      status: 'STARTED',
-      salesmanId: { in: Array.from(salesmanData.keys()) }
-    },
-    include: { customer: { include: { area: true, route: true } } }
-  });
-
-  activeVisits.forEach(v => {
-    if (salesmanData.has(v.salesmanId)) {
-      salesmanData.get(v.salesmanId).currentCustomer = v.customer;
-      salesmanData.get(v.salesmanId).currentAction = 'At Customer Visit';
-    }
-  });
-
-  sales.forEach(s => {
-    if (salesmanData.has(s.salesmanId)) {
-      salesmanData.get(s.salesmanId).sales += s.totalAmount;
-    }
-  });
-
-  payments.forEach(p => {
-    if (salesmanData.has(p.salesmanId)) {
-      salesmanData.get(p.salesmanId).collection += p.amount;
-    }
-  });
-
-  const salesmanPerformance = Array.from(salesmanData.values());
-
-  const topKpis: KPIItem[] = [
-    {
-      id: 'sales',
-      title: 'TOTAL SALES',
-      value: formatMoney(totalSales),
-      subtitle: "Today's Volume",
-      icon: <TrendingUp className="h-4 w-4" />,
-      iconBg: 'bg-alvoun-light',
-      iconColor: 'text-alvoun-blue'
-    },
-    {
-      id: 'collection',
-      title: 'COLLECTION',
-      value: formatMoney(totalCollection),
-      subtitle: 'Received Today',
-      icon: <Wallet className="h-4 w-4" />,
-      iconBg: 'bg-green-50 dark:bg-green-900/20',
-      iconColor: 'text-alvoun-green'
-    },
-    {
-      id: 'outstanding',
-      title: 'DUES',
-      value: formatMoney(totalOutstanding),
-      subtitle: 'Across Market',
-      icon: <CreditCard className="h-4 w-4" />,
-      iconBg: 'bg-orange-50 dark:bg-orange-900/20',
-      iconColor: 'text-alvoun-amber'
-    },
-    {
-      id: 'visits',
-      title: 'VISITS',
-      value: formatNumber(visits.length),
-      subtitle: 'Customers Visited Today',
-      icon: <MapPin className="h-4 w-4" />,
-      iconBg: 'bg-slate-100 dark:bg-slate-800',
-      iconColor: 'text-slate-600 dark:text-slate-400'
-    }
-  ];
+  // Fetch complete real data via Phase 2 data layer
+  const data = await getDashboardExecutiveData(dateStr);
 
   return (
-    <KPIProvider>
-      <div className="space-y-8 animate-fade-in-up">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              {greeting}, {session.user.name?.split(' ')[0]}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{subtitle}</p>
+    <div className="space-y-4 sm:space-y-5 animate-fade-in-up">
+      {/* 1. EXECUTIVE COCKPIT HEADER */}
+      <ExecutiveHeader
+        userName={session.user.name || 'Admin'}
+        userRole={session.user.role || 'ADMIN'}
+        selectedDate={data.selectedDate}
+        greeting={greeting}
+      />
+
+      {/* 2. PRIMARY 4-CARD KPI ROW (MATCHES REFERENCE ROW 1) */}
+      <ExecutiveKPIRow
+        trends={data.trends}
+        dispatches={data.dispatches}
+        isToday={data.isToday}
+        selectedDate={data.selectedDate}
+      />
+
+      {/* 3. MAIN COCKPIT ENTERPRISE GRID */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 items-start">
+        {/* LEFT / CENTER CONTENT AREA (9 COLS ON XL) */}
+        <div className="xl:col-span-9 space-y-4 sm:space-y-5">
+          {/* REFERENCE ROW 2: 3-PANEL ANALYTICS & SIGNALS GRID (TREND + DONUT + ALERTS) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+            {/* 1. SALES TREND AREA CHART (5 COLS ON XL) */}
+            <div className="md:col-span-2 xl:col-span-5 flex flex-col">
+              <SalesTrendChart
+                initialPoints={data.trends.points}
+                selectedDate={data.selectedDate}
+              />
+            </div>
+
+            {/* 2. SALES BY PRODUCT DONUT & TABLE (4 COLS ON XL) */}
+            <div className="md:col-span-1 xl:col-span-4 flex flex-col">
+              <ProductSalesDonut
+                productSales={data.productSales}
+              />
+            </div>
+
+            {/* 3. ALERTS & NOTIFICATIONS (3 COLS ON XL) */}
+            <div className="md:col-span-1 xl:col-span-3 flex flex-col">
+              <OperationalAlertsCard
+                alerts={data.alerts}
+              />
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <AdminDatePicker currentDate={dateStr || getKolkataDateString(now)} />
-          </div>
+
+          {/* REFERENCE ROW 3: SECONDARY METRICS HORIZONTAL STRIP */}
+          <SecondaryMetricsBar
+            meta={data.meta}
+            attendance={data.attendance}
+          />
+
+          {/* REFERENCE ROW 4 & 5: LOWER OPERATIONAL TABLES & MODULES */}
+          <LowerInformationGrid
+            topCustomers={data.topCustomers}
+            areaSales={data.areaSales}
+            attendance={data.attendance}
+            dispatches={data.dispatches}
+            isToday={data.isToday}
+            selectedDate={data.selectedDate}
+          />
         </div>
 
-        <InteractiveKPIRow kpis={topKpis} dateStr={dateStr} />
-
-        {/* Route & Area Coverage Charts */}
-        <Suspense fallback={<AdminChartsSkeleton />}>
-          <AdminCharts dateStr={dateStr} />
-        </Suspense>
-
-        <div className="w-full space-y-8">
-          {/* Salesman Activity Table */}
-          <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Salesman Activity</h2>
-              <Link href="/dashboard/admin/locations" className="text-sm font-medium text-alvoun-blue hover:underline">
-                View Map
-              </Link>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
-                  <tr>
-                    <th className="px-6 py-3">Salesman</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Current Activity</th>
-                    <th className="px-6 py-3 text-right">Sales</th>
-                    <th className="px-6 py-3 text-right">Collection</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {salesmanPerformance.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
-                        No field staff active today.
-                      </td>
-                    </tr>
-                  ) : (
-                    salesmanPerformance.map((sp: any) => (
-                      <tr key={sp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                        <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{sp.name}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${sp.status === 'Working' ? 'bg-green-50 dark:bg-green-900/20 text-alvoun-green' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${sp.status === 'Working' ? 'bg-alvoun-green' : 'bg-slate-400'}`}></span>
-                            {sp.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{sp.currentAction}</div>
-                          {sp.currentCustomer && (
-                            <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" />
-                              {sp.currentCustomer.customerName} ({sp.currentCustomer.area?.name})
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
-                          {formatMoney(sp.sales)}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium text-slate-900 dark:text-slate-100">
-                          {formatMoney(sp.collection)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        {/* RIGHT RAIL: WEATHER + BRAND INSPIRATION + QUICK ACTIONS (3 COLS ON XL) */}
+        <div className="xl:col-span-3 space-y-4 sm:space-y-5">
+          <QuickActionsRail />
         </div>
       </div>
-    </KPIProvider>
+    </div>
   );
 }

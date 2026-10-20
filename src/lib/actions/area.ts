@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { requireAdminSession } from '@/lib/session';
 
 const AreaSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -10,6 +11,7 @@ const AreaSchema = z.object({
 });
 
 export async function createArea(data: FormData) {
+  await requireAdminSession();
   const parsed = {
     name: data.get('name') as string,
     routeId: data.get('routeId') as string,
@@ -34,6 +36,7 @@ export async function createArea(data: FormData) {
 }
 
 export async function updateArea(id: string, data: FormData) {
+  await requireAdminSession();
   const parsed = {
     name: data.get('name') as string,
     routeId: data.get('routeId') as string,
@@ -54,6 +57,7 @@ export async function updateArea(id: string, data: FormData) {
 }
 
 export async function assignSalesmanToArea(areaId: string, routeId: string, salesmanId: string) {
+  await requireAdminSession();
   try {
     await prisma.$transaction(async (tx) => {
       // Create/update assignment

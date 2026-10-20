@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { requireAdminSession, requireAuthSession } from '@/lib/session';
 
 const CitySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -10,6 +11,7 @@ const CitySchema = z.object({
 });
 
 export async function getCities(stateId?: string) {
+  await requireAuthSession();
   return await prisma.city.findMany({
     where: stateId ? { stateId } : undefined,
     include: { state: true },
@@ -18,6 +20,7 @@ export async function getCities(stateId?: string) {
 }
 
 export async function createCity(data: FormData) {
+  await requireAdminSession();
   const result = CitySchema.safeParse(Object.fromEntries(data));
   if (!result.success) return { error: result.error.issues[0].message };
 
@@ -31,6 +34,7 @@ export async function createCity(data: FormData) {
 }
 
 export async function updateCity(id: string, data: FormData) {
+  await requireAdminSession();
   const result = CitySchema.safeParse(Object.fromEntries(data));
   if (!result.success) return { error: result.error.issues[0].message };
 

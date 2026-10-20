@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { requireAdminSession, requireAuthSession } from '@/lib/session';
 
 const RouteSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -12,6 +13,7 @@ const RouteSchema = z.object({
 });
 
 export async function getRoutes(cityId?: string) {
+  await requireAuthSession();
   return await prisma.route.findMany({
     where: cityId ? { cityId } : undefined,
     include: {
@@ -28,19 +30,32 @@ export async function getRoutes(cityId?: string) {
 }
 
 export async function createRoute(data: FormData) {
+  await requireAdminSession();
   const parsed = {
-    name: data.get('name') as string,
+    name: (data.get('name') as string || '').trim(),
     cityId: data.get('cityId') as string,
-    salesmanId: data.get('salesmanId') as string || undefined,
+    salesmanId: (data.get('salesmanId') || data.get('defaultSalesmanId')) as string || undefined,
     isActive: data.get('isActive') === 'on' || data.get('isActive') === 'true',
   };
   
   const result = RouteSchema.safeParse(parsed);
   if (!result.success) return { error: result.error.issues[0].message };
 
+  // Check duplicate route name in the same city
+  const existing = await prisma.route.findFirst({
+    where: {
+      name: result.data.name,
+      cityId: result.data.cityId
+    }
+  });
+
+  if (existing) {
+    return { error: `Route "${result.data.name}" already exists in this city.` };
+  }
+
   try {
     await prisma.route.create({ data: result.data });
-    revalidatePath('/dashboard/admin/routes');
+    try { revalidatePath('/dashboard/admin/routes'); } catch {}
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to create route' };
@@ -48,6 +63,7 @@ export async function createRoute(data: FormData) {
 }
 
 export async function updateRoute(id: string, data: FormData) {
+  await requireAdminSession();
   const parsed = {
     name: data.get('name') as string,
     cityId: data.get('cityId') as string,
@@ -71,6 +87,7 @@ export async function updateRoute(id: string, data: FormData) {
 }
 
 export async function deactivateRoute(id: string) {
+  await requireAdminSession();
   try {
     await prisma.route.update({
       where: { id },
@@ -84,6 +101,7 @@ export async function deactivateRoute(id: string) {
 }
 
 export async function activateRoute(id: string) {
+  await requireAdminSession();
   try {
     await prisma.route.update({
       where: { id },
@@ -97,6 +115,7 @@ export async function activateRoute(id: string) {
 }
 
 export async function deleteRoute(id: string) {
+  await requireAdminSession();
   try {
     const r = await prisma.route.findUnique({
       where: { id },

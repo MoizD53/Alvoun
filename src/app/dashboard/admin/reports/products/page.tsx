@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/db';
 import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
 import { formatMoney, formatNumber } from '@/lib/format';
-import Link from 'next/link';
 import ProductManager from './components/ProductManager';
 import AdminDatePicker from '../../components/AdminDatePicker';
+import { Download, BarChart2 } from 'lucide-react';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default async function ProductReportPage({
   searchParams
@@ -58,47 +59,62 @@ export default async function ProductReportPage({
   const reportData = Array.from(productMap.values());
 
   return (
-    <div className="space-y-8 animate-fade-in-up pb-24">
+    <div className="space-y-8 animate-fade-in-up pb-16">
       {/* Product Management Section */}
       <ProductManager initialProducts={products} />
 
       {/* Product Sales Report Section */}
-      <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Product Sales Report</h2>
-            <p className="text-sm text-slate-500">Historical sales metrics based on the exact amounts sold.</p>
-          </div>
+      <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 p-5 sm:p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-surface-inset shadow-inset border border-border/40 flex items-center justify-center text-primary shrink-0">
+              <BarChart2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">Daily Product Sales Report</h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Crate and bottle volume metrics dispatched for selected date</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5">
             <AdminDatePicker currentDate={dateStr} basePath="/dashboard/admin/reports/products" />
-            <a href={`/api/admin/export?type=products&date=${dateStr}`} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 whitespace-nowrap">
-              Export Excel
+            <a 
+              href={`/api/admin/export?type=products&date=${dateStr}`} 
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-surface-raised shadow-raised hover:shadow-raised-sm press-active border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
+            >
+              <Download className="h-4 w-4" /> Export Excel
             </a>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-medium border-y border-slate-100 dark:border-slate-800">
+        <div className="overflow-x-auto rounded-xl border border-border/40">
+          <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
+            <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
               <tr>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3 text-right">Crates Sold</th>
-                <th className="px-4 py-3 text-right">Bottles Sold</th>
-                <th className="px-4 py-3 text-right">Sales Amount</th>
+                <th className="px-5 py-3.5">Product</th>
+                <th className="px-5 py-3.5 text-right">Crates Sold</th>
+                <th className="px-5 py-3.5 text-right">Bottles Sold</th>
+                <th className="px-5 py-3.5 text-right">Total Revenue</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+            <tbody className="divide-y divide-border/40 bg-surface-raised">
               {reportData.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">No sales data for this date.</td>
+                  <td colSpan={4} className="p-8 text-center">
+                    <EmptyState
+                      icon={<BarChart2 className="w-8 h-8 text-primary" />}
+                      title="No Product Activity"
+                      description={`No bottles or crates sold on ${dateStr}.`}
+                    />
+                  </td>
                 </tr>
               ) : (
                 reportData.map((row) => (
-                  <tr key={row.name} className="hover:bg-slate-50 dark:hover:bg-slate-900">
-                    <td className="px-4 py-3 font-bold text-slate-900 dark:text-slate-100">{row.name}</td>
-                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{formatNumber(row.cratesSold)}</td>
-                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{formatNumber(row.bottlesSold)}</td>
-                    <td className="px-4 py-3 text-right font-bold text-alvoun-blue">{formatMoney(row.salesAmount)}</td>
+                  <tr key={row.name} className="hover:bg-surface-inset/30 transition-colors">
+                    <td className="px-5 py-4 font-bold text-foreground">{row.name}</td>
+                    <td className="px-5 py-4 text-right font-medium text-foreground">{formatNumber(row.cratesSold)}</td>
+                    <td className="px-5 py-4 text-right font-medium text-muted-foreground">{formatNumber(row.bottlesSold)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-primary">{formatMoney(row.salesAmount)}</td>
                   </tr>
                 ))
               )}

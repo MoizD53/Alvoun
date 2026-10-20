@@ -1,11 +1,12 @@
-import { Home, Users, ShoppingBag, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { auth, signOut } from '@/auth';
 import { getCurrentKolkataTime, isWorkingHours } from '@/lib/time';
 import LocationTracker from './components/LocationTracker';
+import SalesmanBottomNav from './components/SalesmanBottomNav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { salesmanLogout } from '@/lib/actions/salesman/session';
+import { LogOut } from 'lucide-react';
 
 export default async function SalesmanLayout({
   children,
@@ -16,64 +17,50 @@ export default async function SalesmanLayout({
   const workingHours = isWorkingHours(getCurrentKolkataTime());
 
   return (
-    <div className={`w-full bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col ${workingHours ? 'pb-20' : ''}`}>
+    <div className={`w-full bg-background min-h-screen flex flex-col ${workingHours ? 'pb-20' : ''}`}>
       {workingHours && <LocationTracker />}
       
       {/* Mobile Top Header */}
-      <header className="bg-white dark:bg-gray-950 border-b border-slate-200 dark:border-gray-800 sticky top-0 z-30 px-4 h-14 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="relative h-7 w-7 rounded-lg overflow-hidden flex-shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-center">
+      <header className="bg-surface-raised/95 backdrop-blur-md border-b border-border/40 sticky top-0 z-30 px-4 h-14 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="relative h-8 w-8 rounded-full overflow-hidden shrink-0 border border-border-default/80 shadow-xs flex items-center justify-center bg-white">
             <Image 
-              src="/alvoun-logo-icon.png" 
+              src="/icons/icon.png" 
               alt="ALVOUN" 
-              width={28} 
-              height={28} 
-              className="object-contain p-0.5" 
+              width={32} 
+              height={32} 
+              className="w-full h-full object-cover scale-110 rounded-full" 
               priority 
             />
           </div>
-          <span className="font-bold text-slate-900 dark:text-slate-100 tracking-tight">ALVOUN</span>
+          <span className="font-extrabold text-foreground text-sm tracking-tight">ALVOUN</span>
         </div>
-        <div className="flex items-center space-x-3">
+
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           <form action={async () => {
             'use server';
             await salesmanLogout();
             await signOut({ redirectTo: '/login' });
           }}>
-            <button type="submit" className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-              <LogOut className="h-5 w-5" />
+            <button 
+              type="submit" 
+              className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-surface-inset/60 transition-colors"
+              aria-label="Logout"
+            >
+              <LogOut className="h-4 w-4" />
             </button>
           </form>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 w-full p-4 sm:px-6">
+      <main className="flex-1 w-full p-4 sm:px-6 max-w-lg mx-auto">
         {children}
       </main>
 
-      {/* Bottom Navigation */}
-      {workingHours && (
-        <div className="fixed bottom-0 left-0 right-0 w-full bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 z-50 px-6 py-2 flex justify-between items-center pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-          <Link href="/dashboard/salesman" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
-            <Home className="h-6 w-6 mb-1" />
-            <span className="text-[10px] font-semibold">Home</span>
-          </Link>
-          <Link href="/dashboard/salesman/customers" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
-            <Users className="h-6 w-6 mb-1" />
-            <span className="text-[10px] font-semibold">Customers</span>
-          </Link>
-          <Link href="/dashboard/salesman/sales" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
-            <ShoppingBag className="h-6 w-6 mb-1" />
-            <span className="text-[10px] font-semibold">Sales</span>
-          </Link>
-          <Link href="/dashboard/salesman/profile" className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-alvoun-blue focus:text-alvoun-blue transition-colors">
-            <User className="h-6 w-6 mb-1" />
-            <span className="text-[10px] font-semibold">Profile</span>
-          </Link>
-        </div>
-      )}
+      {/* Mobile Bottom Navigation */}
+      {workingHours && <SalesmanBottomNav />}
     </div>
   );
 }

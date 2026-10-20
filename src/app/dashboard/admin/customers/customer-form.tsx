@@ -3,6 +3,9 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createCustomer, updateCustomer } from '@/lib/actions/customer';
+import { Button } from '@/components/ui/button';
+import { AlertBanner } from '@/components/ui/alert-banner';
+import { Building2, Phone, MapPin, UserCheck, IndianRupee, Save } from 'lucide-react';
 
 export default function CustomerForm({
   initialData,
@@ -11,11 +14,11 @@ export default function CustomerForm({
   routes,
   salesmen
 }: {
-  initialData?: any,
-  states: any[],
-  cities: any[],
-  routes: any[],
-  salesmen: any[]
+  initialData?: any;
+  states: any[];
+  cities: any[];
+  routes: any[];
+  salesmen: any[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -42,7 +45,7 @@ export default function CustomerForm({
         ? await updateCustomer(initialData.id, data)
         : await createCustomer(data);
         
-      if (res.error) {
+      if (res?.error) {
         setError(res.error);
       } else {
         router.push('/dashboard/admin/customers');
@@ -52,93 +55,216 @@ export default function CustomerForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
-      {error && <div className="bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-md text-sm">{error}</div>}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Customer Name *</label>
-          <input required type="text" name="customerName" defaultValue={initialData?.customerName} className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contact Number *</label>
-          <input required type="text" name="contact" defaultValue={initialData?.contact} className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm" />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address *</label>
-          <textarea required name="address" defaultValue={initialData?.address} rows={3} className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm"></textarea>
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+      {error && (
+        <AlertBanner
+          variant="danger"
+          title="Could not save customer"
+          onClose={() => setError(null)}
+        >
+          {error}
+        </AlertBanner>
+      )}
+
+      {/* Basic Details Section */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
+        <div className="flex items-center gap-2 pb-3 border-b border-border/40">
+          <Building2 className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">Basic Information</h2>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">State *</label>
-          <select 
-            required name="stateId" value={stateId} 
-            onChange={(e) => { setStateId(e.target.value); setCityId(''); }}
-            className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-950"
-          >
-            <option value="">Select State</option>
-            {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Customer Name <span className="text-destructive">*</span>
+            </label>
+            <input
+              required
+              type="text"
+              name="customerName"
+              placeholder="e.g. Metro Mart"
+              defaultValue={initialData?.customerName}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Contact Number <span className="text-destructive">*</span>
+            </label>
+            <div className="relative">
+              <input
+                required
+                type="text"
+                name="contact"
+                placeholder="e.g. +91 98765 43210"
+                defaultValue={initialData?.contact}
+                className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Address <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              required
+              name="address"
+              defaultValue={initialData?.address}
+              rows={3}
+              placeholder="Shop No., Street, Landmark"
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all resize-none"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">City *</label>
-          <select 
-            required name="cityId" value={cityId} 
-            onChange={(e) => setCityId(e.target.value)}
-            disabled={!stateId}
-            className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-950 disabled:bg-slate-100 dark:disabled:bg-slate-800"
-          >
-            <option value="">Select City</option>
-            {availableCities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Route *</label>
-          <select 
-            required name="routeId" defaultValue={initialData?.routeId || ''} 
-            disabled={!cityId}
-            className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-950 disabled:bg-slate-100 dark:disabled:bg-slate-800"
-          >
-            <option value="">Select Route</option>
-            {availableRoutes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Salesman *</label>
-          <select required name="salesmanId" defaultValue={initialData?.salesmanId || ''} className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-950">
-            <option value="">Select Salesman</option>
-            {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+      </div>
+
+      {/* Territory & Routing Section */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
+        <div className="flex items-center gap-2 pb-3 border-b border-border/40">
+          <MapPin className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">Territory & Routing</h2>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Opening Balance (₹) *</label>
-          <input required type="number" step="0.01" min="0" name="openingBalance" defaultValue={initialData ? (initialData.openingBalance / 100).toFixed(2) : '0.00'} className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              State <span className="text-destructive">*</span>
+            </label>
+            <select 
+              required
+              name="stateId"
+              value={stateId} 
+              onChange={(e) => { setStateId(e.target.value); setCityId(''); }}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+            >
+              <option value="">Select State</option>
+              {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              City <span className="text-destructive">*</span>
+            </label>
+            <select 
+              required
+              name="cityId"
+              value={cityId} 
+              onChange={(e) => setCityId(e.target.value)}
+              disabled={!stateId}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">Select City</option>
+              {availableCities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Route <span className="text-destructive">*</span>
+            </label>
+            <select 
+              required
+              name="routeId"
+              defaultValue={initialData?.routeId || ''} 
+              disabled={!cityId}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">Select Route</option>
+              {availableRoutes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Assigned Salesman
+            </label>
+            <select
+              name="salesmanId"
+              defaultValue={initialData?.salesmanId || ''}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+            >
+              <option value="">Unassigned</option>
+              {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Balance Type</label>
-          <select name="openingBalanceType" defaultValue={initialData?.openingBalanceType || 'DEBIT'} className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-950">
-            <option value="DEBIT">DEBIT (Customer owes us)</option>
-            <option value="CREDIT">CREDIT (We owe customer)</option>
-          </select>
+      </div>
+
+      {/* Financials & Status Section */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
+        <div className="flex items-center gap-2 pb-3 border-b border-border/40">
+          <IndianRupee className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">Financials & Status</h2>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
-          <select name="status" defaultValue={initialData?.status || 'ACTIVE'} className="w-full rounded-md border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm bg-white dark:bg-slate-950">
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Opening Balance (₹) <span className="text-destructive">*</span>
+            </label>
+            <input
+              required
+              type="number"
+              step="0.01"
+              min="0"
+              name="openingBalance"
+              defaultValue={initialData ? (initialData.openingBalance / 100).toFixed(2) : '0.00'}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Balance Type
+            </label>
+            <select
+              name="openingBalanceType"
+              defaultValue={initialData?.openingBalanceType || 'DEBIT'}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+            >
+              <option value="DEBIT">DEBIT (Customer owes us)</option>
+              <option value="CREDIT">CREDIT (We owe customer)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Account Status
+            </label>
+            <select
+              name="status"
+              defaultValue={initialData?.status || 'ACTIVE'}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+            >
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
         </div>
       </div>
       
-      <div className="flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-        <button type="button" onClick={() => router.back()} className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900">
+      {/* Form Action Controls */}
+      <div className="flex items-center justify-end gap-3 pt-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          disabled={isPending}
+        >
           Cancel
-        </button>
-        <button type="submit" disabled={isPending} className="px-4 py-2 text-sm font-medium text-white bg-alvoun-blue rounded-md hover:bg-alvoun-dark disabled:opacity-50">
+        </Button>
+        <Button
+          type="submit"
+          variant="primary"
+          isLoading={isPending}
+          className="shadow-raised hover:shadow-raised-sm press-active"
+        >
+          <Save className="w-4 h-4 mr-1.5" />
           {isPending ? 'Saving...' : (initialData ? 'Update Customer' : 'Create Customer')}
-        </button>
+        </Button>
       </div>
     </form>
   );

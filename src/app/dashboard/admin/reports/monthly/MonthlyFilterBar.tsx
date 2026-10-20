@@ -39,26 +39,26 @@ export default function MonthlyFilterBar({
   ];
 
   return (
-    <div className="flex items-center gap-2 bg-white dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-      <div className="flex items-center gap-1.5 px-2">
-        <span className="text-xs font-semibold text-slate-400">Month</span>
+    <div className="inline-flex items-center gap-2 bg-surface-inset shadow-inset px-3 py-1.5 rounded-xl border border-border/40">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Month</span>
         <select 
           value={month || 'all'}
           onChange={(e) => updateParam('month', e.target.value)}
-          className="text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100 font-medium cursor-pointer"
+          className="text-xs bg-transparent border-none focus:outline-none text-foreground font-semibold cursor-pointer"
         >
           {months.map(m => (
-            <option key={m.value} value={m.value} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <option key={m.value} value={m.value} className="bg-surface-raised text-foreground">
               {m.label}
             </option>
           ))}
         </select>
       </div>
 
-      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+      <div className="w-px h-5 bg-border/40"></div>
 
-      <div className="flex items-center gap-1.5 px-2">
-        <span className="text-xs font-semibold text-slate-400">Year</span>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Year</span>
         <input 
           type="number" 
           defaultValue={year}
@@ -68,7 +68,7 @@ export default function MonthlyFilterBar({
               updateParam('year', val);
             }
           }}
-          className="w-16 text-xs bg-transparent border-none focus:ring-0 focus:outline-none text-slate-900 dark:text-slate-100 font-medium cursor-pointer" 
+          className="w-14 text-xs bg-transparent border-none focus:outline-none text-foreground font-semibold cursor-pointer" 
         />
       </div>
     </div>

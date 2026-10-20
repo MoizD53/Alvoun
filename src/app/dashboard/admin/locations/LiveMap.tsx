@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { MapPin } from 'lucide-react';
 
 interface SalesmanLocation {
   id: string;
@@ -18,8 +19,9 @@ interface SalesmanLocation {
 const LeafletMap = dynamic(() => import('./LeafletMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[450px] lg:h-[600px] bg-slate-100 dark:bg-slate-800 animate-pulse rounded-lg flex items-center justify-center border border-slate-200 dark:border-slate-800">
-      <span className="text-slate-400 font-medium">Loading Map...</span>
+    <div className="w-full h-[450px] lg:h-[600px] bg-surface-sunken animate-pulse rounded-2xl flex flex-col items-center justify-center border border-border-subtle gap-2">
+      <MapPin className="h-8 w-8 text-brand-teal animate-bounce" />
+      <span className="text-text-muted font-bold text-xs uppercase tracking-wider">Loading Fleet Map...</span>
     </div>
   )
 });

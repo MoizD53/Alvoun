@@ -35,29 +35,39 @@ export default async function RouteManagePage({ params }: { params: Promise<{ id
   const salesmen = await getSalesmen();
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+    <div className="space-y-6 animate-fade-in-up pb-24">
+      {/* Route Header Banner */}
+      <div className="bg-surface-raised p-6 rounded-3xl shadow-raised border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/admin/routes" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+          <Link 
+            href="/dashboard/admin/routes" 
+            className="w-10 h-10 flex items-center justify-center bg-surface-raised rounded-2xl shadow-raised-sm border border-border-subtle text-text-primary active:shadow-inset active:scale-95 transition-all"
+            aria-label="Back to routes"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight">{route.name}</h1>
+              <h1 className="text-2xl font-black text-text-primary uppercase tracking-tight">{route.name}</h1>
               {route.isActive ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-green-50 dark:bg-green-900/20 text-alvoun-green">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-raised-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                   Active
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-surface-sunken text-text-muted border border-border-subtle shadow-inset-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
                   Inactive
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-4 mt-1 text-sm text-slate-500 font-medium">
-              <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {route.city.name}, {route.city.state.name}</span>
+            <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs font-semibold text-text-muted">
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5 text-brand-teal" /> 
+                {route.city.name}, {route.city.state.name}
+              </span>
               <span>•</span>
-              <span>Salesman: <strong className="text-slate-700 dark:text-slate-300">{route.salesman?.name || 'Unassigned'}</strong></span>
+              <span>Salesman: <strong className="text-text-primary">{route.salesman?.name || 'Unassigned'}</strong></span>
               <span>•</span>
               <span>{route.customers.length} Customers</span>
             </div>

@@ -1,14 +1,16 @@
-import { getCustomers } from '@/lib/actions/customer';
 import { getStates } from '@/lib/actions/state';
 import { getCities } from '@/lib/actions/city';
 import { getRoutes } from '@/lib/actions/route';
 import { getSalesmen } from '@/lib/actions/salesman';
 import Link from 'next/link';
-import { Plus, Filter, Search, Phone, ExternalLink, MoreVertical, ArrowLeft } from 'lucide-react';
+import { Plus, Phone, ExternalLink, ArrowLeft, Users } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import { prisma } from '@/lib/db';
 import CustomerFilterBar from './components/CustomerFilterBar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default async function CustomersPage({
   searchParams,
@@ -64,99 +66,132 @@ export default async function CustomersPage({
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/admin" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+          <Link 
+            href="/dashboard/admin" 
+            className="p-2 rounded-xl bg-surface-raised border border-border-default shadow-xs text-secondary hover:text-primary hover:border-border-strong transition-colors cursor-pointer press-active"
+            aria-label="Back to dashboard"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Customers</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage your customer database and assignments.</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+              Customer Directory
+            </h1>
+            <p className="text-xs sm:text-sm text-secondary font-medium mt-0.5">
+              Manage accounts, route assignments, dues, and contact info.
+            </p>
           </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Link 
-            href="/dashboard/admin/customers/new" 
-            className="flex items-center justify-center gap-2 bg-alvoun-blue text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-alvoun-dark transition-colors flex-1 sm:flex-none shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Add Customer
+
+        <div className="flex gap-2.5 w-full sm:w-auto">
+          <Link href="/dashboard/admin/customers/import" className="flex-1 sm:flex-none">
+            <Button variant="secondary" size="md" className="w-full">
+              Bulk Import
+            </Button>
+          </Link>
+          <Link href="/dashboard/admin/customers/new" className="flex-1 sm:flex-none">
+            <Button variant="primary" size="md" leftIcon={<Plus className="h-4 w-4" />} className="w-full">
+              Add Customer
+            </Button>
           </Link>
         </div>
       </div>
 
-      {/* Reusable Filter Bar */}
+      {/* Filter Bar */}
       <CustomerFilterBar 
         initialFilters={filters} 
         routes={routes} 
         salesmen={salesmen} 
       />
 
-      {/* Main Table */}
-      <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {/* Main Table Shell */}
+      <div className="bg-surface-raised rounded-2xl border border-border-default shadow-raised overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap hidden lg:table">
-            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
+          <table className="w-full text-xs text-left whitespace-nowrap hidden lg:table">
+            <thead className="bg-surface-inset text-secondary font-semibold uppercase tracking-wider border-b border-border-default">
               <tr>
-                <th className="px-6 py-3">Customer</th>
-                <th className="px-6 py-3">Route & Salesman</th>
-                <th className="px-6 py-3 text-right">Dues</th>
-                <th className="px-6 py-3">Last Visit</th>
-                <th className="px-6 py-3 text-center">Status</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-6 py-3.5">Customer</th>
+                <th className="px-6 py-3.5">Route & Salesman</th>
+                <th className="px-6 py-3.5 text-right">Dues</th>
+                <th className="px-6 py-3.5">Last Visit</th>
+                <th className="px-6 py-3.5 text-center">Status</th>
+                <th className="px-6 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border-subtle">
               {customers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-slate-400">
-                      <Filter className="h-8 w-8 mb-3 text-slate-300" />
-                      <p className="text-base font-medium text-slate-600 dark:text-slate-400">No customers found</p>
-                      <p className="text-sm mt-1 text-slate-500 dark:text-slate-400">Try adjusting your filters or add a new customer.</p>
-                    </div>
+                    <EmptyState 
+                      icon={<Users className="h-7 w-7" />}
+                      title="No customers found"
+                      description="Try adjusting your search criteria or add a new customer."
+                      action={
+                        <Link href="/dashboard/admin/customers/new">
+                          <Button variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+                            Add First Customer
+                          </Button>
+                        </Link>
+                      }
+                    />
                   </td>
                 </tr>
               ) : (
                 customers.map((c) => {
                   const outstanding = calculateOutstanding(c as any);
                   const isNegative = outstanding > 0;
-                  const lastVisit = c.visits[0]?.createdAt ? new Date(c.visits[0].createdAt).toLocaleDateString() : 'Never';
+                  const lastVisit = c.visits[0]?.createdAt 
+                    ? new Date(c.visits[0].createdAt).toLocaleDateString() 
+                    : 'Never';
                   
                   return (
-                    <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
-                      <td className="px-6 py-3">
-                        <div className="font-bold text-slate-900 dark:text-slate-100">{c.customerName}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{c.contact} • {c.city.name}</div>
+                    <tr key={c.id} className="hover:bg-surface-inset/50 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-primary text-sm">{c.customerName}</div>
+                        <div className="text-[11px] text-muted mt-0.5">{c.contact} • {c.city.name}</div>
                       </td>
-                      <td className="px-6 py-3">
-                        <div className="font-medium text-slate-700 dark:text-slate-300">{c.route.name}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{c.salesman?.name}</div>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-primary">{c.route.name}</div>
+                        <div className="text-[11px] text-secondary mt-0.5">{c.salesman?.name || 'Unassigned'}</div>
                       </td>
-                      <td className="px-6 py-3 text-right">
-                        <span className={`font-bold ${isNegative ? 'text-alvoun-red' : 'text-slate-900 dark:text-slate-100'}`}>
+                      <td className="px-6 py-4 text-right">
+                        <span className={`font-mono font-bold text-sm ${isNegative ? 'text-danger' : 'text-primary'}`}>
                           {formatMoney(Math.abs(outstanding))}
                         </span>
                         {outstanding !== 0 && (
-                          <div className="text-[10px] text-slate-400 font-medium">
+                          <div className="text-[10px] font-semibold tracking-wider text-muted mt-0.5">
                             {isNegative ? 'TO RECEIVE' : 'IN ADVANCE'}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-right text-slate-500 dark:text-slate-400 font-medium text-sm">
+                      <td className="px-6 py-4 text-secondary font-medium">
                         {lastVisit}
                       </td>
-                      <td className="px-6 py-3 text-center">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${c.status === 'ACTIVE' ? 'bg-green-50 dark:bg-green-900/20 text-alvoun-green' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                      <td className="px-6 py-4 text-center">
+                        <Badge 
+                          variant={c.status === 'ACTIVE' ? 'success' : 'neutral'}
+                          styleType="subtle"
+                          size="sm"
+                          dot
+                        >
                           {c.status}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="px-6 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <a href={`tel:${c.contact}`} className="p-1.5 text-slate-400 hover:text-alvoun-blue bg-white dark:bg-slate-950 hover:bg-alvoun-light border border-slate-200 dark:border-slate-800 rounded transition-colors" title="Call">
-                            <Phone className="h-4 w-4" />
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                          <a 
+                            href={`tel:${c.contact}`} 
+                            className="p-2 rounded-xl bg-surface-raised border border-border-default shadow-xs text-muted hover:text-teal-600 dark:hover:text-teal-400 hover:border-border-strong transition-all press-active"
+                            title="Call customer"
+                          >
+                            <Phone className="h-3.5 w-3.5" />
                           </a>
-                          <Link href={`/dashboard/admin/customers/${c.id}`} className="flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-alvoun-blue hover:border-alvoun-blue rounded text-xs font-medium transition-all shadow-sm">
+                          <Link 
+                            href={`/dashboard/admin/customers/${c.id}`} 
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-default shadow-xs text-primary hover:border-teal-500 hover:text-teal-600 rounded-xl text-xs font-semibold transition-all press-active"
+                          >
                             <ExternalLink className="h-3.5 w-3.5" />
-                            View
+                            <span>View</span>
                           </Link>
                         </div>
                       </td>
@@ -168,43 +203,62 @@ export default async function CustomersPage({
           </table>
         </div>
 
-        {/* Mobile cards view */}
-        <div className="lg:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
+        {/* Mobile Cards View */}
+        <div className="lg:hidden flex flex-col divide-y divide-border-subtle">
           {customers.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 dark:text-slate-400">No customers found.</div>
+            <div className="p-6">
+              <EmptyState 
+                title="No customers found"
+                description="Try adjusting your search criteria or add a new customer."
+              />
+            </div>
           ) : (
             customers.map((c) => {
               const outstanding = calculateOutstanding(c as any);
               const isNegative = outstanding > 0;
               return (
-                <div key={c.id} className="p-4 bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                <div key={c.id} className="p-4 bg-surface-raised hover:bg-surface-inset/40 transition-colors">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-bold text-slate-900 dark:text-slate-100">{c.customerName}</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{c.contact}</p>
+                      <h3 className="font-bold text-sm text-primary">{c.customerName}</h3>
+                      <p className="text-xs text-secondary mt-0.5">{c.contact} • {c.city.name}</p>
                     </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${c.status === 'ACTIVE' ? 'bg-green-50 dark:bg-green-900/20 text-alvoun-green' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                    <Badge 
+                      variant={c.status === 'ACTIVE' ? 'success' : 'neutral'}
+                      styleType="subtle"
+                      size="sm"
+                      dot
+                    >
                       {c.status}
-                    </span>
+                    </Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-y-2 text-sm mt-3 pt-3 border-t border-slate-50">
+
+                  <div className="grid grid-cols-2 gap-y-2 text-xs mt-3 pt-3 border-t border-border-subtle">
                     <div>
-                      <div className="text-xs text-slate-400 font-medium">Route & Salesman</div>
-                      <div className="font-medium text-slate-700 dark:text-slate-300">{c.route.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{c.salesman?.name}</div>
+                      <div className="text-[10px] text-muted font-bold uppercase tracking-wider">Route & Salesman</div>
+                      <div className="font-semibold text-primary mt-0.5">{c.route.name}</div>
+                      <div className="text-secondary">{c.salesman?.name || 'Unassigned'}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs text-slate-400 font-medium">Dues</div>
-                      <div className={`font-bold ${isNegative ? 'text-alvoun-red' : 'text-slate-900 dark:text-slate-100'}`}>
+                      <div className="text-[10px] text-muted font-bold uppercase tracking-wider">Dues</div>
+                      <div className={`font-mono font-bold text-sm mt-0.5 ${isNegative ? 'text-danger' : 'text-primary'}`}>
                         {formatMoney(Math.abs(outstanding))}
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 flex gap-2">
-                    <a href={`tel:${c.contact}`} className="flex-1 flex justify-center items-center gap-2 py-2 border border-slate-200 dark:border-slate-800 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900">
-                      <Phone className="h-4 w-4" /> Call
+
+                  <div className="mt-3.5 flex gap-2">
+                    <a 
+                      href={`tel:${c.contact}`} 
+                      className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 rounded-xl bg-surface-raised border border-border-default shadow-xs text-xs font-semibold text-secondary hover:text-primary transition-all press-active"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      <span>Call</span>
                     </a>
-                    <Link href={`/dashboard/admin/customers/${c.id}`} className="flex-1 flex justify-center items-center gap-2 py-2 bg-alvoun-light/30 border border-alvoun-light text-alvoun-blue rounded-md text-sm font-medium hover:bg-alvoun-light/50">
+                    <Link 
+                      href={`/dashboard/admin/customers/${c.id}`} 
+                      className="flex-1 inline-flex justify-center items-center gap-1.5 py-2 rounded-xl bg-teal-50 dark:bg-teal-900/30 border border-teal-200/50 text-teal-700 dark:text-teal-300 text-xs font-bold transition-all press-active"
+                    >
                       View Profile
                     </Link>
                   </div>

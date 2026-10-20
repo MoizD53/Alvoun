@@ -2,31 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Calendar, TrendingUp, CreditCard, Package } from 'lucide-react';
 
 const navItems = [
-  { name: 'Daily Sales', href: '/dashboard/admin/reports/daily' },
-  { name: 'Monthly Sales', href: '/dashboard/admin/reports/monthly' },
-  { name: 'Dues', href: '/dashboard/admin/reports/outstanding' },
-  { name: 'Products', href: '/dashboard/admin/reports/products' },
+  { name: 'Daily Sales', href: '/dashboard/admin/reports/daily', icon: Calendar },
+  { name: 'Monthly Sales', href: '/dashboard/admin/reports/monthly', icon: TrendingUp },
+  { name: 'Dues', href: '/dashboard/admin/reports/outstanding', icon: CreditCard },
+  { name: 'Products', href: '/dashboard/admin/reports/products', icon: Package },
 ];
 
 export default function ReportsNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+    <nav className="inline-flex flex-wrap bg-surface-inset shadow-inset p-1 rounded-2xl border border-border/40 gap-1">
       {navItems.map((item) => {
+        const Icon = item.icon;
         const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
               isActive
-                ? 'bg-alvoun-blue text-white shadow-sm font-bold'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-900'
+                ? 'bg-surface-raised shadow-raised text-primary border border-border/40'
+                : 'text-muted-foreground hover:text-foreground hover:bg-surface-raised/40'
             }`}
           >
+            <Icon className="w-4 h-4" />
             {item.name}
           </Link>
         );

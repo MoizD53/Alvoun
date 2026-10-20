@@ -19,7 +19,6 @@ import {
   Eye, 
   IndianRupee,
   Check,
-  ChevronRight,
   Banknote,
   QrCode
 } from 'lucide-react';
@@ -138,23 +137,23 @@ export default function SalesmanCustomerList({
   };
 
   return (
-    <div className="space-y-6 pb-24 animate-fade-in-up">
+    <div className="space-y-6 pb-28 animate-fade-in-up">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-xl font-bold text-sm flex items-center gap-2 animate-bounce">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-raised-lg font-bold text-sm flex items-center gap-2 animate-bounce">
           <CheckCircle2 className="h-5 w-5" />
-          {toastMessage}
+          <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Header & Search */}
-      <div className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="sticky top-0 z-20 bg-surface/90 backdrop-blur-md pt-2 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-border-subtle/40">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+            <h1 className="text-2xl font-black text-text-primary tracking-tight">
               {routeName || (routeId && customers.length > 0 ? customers[0].route.name : 'My Customers')}
             </h1>
-            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs font-semibold text-text-muted mt-0.5">
               {pendingCustomers.length} pending • {completedCustomers.length} visited today
             </p>
           </div>
@@ -166,27 +165,28 @@ export default function SalesmanCustomerList({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search customer name or phone..." 
-            className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-alvoun-blue/50 focus:border-alvoun-blue transition-all placeholder-slate-400 font-medium"
+            className="w-full pl-11 pr-10 py-3.5 bg-surface-sunken shadow-inset border border-border-subtle rounded-2xl text-base text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal transition-all placeholder:text-text-muted font-medium"
           />
-          <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
+          <Search className="absolute left-4 top-4 h-5 w-5 text-text-muted pointer-events-none" />
           {searchTerm && (
             <button 
               onClick={() => setSearchTerm('')}
-              className="absolute right-4 top-4 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-3.5 top-3.5 w-7 h-7 flex items-center justify-center rounded-full bg-surface-raised text-text-muted hover:text-text-primary shadow-raised-sm active:shadow-inset transition-colors"
+              aria-label="Clear search"
             >
-              ✕
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
       </div>
 
       {filteredCustomers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
-          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-            <MapPin className="h-8 w-8 text-slate-300" />
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-surface-raised rounded-3xl border border-border-subtle p-8 shadow-raised">
+          <div className="w-16 h-16 bg-surface-sunken shadow-inset rounded-2xl flex items-center justify-center mb-4">
+            <MapPin className="h-8 w-8 text-text-muted" />
           </div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">No customers found</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+          <h2 className="text-lg font-bold text-text-primary mb-1">No customers found</h2>
+          <p className="text-text-secondary text-sm">
             {searchTerm ? 'Try adjusting your search terms.' : 'No customers assigned in this area.'}
           </p>
         </div>
@@ -197,12 +197,12 @@ export default function SalesmanCustomerList({
             <div className="space-y-3">
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                  <h2 className="font-extrabold text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <span className="h-2.5 w-2.5 rounded-full bg-brand-teal animate-pulse"></span>
+                  <h2 className="font-extrabold text-xs text-text-muted uppercase tracking-wider">
                     TODAY&apos;S ROUTE
                   </h2>
                 </div>
-                <span className="text-xs font-bold text-alvoun-blue bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-brand-teal bg-brand-teal/10 border border-brand-teal/20 px-2.5 py-0.5 rounded-full shadow-raised-sm">
                   {pendingCustomers.length} Remaining
                 </span>
               </div>
@@ -224,35 +224,35 @@ export default function SalesmanCustomerList({
                   return (
                     <div 
                       key={customer.id} 
-                      className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 transition-all"
+                      className="bg-surface-raised rounded-2xl shadow-raised hover:shadow-raised-hover border border-border-subtle p-4 sm:p-5 transition-all duration-200"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1 mr-2">
                           <Link 
                             href={`/dashboard/salesman/customers/${customer.id}`}
-                            className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight hover:text-alvoun-blue transition-colors block mb-1"
+                            className="text-lg font-black text-text-primary leading-tight hover:text-brand-teal transition-colors block mb-1"
                           >
                             {customer.customerName}
                           </Link>
-                          <div className="flex items-center text-xs font-semibold text-slate-500 dark:text-slate-400 gap-2 mb-2">
+                          <div className="flex flex-wrap items-center text-xs font-semibold text-text-muted gap-2 mb-2">
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3 text-slate-400" />
+                              <MapPin className="h-3.5 w-3.5 text-brand-teal" />
                               {customer.route?.name || 'Assigned Area'}
                             </span>
                             {customer.contact && (
-                              <span className="flex items-center gap-1 text-slate-400">
-                                • <Phone className="h-3 w-3" /> {customer.contact}
+                              <span className="flex items-center gap-1">
+                                • <Phone className="h-3.5 w-3.5 text-text-muted" /> {customer.contact}
                               </span>
                             )}
                           </div>
 
                           {/* Outstanding dues */}
                           <div className="text-sm font-bold mt-1">
-                            <span className="text-slate-500 dark:text-slate-400">Outstanding: </span>
-                            <span className={customer.outstanding > 0 ? 'text-alvoun-red font-black' : 'text-slate-900 dark:text-slate-100'}>
+                            <span className="text-text-muted">Outstanding: </span>
+                            <span className={customer.outstanding > 0 ? 'text-accent-terracotta font-black' : 'text-text-primary font-black'}>
                               {formatMoney(Math.abs(customer.outstanding))}
                               {customer.outstanding !== 0 && (
-                                <span className="text-[10px] ml-1 uppercase">{customer.outstanding > 0 ? 'Dr' : 'Cr'}</span>
+                                <span className="text-[10px] ml-1 uppercase font-extrabold">{customer.outstanding > 0 ? 'Dr' : 'Cr'}</span>
                               )}
                             </span>
                           </div>
@@ -260,27 +260,27 @@ export default function SalesmanCustomerList({
 
                         {/* Status Badge: NOT VISITED */}
                         <div>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                            <CircleDot className="h-3 w-3 text-slate-400" />
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-surface-sunken shadow-inset-sm text-text-muted border border-border-subtle whitespace-nowrap">
+                            <CircleDot className="h-3 w-3 text-text-muted" />
                             NOT VISITED
                           </span>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/80">
+                      <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-border-subtle/80">
                         {customer.contact ? (
                           <a 
                             href={`tel:${customer.contact}`} 
-                            className="flex items-center justify-center gap-2 py-3 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider active:bg-slate-100 transition-colors"
+                            className="min-h-[44px] flex items-center justify-center gap-2 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-primary rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
                           >
-                            <Phone className="h-3.5 w-3.5 text-slate-400" />
+                            <Phone className="h-3.5 w-3.5 text-brand-teal" />
                             CALL
                           </a>
                         ) : (
                           <Link 
                             href={`/dashboard/salesman/customers/${customer.id}`} 
-                            className="flex items-center justify-center gap-1.5 py-3 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider active:bg-slate-100 transition-colors"
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-muted rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
                           >
                             + ADD PHONE
                           </Link>
@@ -292,7 +292,7 @@ export default function SalesmanCustomerList({
                             e.stopPropagation();
                             setActiveCustomerForVisit(customer);
                           }}
-                          className="flex items-center justify-center gap-1.5 py-3 bg-alvoun-blue text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shadow-alvoun-blue/20 hover:bg-alvoun-dark active:bg-alvoun-dark transition-colors"
+                          className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-raised-sm hover:shadow-raised active:scale-[0.98] transition-all"
                         >
                           <ShoppingBag className="h-3.5 w-3.5" />
                           START VISIT
@@ -311,11 +311,11 @@ export default function SalesmanCustomerList({
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <h2 className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  <h2 className="font-extrabold text-xs text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
                     COMPLETED
                   </h2>
                 </div>
-                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full">
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full shadow-raised-sm">
                   {completedCustomers.length} Visited
                 </span>
               </div>
@@ -326,25 +326,25 @@ export default function SalesmanCustomerList({
                   return (
                     <div 
                       key={customer.id} 
-                      className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border-2 border-emerald-500/30 dark:border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10 p-4 transition-all"
+                      className="bg-surface-raised rounded-2xl shadow-raised border-2 border-emerald-500/30 p-4 sm:p-5 transition-all duration-200"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1 mr-2">
                           <Link 
                             href={`/dashboard/salesman/customers/${customer.id}`}
-                            className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight hover:text-emerald-600 transition-colors inline-flex items-center gap-1.5 mb-1"
+                            className="text-lg font-black text-text-primary leading-tight hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5 mb-1"
                           >
-                            <span className="text-emerald-600 dark:text-emerald-400">✓</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-black">✓</span>
                             <span>{customer.customerName}</span>
                           </Link>
-                          <div className="flex items-center text-xs font-semibold text-slate-500 dark:text-slate-400 gap-2 mb-2">
+                          <div className="flex flex-wrap items-center text-xs font-semibold text-text-muted gap-2 mb-2">
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3 text-slate-400" />
+                              <MapPin className="h-3.5 w-3.5 text-brand-teal" />
                               {customer.route?.name || 'Assigned Area'}
                             </span>
                             {customer.contact && (
-                              <span className="flex items-center gap-1 text-slate-400">
-                                • <Phone className="h-3 w-3" /> {customer.contact}
+                              <span className="flex items-center gap-1">
+                                • <Phone className="h-3.5 w-3.5 text-text-muted" /> {customer.contact}
                               </span>
                             )}
                           </div>
@@ -352,7 +352,7 @@ export default function SalesmanCustomerList({
 
                         {/* Status Badge: VISITED TODAY */}
                         <div>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-raised-sm whitespace-nowrap">
                             <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                             VISITED TODAY
                           </span>
@@ -360,46 +360,46 @@ export default function SalesmanCustomerList({
                       </div>
 
                       {/* Visit Details Summary */}
-                      <div className="mt-2.5 mb-1 p-3 bg-white/80 dark:bg-slate-900/80 rounded-lg border border-emerald-100 dark:border-emerald-900/30 text-xs">
-                        <div className="text-slate-500 dark:text-slate-400 font-medium mb-1.5 flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-slate-400" />
+                      <div className="mt-2.5 mb-1 p-3.5 bg-surface-sunken shadow-inset rounded-xl border border-border-subtle text-xs">
+                        <div className="text-text-muted font-medium mb-1.5 flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5 text-brand-teal" />
                           <span>Visited: {visit?.formattedTime || 'Today'}</span>
                         </div>
 
                         {visit?.isNoSale ? (
-                          <div className="font-bold text-slate-700 dark:text-slate-300">
-                            Visit completed • <span className="text-slate-500">No sale ({visit.noSaleReason || 'No sale'})</span>
+                          <div className="font-bold text-text-secondary">
+                            Visit completed • <span className="text-text-muted">No sale ({visit.noSaleReason || 'No sale'})</span>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-3 gap-2 pt-1 font-semibold text-slate-700 dark:text-slate-200 border-t border-slate-100 dark:border-slate-800">
+                          <div className="grid grid-cols-3 gap-2 pt-1 font-semibold text-text-secondary border-t border-border-subtle/80">
                             <div>
-                              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Sale</span>
-                              <span className="font-bold text-slate-900 dark:text-slate-100">{formatMoney(visit?.saleAmount || 0)}</span>
+                              <span className="text-[10px] text-text-muted uppercase tracking-wider block">Sale</span>
+                              <span className="font-black text-text-primary">{formatMoney(visit?.saleAmount || 0)}</span>
                             </div>
                             <div>
-                              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Received</span>
-                              <span className="font-bold text-alvoun-green">{formatMoney(visit?.receivedAmount || 0)}</span>
+                              <span className="text-[10px] text-text-muted uppercase tracking-wider block">Received</span>
+                              <span className="font-black text-emerald-600 dark:text-emerald-400">{formatMoney(visit?.receivedAmount || 0)}</span>
                             </div>
                             <div>
-                              <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Due</span>
-                              <span className="font-bold text-alvoun-red">{formatMoney(visit?.dueFromSale || 0)}</span>
+                              <span className="text-[10px] text-text-muted uppercase tracking-wider block">Due</span>
+                              <span className="font-black text-accent-terracotta">{formatMoney(visit?.dueFromSale || 0)}</span>
                             </div>
                           </div>
                         )}
                       </div>
 
                       {/* Actions */}
-                      <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-emerald-100 dark:border-emerald-900/30">
+                      <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-border-subtle/80">
                         {customer.contact ? (
                           <a 
                             href={`tel:${customer.contact}`} 
-                            className="flex items-center justify-center gap-2 py-3 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs uppercase tracking-wider active:bg-slate-100 transition-colors"
+                            className="min-h-[44px] flex items-center justify-center gap-2 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-primary rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
                           >
-                            <Phone className="h-3.5 w-3.5 text-slate-400" />
+                            <Phone className="h-3.5 w-3.5 text-brand-teal" />
                             CALL
                           </a>
                         ) : (
-                          <div className="flex items-center justify-center py-3 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 rounded-xl text-xs font-semibold">
+                          <div className="min-h-[44px] flex items-center justify-center py-2.5 bg-surface-sunken/60 text-text-muted rounded-xl text-xs font-semibold">
                             No Phone
                           </div>
                         )}
@@ -407,7 +407,7 @@ export default function SalesmanCustomerList({
                         <button 
                           type="button"
                           onClick={() => setActiveCustomerForView(customer)}
-                          className="flex items-center justify-center gap-1.5 py-3 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-800 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors"
+                          className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs uppercase tracking-wider shadow-raised-sm active:shadow-inset transition-all"
                         >
                           <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                           VIEW VISIT
@@ -548,287 +548,290 @@ function InteractiveVisitFlow({
 
   return (
     <div 
-      className="bg-white dark:bg-slate-950 rounded-xl shadow-lg border-2 border-alvoun-blue/50 overflow-hidden animate-fade-in flex flex-col"
+      className="bg-surface-raised rounded-3xl shadow-raised-lg border-2 border-brand-teal/40 overflow-hidden animate-fade-in flex flex-col my-2"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-blue-50/50 dark:bg-blue-900/10">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle bg-brand-teal/10">
         <div>
-          <span className="text-[10px] font-bold text-alvoun-blue uppercase tracking-wider block">
+          <span className="text-[10px] font-bold text-brand-teal uppercase tracking-wider block">
             {step === 'START' ? 'Customer Visit' : step === 'ORDER' ? 'Step 2: Take Order' : 'Step 3: Collect Payment'}
           </span>
-          <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate max-w-[280px]">
+          <h2 className="text-base font-black text-text-primary truncate max-w-[280px]">
             {customer.customerName}
           </h2>
         </div>
         <button 
           type="button" 
           onClick={onClose}
-          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised text-text-muted hover:text-text-primary shadow-raised-sm active:shadow-inset transition-colors"
+          aria-label="Close"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Content */}
       <div className="p-5 flex-1 space-y-5">
-          {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold border border-red-200 dark:border-red-800 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+        {error && (
+          <div className="p-3.5 bg-red-500/10 border border-red-500/30 text-accent-terracotta rounded-xl text-xs font-bold flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* STEP 1: START */}
+        {step === 'START' && (
+          <div className="space-y-6 text-center">
+            <div className="w-16 h-16 bg-surface-sunken shadow-inset border border-border-subtle rounded-2xl flex items-center justify-center mx-auto text-brand-teal">
+              <ShoppingBag className="h-8 w-8" />
             </div>
-          )}
-
-          {/* STEP 1: START */}
-          {step === 'START' && (
-            <div className="space-y-6 text-center">
-              <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto text-alvoun-blue">
-                <ShoppingBag className="h-8 w-8" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-slate-100">{customer.customerName}</h3>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">{customer.route?.name}</p>
-              </div>
-
-              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Current Outstanding</span>
-                <span className={`text-2xl font-black ${customer.outstanding > 0 ? 'text-alvoun-red' : 'text-slate-900 dark:text-slate-100'}`}>
-                  {formatMoney(Math.abs(customer.outstanding))}
-                  {customer.outstanding !== 0 && (
-                    <span className="text-xs ml-1 font-bold">{customer.outstanding > 0 ? 'Dr' : 'Cr'}</span>
-                  )}
-                </span>
-              </div>
-
-              {!isNoSale ? (
-                <div className="space-y-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setStep('ORDER')}
-                    className="w-full py-4 bg-alvoun-blue text-white rounded-xl font-bold text-base shadow-lg shadow-alvoun-blue/20 active:bg-alvoun-dark transition-colors"
-                  >
-                    TAKE ORDER
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsNoSale(true)}
-                    className="w-full py-3.5 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm active:bg-slate-200 dark:active:bg-slate-800 transition-colors"
-                  >
-                    NO SALE TODAY
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-left space-y-4 animate-fade-in">
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 block">
-                      Reason for No Sale:
-                    </label>
-                    <select
-                      value={noSaleReason}
-                      onChange={(e) => setNoSaleReason(e.target.value)}
-                      className="w-full p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 outline-none"
-                    >
-                      <option>Shop Closed</option>
-                      <option>Sufficient Stock</option>
-                      <option>Owner Unavailable</option>
-                      <option>Payment Pending</option>
-                      <option>Price Dispute</option>
-                      <option>Other</option>
-                    </select>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      disabled={loading}
-                      onClick={() => handleCompleteVisit(true)}
-                      className="flex-1 py-3.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold text-sm shadow-md disabled:opacity-50 flex items-center justify-center gap-1.5"
-                    >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'COMPLETE VISIT (NO SALE)'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={loading}
-                      onClick={() => setIsNoSale(false)}
-                      className="px-4 py-3.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div>
+              <h3 className="text-xl font-black text-text-primary">{customer.customerName}</h3>
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mt-1">{customer.route?.name}</p>
             </div>
-          )}
 
-          {/* STEP 2: ORDER */}
-          {step === 'ORDER' && (
-            <div className="space-y-4">
-              <div className="space-y-3">
-                {safeProducts.map(p => (
-                  <div key={p.id} className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base">{p.name}</h4>
-                      <p className="text-xs text-slate-500 font-medium">{p.bottlesPerCrate} bottles/crate</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        type="button"
-                        onClick={() => handleCrateChange(p.id, -1)}
-                        className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg active:bg-slate-200 border border-slate-200 dark:border-slate-700"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="text-lg font-black w-6 text-center text-slate-900 dark:text-slate-100">
-                        {order[p.id] || 0}
-                      </span>
-                      <button 
-                        type="button"
-                        onClick={() => handleCrateChange(p.id, 1)}
-                        className="w-10 h-10 flex items-center justify-center bg-alvoun-blue text-white rounded-lg active:bg-alvoun-dark"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+            <div className="bg-surface-sunken shadow-inset p-4 rounded-2xl border border-border-subtle">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block mb-1">Current Outstanding</span>
+              <span className={`text-2xl font-black ${customer.outstanding > 0 ? 'text-accent-terracotta' : 'text-text-primary'}`}>
+                {formatMoney(Math.abs(customer.outstanding))}
+                {customer.outstanding !== 0 && (
+                  <span className="text-xs ml-1 font-extrabold">{customer.outstanding > 0 ? 'Dr' : 'Cr'}</span>
+                )}
+              </span>
+            </div>
+
+            {!isNoSale ? (
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep('ORDER')}
+                  className="w-full min-h-[48px] py-3.5 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-black text-base shadow-raised active:scale-[0.98] transition-all"
+                >
+                  TAKE ORDER
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsNoSale(true)}
+                  className="w-full min-h-[44px] py-3 bg-surface-raised shadow-raised-sm hover:shadow-raised border border-border-subtle text-text-secondary rounded-xl font-bold text-sm active:scale-[0.98] transition-all"
+                >
+                  NO SALE TODAY
+                </button>
               </div>
-
-              {/* Order Summary & Navigation */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex justify-between items-center mb-4 p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Crates</span>
-                    <span className="text-lg font-black text-slate-900 dark:text-slate-100">
-                      {orderItems.reduce((acc, curr) => acc + curr.crates, 0)} crates
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Sale Amount</span>
-                    <span className="text-xl font-black text-alvoun-blue">{formatMoney(totalSaleAmount)}</span>
-                  </div>
+            ) : (
+              <div className="bg-surface-sunken shadow-inset p-4 rounded-2xl border border-border-subtle text-left space-y-4 animate-fade-in">
+                <div>
+                  <label className="text-xs font-bold text-text-primary mb-1.5 block">
+                    Reason for No Sale:
+                  </label>
+                  <select
+                    value={noSaleReason}
+                    onChange={(e) => setNoSaleReason(e.target.value)}
+                    className="w-full p-3 bg-surface-raised border border-border-subtle rounded-xl text-sm font-semibold text-text-primary outline-none focus:ring-2 focus:ring-brand-teal/30 focus:border-brand-teal"
+                  >
+                    <option>Shop Closed</option>
+                    <option>Sufficient Stock</option>
+                    <option>Owner Unavailable</option>
+                    <option>Payment Pending</option>
+                    <option>Price Dispute</option>
+                    <option>Other</option>
+                  </select>
                 </div>
 
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setStep('START')}
-                    className="px-4 py-3.5 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm"
+                    disabled={loading}
+                    onClick={() => handleCompleteVisit(true)}
+                    className="flex-1 min-h-[44px] py-3 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-bold text-sm shadow-raised disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
                   >
-                    Back
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'COMPLETE VISIT (NO SALE)'}
                   </button>
                   <button
                     type="button"
-                    disabled={totalSaleAmount === 0}
-                    onClick={() => setStep('PAYMENT')}
-                    className="flex-1 py-3.5 bg-alvoun-blue text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50"
+                    disabled={loading}
+                    onClick={() => setIsNoSale(false)}
+                    className="min-h-[44px] px-4 py-3 bg-surface-raised shadow-raised-sm border border-border-subtle text-text-secondary rounded-xl font-bold text-sm active:scale-[0.98] transition-all"
                   >
-                    CONTINUE TO PAYMENT
+                    Back
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* STEP 3: PAYMENT */}
-          {step === 'PAYMENT' && (
-            <div className="space-y-4">
-              <div className="bg-slate-900 text-white p-5 rounded-2xl space-y-3">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Today&apos;s Sale</span>
-                  <span className="text-3xl font-black block">{formatMoney(totalSaleAmount)}</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {/* Cash Input */}
-                  <div className="bg-white/10 rounded-xl p-3 border border-white/10">
-                    <label className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                      <Banknote className="h-3.5 w-3.5" />
-                      Cash Collected (₹)
-                    </label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      placeholder="0"
-                      value={cashReceivedStr}
-                      onChange={(e) => setCashReceivedStr(e.target.value)}
-                      className="w-full bg-transparent text-xl font-black text-white placeholder-white/30 outline-none"
-                      autoFocus
-                    />
-                  </div>
-
-                  {/* UPI Input */}
-                  <div className="bg-white/10 rounded-xl p-3 border border-white/10">
-                    <label className="text-xs font-bold text-sky-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                      <QrCode className="h-3.5 w-3.5" />
-                      UPI Collected (₹)
-                    </label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      placeholder="0"
-                      value={upiReceivedStr}
-                      onChange={(e) => setUpiReceivedStr(e.target.value)}
-                      className="w-full bg-transparent text-xl font-black text-white placeholder-white/30 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 text-xs font-semibold">
-                <div className="flex justify-between items-center text-slate-500">
-                  <span>Previous Balance</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{formatMoney(customer.outstanding)}</span>
-                </div>
-                <div className="flex justify-between items-center text-slate-500">
-                  <span>Today&apos;s Sale</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">+{formatMoney(totalSaleAmount)}</span>
-                </div>
-                {cashReceivedCents > 0 && (
-                  <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                    <span className="flex items-center gap-1"><Banknote className="h-3 w-3" /> Cash Collected</span>
-                    <span className="font-bold">-{formatMoney(cashReceivedCents)}</span>
-                  </div>
-                )}
-                {upiReceivedCents > 0 && (
-                  <div className="flex justify-between items-center text-sky-600 dark:text-sky-400">
-                    <span className="flex items-center gap-1"><QrCode className="h-3 w-3" /> UPI Collected</span>
-                    <span className="font-bold">-{formatMoney(upiReceivedCents)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between items-center text-alvoun-green pt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
-                  <span className="font-bold">Total Collected Now</span>
-                  <span className="font-bold">-{formatMoney(totalReceivedCents)}</span>
-                </div>
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-sm">
+        {/* STEP 2: ORDER */}
+        {step === 'ORDER' && (
+          <div className="space-y-4">
+            <div className="space-y-3">
+              {safeProducts.map(p => (
+                <div key={p.id} className="bg-surface-sunken shadow-inset p-4 rounded-2xl border border-border-subtle flex items-center justify-between">
                   <div>
-                    <span className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider block">New Total Outstanding</span>
-                    <span className="text-[10px] text-slate-400 font-medium">(Auto calculated)</span>
+                    <h4 className="font-bold text-text-primary text-base">{p.name}</h4>
+                    <p className="text-xs text-text-muted font-medium">{p.bottlesPerCrate} bottles/crate</p>
                   </div>
-                  <span className="font-black text-alvoun-red">{formatMoney(finalOutstanding)}</span>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => handleCrateChange(p.id, -1)}
+                      className="w-11 h-11 flex items-center justify-center bg-surface-raised shadow-raised-sm active:shadow-inset text-text-primary rounded-xl border border-border-subtle active:scale-95 transition-all"
+                      aria-label="Decrease crate count"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="text-lg font-black w-8 text-center text-text-primary">
+                      {order[p.id] || 0}
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={() => handleCrateChange(p.id, 1)}
+                      className="w-11 h-11 flex items-center justify-center bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl shadow-raised-sm active:scale-95 transition-all"
+                      aria-label="Increase crate count"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Order Summary & Navigation */}
+            <div className="pt-4 border-t border-border-subtle">
+              <div className="flex justify-between items-center mb-4 p-4 bg-brand-teal/10 rounded-2xl border border-brand-teal/20">
+                <div>
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Total Crates</span>
+                  <span className="text-lg font-black text-text-primary">
+                    {orderItems.reduce((acc, curr) => acc + curr.crates, 0)} crates
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">Total Sale Amount</span>
+                  <span className="text-xl font-black text-brand-teal">{formatMoney(totalSaleAmount)}</span>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2">
                 <button
                   type="button"
-                  disabled={loading}
-                  onClick={() => setStep('ORDER')}
-                  className="px-4 py-3.5 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl font-bold text-sm"
+                  onClick={() => setStep('START')}
+                  className="min-h-[44px] px-5 py-3 bg-surface-raised shadow-raised-sm border border-border-subtle text-text-primary rounded-xl font-bold text-sm active:scale-[0.98] transition-all"
                 >
                   Back
                 </button>
                 <button
                   type="button"
-                  disabled={loading}
-                  onClick={() => handleCompleteVisit(false)}
-                  className="flex-1 py-3.5 bg-alvoun-blue text-white rounded-xl font-bold text-sm shadow-md disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  disabled={totalSaleAmount === 0}
+                  onClick={() => setStep('PAYMENT')}
+                  className="flex-1 min-h-[44px] py-3 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-bold text-sm shadow-raised disabled:opacity-50 active:scale-[0.98] transition-all"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'COMPLETE VISIT'}
+                  CONTINUE TO PAYMENT
                 </button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* STEP 3: PAYMENT */}
+        {step === 'PAYMENT' && (
+          <div className="space-y-4">
+            <div className="bg-linear-to-br from-brand-teal-dark via-brand-teal to-slate-900 text-white p-5 rounded-2xl shadow-raised-md space-y-3">
+              <div>
+                <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider block mb-1">Today&apos;s Sale</span>
+                <span className="text-3xl font-black block">{formatMoney(totalSaleAmount)}</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                {/* Cash Input */}
+                <div className="bg-black/20 backdrop-blur-sm rounded-xl p-3 border border-white/15 shadow-inset">
+                  <label className="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                    <Banknote className="h-3.5 w-3.5" />
+                    Cash Collected (₹)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={cashReceivedStr}
+                    onChange={(e) => setCashReceivedStr(e.target.value)}
+                    className="w-full bg-transparent text-xl font-black text-white placeholder-white/30 outline-none"
+                    autoFocus
+                  />
+                </div>
+
+                {/* UPI Input */}
+                <div className="bg-black/20 backdrop-blur-sm rounded-xl p-3 border border-white/15 shadow-inset">
+                  <label className="text-xs font-bold text-sky-300 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                    <QrCode className="h-3.5 w-3.5" />
+                    UPI Collected (₹)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={upiReceivedStr}
+                    onChange={(e) => setUpiReceivedStr(e.target.value)}
+                    className="w-full bg-transparent text-xl font-black text-white placeholder-white/30 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle space-y-2 text-xs font-semibold">
+              <div className="flex justify-between items-center text-text-muted">
+                <span>Previous Balance</span>
+                <span className="font-bold text-text-primary">{formatMoney(customer.outstanding)}</span>
+              </div>
+              <div className="flex justify-between items-center text-text-muted">
+                <span>Today&apos;s Sale</span>
+                <span className="font-bold text-text-primary">+{formatMoney(totalSaleAmount)}</span>
+              </div>
+              {cashReceivedCents > 0 && (
+                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                  <span className="flex items-center gap-1"><Banknote className="h-3 w-3" /> Cash Collected</span>
+                  <span className="font-bold">-{formatMoney(cashReceivedCents)}</span>
+                </div>
+              )}
+              {upiReceivedCents > 0 && (
+                <div className="flex justify-between items-center text-sky-600 dark:text-sky-400">
+                  <span className="flex items-center gap-1"><QrCode className="h-3 w-3" /> UPI Collected</span>
+                  <span className="font-bold">-{formatMoney(upiReceivedCents)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-emerald-700 dark:text-emerald-300 pt-1 border-t border-dashed border-border-subtle">
+                <span className="font-bold">Total Collected Now</span>
+                <span className="font-bold">-{formatMoney(totalReceivedCents)}</span>
+              </div>
+              <div className="pt-2 border-t border-border-subtle flex justify-between items-center text-sm">
+                <div>
+                  <span className="font-bold text-text-primary uppercase tracking-wider block">New Total Outstanding</span>
+                  <span className="text-[10px] text-text-muted font-medium">(Auto calculated)</span>
+                </div>
+                <span className="font-black text-accent-terracotta">{formatMoney(finalOutstanding)}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setStep('ORDER')}
+                className="min-h-[44px] px-5 py-3 bg-surface-raised shadow-raised-sm border border-border-subtle text-text-primary rounded-xl font-bold text-sm active:scale-[0.98] transition-all"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleCompleteVisit(false)}
+                className="flex-1 min-h-[44px] py-3 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-bold text-sm shadow-raised disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'COMPLETE VISIT'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -846,90 +849,91 @@ function ViewVisitModal({
   const visit = customer.todayVisit;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/70 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className="w-full max-w-lg bg-white dark:bg-slate-950 rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col overflow-hidden animate-slide-up"
+        className="w-full max-w-lg bg-surface-raised rounded-t-3xl sm:rounded-3xl shadow-raised-lg border border-border-subtle max-h-[90vh] flex flex-col overflow-hidden animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-emerald-50/50 dark:bg-emerald-950/20">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-emerald-500/10">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-base font-black text-text-primary">
                 Today&apos;s Visit Details
               </h2>
-              <p className="text-xs text-slate-500">{customer.customerName} ({customer.route?.name})</p>
+              <p className="text-xs text-text-muted">{customer.customerName} ({customer.route?.name})</p>
             </div>
           </div>
           <button 
             type="button" 
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-raised text-text-muted hover:text-text-primary shadow-raised-sm active:shadow-inset transition-colors"
+            aria-label="Close"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-6 overflow-y-auto space-y-5 text-sm">
           {/* Timing Banner */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-              <Clock className="h-4 w-4 text-slate-400" />
+          <div className="flex items-center justify-between p-3.5 bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle">
+            <div className="flex items-center gap-2 text-text-secondary">
+              <Clock className="h-4 w-4 text-brand-teal" />
               <span className="font-semibold">{visit?.formattedTime || 'Visited Today'}</span>
             </div>
-            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-900/40 px-2 py-0.5 rounded-md">
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 rounded-full shadow-raised-sm">
               <Check className="h-3 w-3" /> COMPLETED
             </span>
           </div>
 
           {/* Visit Result: Sale vs No Sale */}
           {visit?.isNoSale ? (
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-center space-y-1">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Visit Outcome</span>
-              <p className="text-base font-bold text-slate-700 dark:text-slate-300">No Sale Recorded</p>
-              <p className="text-xs text-slate-500 font-medium">Reason: {visit.noSaleReason || 'No sale'}</p>
+            <div className="p-4 bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle text-center space-y-1">
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wider block">Visit Outcome</span>
+              <p className="text-base font-bold text-text-primary">No Sale Recorded</p>
+              <p className="text-xs text-text-muted font-medium">Reason: {visit.noSaleReason || 'No sale'}</p>
             </div>
           ) : (
             <div className="space-y-4">
               {/* Products Purchased Table */}
               <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                <h4 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
                   Products Purchased
                 </h4>
-                <div className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle overflow-hidden">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-slate-100/70 dark:bg-slate-800/50 text-slate-500 uppercase font-semibold">
+                    <thead className="bg-surface/80 text-text-muted uppercase font-semibold border-b border-border-subtle">
                       <tr>
-                        <th className="px-3 py-2.5">Product</th>
-                        <th className="px-3 py-2.5 text-center">Crates</th>
-                        <th className="px-3 py-2.5 text-right">Amount</th>
+                        <th className="px-3.5 py-2.5">Product</th>
+                        <th className="px-3.5 py-2.5 text-center">Crates</th>
+                        <th className="px-3.5 py-2.5 text-right">Amount</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tbody className="divide-y divide-border-subtle">
                       {visit?.items && visit.items.length > 0 ? (
                         visit.items.map((item, idx) => (
                           <tr key={idx}>
-                            <td className="px-3 py-2.5 font-semibold text-slate-800 dark:text-slate-200">
+                            <td className="px-3.5 py-2.5 font-semibold text-text-primary">
                               {item.productName}
                               {item.rate ? (
-                                <span className="block text-[10px] text-slate-400 font-normal">
+                                <span className="block text-[10px] text-text-muted font-normal">
                                   @ {formatMoney(item.rate)}/crate
                                 </span>
                               ) : null}
                             </td>
-                            <td className="px-3 py-2.5 text-center font-bold text-slate-700 dark:text-slate-300">
+                            <td className="px-3.5 py-2.5 text-center font-bold text-text-secondary">
                               {item.crates}
                             </td>
-                            <td className="px-3 py-2.5 text-right font-black text-slate-900 dark:text-slate-100">
+                            <td className="px-3.5 py-2.5 text-right font-black text-text-primary">
                               {formatMoney(item.amount)}
                             </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-3 py-4 text-center text-slate-400">
+                          <td colSpan={3} className="px-3 py-4 text-center text-text-muted">
                             Sale details recorded
                           </td>
                         </tr>
@@ -940,27 +944,27 @@ function ViewVisitModal({
               </div>
 
               {/* Financial Breakdown */}
-              <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-300">
+              <div className="p-4 bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle space-y-2 text-xs">
+                <div className="flex justify-between items-center text-text-secondary">
                   <span className="font-medium">Total Sale</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{formatMoney(visit?.saleAmount || 0)}</span>
+                  <span className="font-bold text-text-primary">{formatMoney(visit?.saleAmount || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
                   <span className="font-medium">Payment Received</span>
                   <span className="font-bold">-{formatMoney(visit?.receivedAmount || 0)}</span>
                 </div>
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-sm font-bold">
-                  <span className="text-slate-900 dark:text-slate-100">Due from this sale</span>
-                  <span className="font-black text-alvoun-red">{formatMoney(visit?.dueFromSale || 0)}</span>
+                <div className="pt-2 border-t border-border-subtle flex justify-between items-center text-sm font-bold">
+                  <span className="text-text-primary">Due from this sale</span>
+                  <span className="font-black text-accent-terracotta">{formatMoney(visit?.dueFromSale || 0)}</span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Existing Customer Outstanding */}
-          <div className="p-3.5 bg-slate-100/70 dark:bg-slate-900/40 rounded-xl flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-500 uppercase tracking-wider">Total Customer Outstanding</span>
-            <span className={`font-black text-base ${customer.outstanding > 0 ? 'text-alvoun-red' : 'text-slate-900 dark:text-slate-100'}`}>
+          <div className="p-3.5 bg-surface-sunken/60 rounded-2xl border border-border-subtle flex items-center justify-between text-xs">
+            <span className="font-bold text-text-muted uppercase tracking-wider">Total Customer Outstanding</span>
+            <span className={`font-black text-base ${customer.outstanding > 0 ? 'text-accent-terracotta' : 'text-text-primary'}`}>
               {formatMoney(Math.abs(customer.outstanding))}
               {customer.outstanding !== 0 && (
                 <span className="text-[10px] ml-1 uppercase">{customer.outstanding > 0 ? 'Dr' : 'Cr'}</span>
@@ -970,11 +974,11 @@ function ViewVisitModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+        <div className="p-4 border-t border-border-subtle bg-surface/50">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold text-sm transition-colors"
+            className="w-full min-h-[44px] py-3 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-bold text-sm shadow-raised active:scale-[0.98] transition-all"
           >
             Close
           </button>

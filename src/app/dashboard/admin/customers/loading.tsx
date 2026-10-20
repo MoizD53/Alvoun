@@ -4,25 +4,29 @@ export default function CustomersLoading() {
       {/* Header skeleton */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="h-8 w-40 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-          <div className="h-4 w-64 bg-slate-100 dark:bg-slate-800/60 rounded mt-2"></div>
+          <div className="h-8 w-44 bg-surface-raised shadow-raised rounded-xl"></div>
+          <div className="h-4 w-72 bg-surface-inset shadow-inset rounded-lg mt-2"></div>
         </div>
-        <div className="h-10 w-36 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+        <div className="flex gap-2">
+          <div className="h-10 w-28 bg-surface-raised shadow-raised rounded-xl"></div>
+          <div className="h-10 w-36 bg-surface-raised shadow-raised rounded-xl"></div>
+        </div>
       </div>
 
-      {/* Search & Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="h-10 flex-1 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-        <div className="h-10 w-36 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-        <div className="h-10 w-36 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+      {/* Filter Bar Skeleton */}
+      <div className="bg-surface-raised shadow-raised p-4 rounded-2xl border border-border/40 flex flex-col lg:flex-row gap-3">
+        <div className="h-10 flex-1 bg-surface-inset shadow-inset rounded-xl"></div>
+        <div className="h-10 w-full lg:w-44 bg-surface-inset shadow-inset rounded-xl"></div>
+        <div className="h-10 w-full lg:w-44 bg-surface-inset shadow-inset rounded-xl"></div>
+        <div className="h-10 w-full lg:w-44 bg-surface-inset shadow-inset rounded-xl"></div>
       </div>
 
       {/* Table Skeleton */}
-      <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="h-12 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800"></div>
-        <div className="divide-y divide-slate-100 dark:divide-slate-800 p-2 space-y-2">
+      <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 overflow-hidden">
+        <div className="h-12 bg-surface-inset shadow-inset border-b border-border/40"></div>
+        <div className="divide-y divide-border/40 p-2 space-y-2">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-14 w-full bg-slate-100 dark:bg-slate-900/60 rounded-lg"></div>
+            <div key={i} className="h-14 w-full bg-surface-inset/40 rounded-xl"></div>
           ))}
         </div>
       </div>

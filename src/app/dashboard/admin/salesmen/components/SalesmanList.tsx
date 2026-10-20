@@ -3,8 +3,15 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, Plus, User, MapPin, Activity, UserCog, UserCheck, UserX, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { 
+  Search, Plus, MapPin, Activity, UserCog, 
+  UserCheck, UserX, Loader2, CheckCircle2, AlertCircle, Phone 
+} from 'lucide-react';
 import { toggleSalesmanStatus } from '@/lib/actions/admin/salesman-management';
+import { Avatar } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { AlertBanner } from '@/components/ui/alert-banner';
 
 export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any[] }) {
   const router = useRouter();
@@ -30,7 +37,7 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
         throw new Error(res.error);
       }
 
-      // Immediately update local state without waiting for F5/browser reload
+      // Immediately update local state without waiting for full reload
       setSalesmen(prev => prev.map(s => {
         if (s.id === salesmanId) {
           return {
@@ -52,7 +59,8 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
 
   const filteredSalesmen = salesmen.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          s.profile?.email.toLowerCase().includes(searchTerm.toLowerCase());
+                          (s.profile?.email && s.profile.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (s.phone && s.phone.includes(searchTerm));
     
     const matchesStatus = statusFilter === 'ALL' || 
                           (statusFilter === 'ACTIVE' && s.isActive) ||
@@ -68,110 +76,114 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
   return (
     <div className="space-y-4">
       {actionError && (
-        <div className="p-3 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-sm flex items-center justify-between">
-          <span>{actionError}</span>
-          <button onClick={() => setActionError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">✕</button>
-        </div>
+        <AlertBanner
+          variant="danger"
+          title="Action failed"
+          onClose={() => setActionError(null)}
+        >
+          {actionError}
+        </AlertBanner>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="relative flex-1 w-full max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-            <Search className="h-5 w-5" />
+      {/* Filter and Action Bar */}
+      <div className="bg-surface-raised shadow-raised p-4 rounded-2xl border border-border/40 flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="relative flex-1">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+            <Search className="h-4 w-4" />
           </div>
           <input
             type="text"
-            placeholder="Search salesmen, emp code, login ID..."
+            placeholder="Search salesmen by name, phone, or login ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-10 pr-3 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-alvoun-blue transition-colors sm:text-sm"
+            className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-surface-inset shadow-inset border border-border/40 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
           />
         </div>
         
-        <div className="flex gap-4 w-full sm:w-auto">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2.5 items-center">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="block w-full sm:w-auto pl-3 pr-10 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-alvoun-blue transition-colors sm:text-sm appearance-none"
+            className="flex-1 sm:flex-initial rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
           >
-            <option value="ALL">Business Status: All</option>
-            <option value="ACTIVE">Business Status: Active</option>
-            <option value="INACTIVE">Business Status: Inactive</option>
+            <option value="ALL">Status: All</option>
+            <option value="ACTIVE">Status: Active</option>
+            <option value="INACTIVE">Status: Inactive</option>
           </select>
 
           <select
             value={loginAccessFilter}
             onChange={(e) => setLoginAccessFilter(e.target.value)}
-            className="block w-full sm:w-auto pl-3 pr-10 py-2 border border-slate-200 dark:border-slate-800 rounded-lg bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-alvoun-blue transition-colors sm:text-sm appearance-none"
+            className="flex-1 sm:flex-initial rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-xs sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
           >
-            <option value="ALL">Login Access: All</option>
-            <option value="ACTIVE">Login Access: Active</option>
-            <option value="DISABLED">Login Access: Disabled</option>
+            <option value="ALL">Login: All</option>
+            <option value="ACTIVE">Login: Enabled</option>
+            <option value="DISABLED">Login: Disabled</option>
           </select>
           
           <Link
             href="/dashboard/admin/salesmen/new"
-            className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-alvoun-blue hover:bg-alvoun-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-alvoun-blue transition-colors whitespace-nowrap"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs sm:text-sm font-semibold shadow-raised hover:shadow-raised-sm press-active transition-all whitespace-nowrap"
           >
-            <Plus className="h-5 w-5 mr-2 -ml-1" />
+            <Plus className="h-4 w-4" />
             Add Salesman
           </Link>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-950 shadow-sm border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      {/* Salesmen Table Card */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-slate-50 dark:bg-slate-900">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Salesman
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Login ID
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Route
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th scope="col" className="px-6 py-4">Salesman</th>
+                <th scope="col" className="px-6 py-4">Login ID</th>
+                <th scope="col" className="px-6 py-4">Route Assignment</th>
+                <th scope="col" className="px-6 py-4">Status & Activity</th>
+                <th scope="col" className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-slate-950 divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-border/40 bg-surface-raised">
               {filteredSalesmen.map((salesman) => (
-                <tr key={salesman.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 flex-shrink-0 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-slate-500" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{salesman.name}</div>
-                        <div className="text-sm text-slate-500">{salesman.phone}</div>
+                <tr key={salesman.id} className="hover:bg-surface-inset/30 transition-colors">
+                  {/* Salesman Info with Avatar */}
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3.5">
+                      <Avatar 
+                        alt={salesman.name} 
+                        size="md" 
+                        className="shadow-raised-sm border border-border/40"
+                      />
+                      <div>
+                        <div className="font-bold text-foreground text-sm tracking-tight">{salesman.name}</div>
+                        {salesman.phone && (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <Phone className="w-3 h-3 text-primary" /> {salesman.phone}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{salesman.profile?.email || 'N/A'}</div>
-                    <div className="flex items-center mt-1">
+
+                  {/* Login ID & Access Status */}
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-foreground">{salesman.profile?.email || 'N/A'}</div>
+                    <div className="mt-1">
                       {salesman.profile?.isActive ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                          <UserCheck className="w-3 h-3 mr-1" /> Login Active
-                        </span>
+                        <Badge variant="success" size="sm" className="gap-1">
+                          <UserCheck className="w-3 h-3" /> Login Active
+                        </Badge>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                          <UserX className="w-3 h-3 mr-1" /> Login Disabled
-                        </span>
+                        <Badge variant="danger" size="sm" className="gap-1">
+                          <UserX className="w-3 h-3" /> Login Disabled
+                        </Badge>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+
+                  {/* Assigned Routes */}
+                  <td className="px-6 py-4">
                     {(() => {
                       const allRoutesMap = new Map();
                       if (salesman.routes) {
@@ -185,107 +197,105 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                       const uniqueRoutes = Array.from(allRoutesMap.entries());
 
                       return uniqueRoutes.length > 0 ? (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-wrap gap-1.5 max-w-xs">
                           {uniqueRoutes.map(([id, name]) => (
-                            <div key={id} className="text-sm text-slate-900 dark:text-slate-100 flex items-center">
-                              <MapPin className="w-3 h-3 mr-1 text-slate-400" /> {name}
-                            </div>
+                            <Badge key={id} variant="neutral" styleType="outline" size="sm" className="gap-1 bg-surface-inset shadow-inset border-border/40">
+                              <MapPin className="w-3 h-3 text-primary" /> {name}
+                            </Badge>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-sm text-slate-500">Unassigned</span>
+                        <span className="text-xs text-muted-foreground italic">No route assigned</span>
                       );
                     })()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col">
-                      {salesman.isActive ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 w-fit">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
-                          ACTIVE
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 w-fit">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mr-1.5"></span>
-                          INACTIVE
-                        </span>
-                      )}
+
+                  {/* Status & Work Session */}
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col gap-1">
+                      <div>
+                        {salesman.isActive ? (
+                          <Badge variant="success" size="sm">ACTIVE</Badge>
+                        ) : (
+                          <Badge variant="neutral" styleType="outline" size="sm">INACTIVE</Badge>
+                        )}
+                      </div>
                       
-                      {/* Today's Work Status */}
+                      {/* Work Session Indicator */}
                       {(() => {
                         const ws = salesman.workSessions?.[0];
                         if (!salesman.isActive) {
                           return (
-                            <div className="text-xs mt-1.5 text-slate-400 flex items-center">
-                              <Activity className="w-3 h-3 mr-1 text-slate-400" />
-                              Access Disabled
-                            </div>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Activity className="w-3 h-3" /> Disabled
+                            </span>
                           );
                         }
                         if (!ws) {
                           return (
-                            <div className="text-xs mt-1.5 text-slate-400 flex items-center">
-                              <Activity className="w-3 h-3 mr-1 text-slate-400" />
-                              Not started today
-                            </div>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Activity className="w-3 h-3" /> Not started today
+                            </span>
                           );
                         }
                         if (ws.status === 'ACTIVE') {
                           const loginTime = ws.loginAt ? new Date(ws.loginAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '';
                           return (
-                            <div className="text-xs mt-1.5 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span>
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                               Active {loginTime ? `(since ${loginTime})` : ''}
-                            </div>
+                            </span>
                           );
                         }
                         if (ws.status === 'COMPLETED') {
                           const logoutTime = ws.logoutAt ? new Date(ws.logoutAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '';
                           return (
-                            <div className="text-xs mt-1.5 text-slate-500 dark:text-slate-400 flex items-center">
-                              <CheckCircle2 className="w-3 h-3 mr-1 text-slate-400" />
-                              Logged Out {logoutTime ? `at ${logoutTime}` : ''}
-                            </div>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-muted-foreground" />
+                              Logged out {logoutTime ? `at ${logoutTime}` : ''}
+                            </span>
                           );
                         }
                         if (ws.status === 'FORCE_CLOSED') {
                           const logoutTime = ws.logoutAt ? new Date(ws.logoutAt).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : '';
                           return (
-                            <div className="text-xs mt-1.5 text-amber-600 dark:text-amber-400 flex items-center">
-                              <AlertCircle className="w-3 h-3 mr-1 text-amber-500" />
+                            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 text-amber-500" />
                               Force Closed {logoutTime ? `at ${logoutTime}` : ''}
-                            </div>
+                            </span>
                           );
                         }
                         return null;
                       })()}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+
+                  {/* Actions */}
+                  <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => handleToggleStatus(salesman.id, salesman.isActive)}
                         disabled={togglingId === salesman.id}
-                        className={`inline-flex items-center px-3 py-1.5 rounded-md text-xs font-bold transition-colors disabled:opacity-50 ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-raised-sm press-active ${
                           salesman.isActive
-                            ? 'text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40'
-                            : 'text-green-700 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/40'
+                            ? 'text-destructive bg-surface-raised border border-destructive/20 hover:bg-destructive/10'
+                            : 'text-emerald-600 dark:text-emerald-400 bg-surface-raised border border-emerald-500/20 hover:bg-emerald-500/10'
                         }`}
                       >
                         {togglingId === salesman.id ? (
                           <>
-                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             {salesman.isActive ? 'Disabling...' : 'Activating...'}
                           </>
                         ) : salesman.isActive ? (
                           <>
-                            <UserX className="w-3.5 h-3.5 mr-1.5" />
+                            <UserX className="w-3.5 h-3.5" />
                             Disable
                           </>
                         ) : (
                           <>
-                            <UserCheck className="w-3.5 h-3.5 mr-1.5" />
+                            <UserCheck className="w-3.5 h-3.5" />
                             Activate
                           </>
                         )}
@@ -293,26 +303,42 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
 
                       <Link
                         href={`/dashboard/admin/salesmen/${salesman.id}`}
-                        className="text-alvoun-blue hover:text-alvoun-blue/80 bg-alvoun-light dark:bg-alvoun-blue/10 px-3 py-1.5 rounded-md inline-flex items-center text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-surface-raised shadow-raised hover:shadow-raised-sm press-active text-primary border border-border/40 transition-all"
                       >
-                        <UserCog className="h-3.5 w-3.5 mr-1" />
+                        <UserCog className="h-3.5 w-3.5" />
                         Manage
                       </Link>
                     </div>
                   </td>
                 </tr>
               ))}
-              
-              {filteredSalesmen.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-slate-500">
-                    No salesmen found matching your criteria.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+
+        {filteredSalesmen.length === 0 && (
+          <div className="p-8">
+            <EmptyState
+              icon={<Search className="w-8 h-8 text-primary" />}
+              title="No Salesmen Found"
+              description="No salesmen match your current search query or status filter criteria."
+              action={
+                searchTerm || statusFilter !== 'ALL' || loginAccessFilter !== 'ALL' ? (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('ALL');
+                      setLoginAccessFilter('ALL');
+                    }}
+                    className="text-xs font-semibold text-primary hover:underline"
+                  >
+                    Reset all filters
+                  </button>
+                ) : undefined
+              }
+            />
+          </div>
+        )}
       </div>
     </div>
   );

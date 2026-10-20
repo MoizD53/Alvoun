@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createArea, updateArea, assignSalesmanToArea } from '@/lib/actions/area';
 import { createCustomer, moveCustomer, deactivateCustomer } from '@/lib/actions/customer';
-import { Plus, Edit2, Check, X, MoveRight, ShieldAlert, MoreVertical, Search, User, MapPin, Map } from 'lucide-react';
+import { Plus, Check, X, Search, MapPin, Map, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 
 export default function RouteManageClient({ route, salesmen }: { route: any, salesmen: any[] }) {
@@ -105,6 +105,8 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
 
     const data = {
       ...customerForm,
+      areaId: customerForm.areaId || undefined,
+      openingBalance: Math.round(Number(customerForm.openingBalance || 0) * 100),
       stateId: route.city.stateId,
       cityId: route.cityId,
       routeId: route.id,
@@ -156,7 +158,7 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
     const q = searchTerm.toLowerCase();
     return (
       c.customerName.toLowerCase().includes(q) ||
-      c.contact.toLowerCase().includes(q) ||
+      c.contact?.toLowerCase().includes(q) ||
       (c.area?.name && c.area.name.toLowerCase().includes(q))
     );
   });
@@ -165,27 +167,37 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
     <div className="space-y-6">
       {/* Toast Messages */}
       {error && (
-        <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm font-medium border border-red-200">
-          {error}
+        <div className="bg-red-500/10 text-accent-terracotta px-4 py-3 rounded-2xl text-xs font-bold border border-red-500/30 flex items-center gap-2 shadow-raised-sm">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
       {success && (
-        <div className="bg-green-50 text-green-600 px-4 py-3 rounded-lg text-sm font-medium border border-green-200">
-          {success}
+        <div className="bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 px-4 py-3 rounded-2xl text-xs font-bold border border-emerald-500/30 flex items-center gap-2 shadow-raised-sm">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+          <span>{success}</span>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800">
+      {/* Modern Inset Pill Tabs */}
+      <div className="flex items-center gap-1.5 p-1 bg-surface-sunken shadow-inset rounded-2xl border border-border-subtle max-w-fit">
         <button 
           onClick={() => setActiveTab('AREAS')}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === 'AREAS' ? 'border-alvoun-blue text-alvoun-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${
+            activeTab === 'AREAS' 
+              ? 'bg-brand-teal text-white shadow-raised-sm' 
+              : 'text-text-muted hover:text-text-primary'
+          }`}
         >
           AREAS ({route.areas.length})
         </button>
         <button 
           onClick={() => setActiveTab('CUSTOMERS')}
-          className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === 'CUSTOMERS' ? 'border-alvoun-blue text-alvoun-blue' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          className={`px-5 py-2 rounded-xl text-xs font-black transition-all ${
+            activeTab === 'CUSTOMERS' 
+              ? 'bg-brand-teal text-white shadow-raised-sm' 
+              : 'text-text-muted hover:text-text-primary'
+          }`}
         >
           CUSTOMERS ({route.customers.length})
         </button>
@@ -193,22 +205,24 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
 
       {/* AREAS TAB */}
       {activeTab === 'AREAS' && (
-        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-            <h2 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><Map className="h-4 w-4" /> Areas in {route.name}</h2>
+        <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle overflow-hidden">
+          <div className="p-5 border-b border-border-subtle flex justify-between items-center bg-surface/80">
+            <h2 className="font-black text-text-primary flex items-center gap-2 tracking-tight">
+              <Map className="h-4 w-4 text-brand-teal" /> Areas in {route.name}
+            </h2>
             <button 
               onClick={() => setShowAddArea(!showAddArea)}
-              className="px-3 py-1.5 bg-alvoun-blue text-white rounded-lg text-sm font-bold hover:bg-alvoun-dark flex items-center gap-1 transition-colors"
+              className="px-4 py-2 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl text-xs font-black shadow-raised active:scale-95 flex items-center gap-1.5 transition-all"
             >
               <Plus className="h-4 w-4" /> Add Area
             </button>
           </div>
 
           {showAddArea && (
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-              <form onSubmit={handleAddArea} className="flex items-end gap-3 max-w-md">
-                <div className="flex-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Area Name</label>
+            <div className="p-5 bg-surface-sunken/60 shadow-inset border-b border-border-subtle animate-fade-in">
+              <form onSubmit={handleAddArea} className="flex flex-wrap items-end gap-3 max-w-md">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Area Name</label>
                   <input 
                     autoFocus
                     required
@@ -216,20 +230,20 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
                     value={newAreaName}
                     onChange={e => setNewAreaName(e.target.value)}
                     placeholder="e.g. Station Road"
-                    className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-alvoun-blue/20 bg-white dark:bg-slate-950"
+                    className="w-full mt-1.5 px-3.5 py-2.5 border border-border-subtle rounded-xl text-sm font-semibold text-text-primary bg-surface-raised shadow-inset-sm focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none"
                   />
                 </div>
                 <button 
                   type="submit" 
                   disabled={isSavingArea}
-                  className="px-4 py-2 bg-alvoun-green text-white rounded-lg text-sm font-bold hover:bg-green-600 disabled:opacity-50"
+                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-raised disabled:opacity-50 active:scale-95 transition-all"
                 >
                   {isSavingArea ? 'Saving...' : 'Save'}
                 </button>
                 <button 
                   type="button" 
                   onClick={() => setShowAddArea(false)}
-                  className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-4 py-2.5 border border-border-subtle rounded-xl text-xs font-bold text-text-secondary bg-surface-raised shadow-raised-sm active:scale-95 transition-all"
                 >
                   Cancel
                 </button>
@@ -239,25 +253,25 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-surface/80 text-text-muted font-bold text-xs uppercase tracking-wider border-b border-border-subtle">
                 <tr>
-                  <th className="px-6 py-3">Area Name</th>
-                  <th className="px-6 py-3 text-center">Customers</th>
-                  <th className="px-6 py-3">Assigned Salesman</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  <th className="px-6 py-4">Area Name</th>
+                  <th className="px-6 py-4 text-center">Customers</th>
+                  <th className="px-6 py-4">Assigned Salesman</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border-subtle">
                 {route.areas.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
-                      No areas yet. Click Add Area to create one.
+                    <td colSpan={4} className="px-6 py-12 text-center text-text-muted">
+                      No areas yet. Click <span className="font-bold text-brand-teal">Add Area</span> above to create one.
                     </td>
                   </tr>
                 ) : (
                   route.areas.map((area: any) => (
-                    <tr key={area.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                      <td className="px-6 py-3 font-bold text-slate-900 dark:text-slate-100">
+                    <tr key={area.id} className="hover:bg-surface-sunken/40 transition-colors">
+                      <td className="px-6 py-4 font-black text-text-primary text-base">
                         {editingAreaId === area.id ? (
                           <div className="flex items-center gap-2">
                             <input 
@@ -265,54 +279,54 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
                               type="text" 
                               value={editAreaName}
                               onChange={e => setEditAreaName(e.target.value)}
-                              className="px-2 py-1 border border-alvoun-blue rounded-md w-48 text-sm"
+                              className="px-3 py-1.5 border border-brand-teal rounded-xl w-48 text-sm font-semibold bg-surface-raised shadow-inset-sm text-text-primary outline-none"
                             />
-                            <button onClick={() => handleEditArea(area.id)} className="text-alvoun-green"><Check className="h-4 w-4" /></button>
-                            <button onClick={() => setEditingAreaId(null)} className="text-red-500"><X className="h-4 w-4" /></button>
+                            <button onClick={() => handleEditArea(area.id)} className="w-8 h-8 flex items-center justify-center bg-emerald-500/15 text-emerald-600 rounded-lg shadow-raised-sm active:scale-95"><Check className="h-4 w-4" /></button>
+                            <button onClick={() => setEditingAreaId(null)} className="w-8 h-8 flex items-center justify-center bg-red-500/15 text-accent-terracotta rounded-lg shadow-raised-sm active:scale-95"><X className="h-4 w-4" /></button>
                           </div>
                         ) : (
                           area.name
                         )}
                       </td>
-                      <td className="px-6 py-3 text-center">
-                        <span className="inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400">
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex h-6 min-w-[1.75rem] items-center justify-center rounded-full bg-surface-sunken shadow-inset-sm text-xs font-black text-text-primary border border-border-subtle px-2">
                           {area._count.customers}
                         </span>
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-4">
                         {assigningAreaId === area.id ? (
                           <div className="flex items-center gap-2">
                             <select 
                               value={assignmentSalesmanId}
                               onChange={e => setAssignmentSalesmanId(e.target.value)}
-                              className="px-2 py-1 border border-alvoun-blue rounded-md w-40 text-sm"
+                              className="px-3 py-1.5 border border-brand-teal rounded-xl w-44 text-xs font-semibold bg-surface-raised shadow-inset-sm text-text-primary outline-none"
                             >
                               <option value="">Select...</option>
                               {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                             </select>
-                            <button onClick={() => handleAssignArea(area.id)} className="text-alvoun-green"><Check className="h-4 w-4" /></button>
-                            <button onClick={() => setAssigningAreaId(null)} className="text-red-500"><X className="h-4 w-4" /></button>
+                            <button onClick={() => handleAssignArea(area.id)} className="w-8 h-8 flex items-center justify-center bg-emerald-500/15 text-emerald-600 rounded-lg shadow-raised-sm active:scale-95"><Check className="h-4 w-4" /></button>
+                            <button onClick={() => setAssigningAreaId(null)} className="w-8 h-8 flex items-center justify-center bg-red-500/15 text-accent-terracotta rounded-lg shadow-raised-sm active:scale-95"><X className="h-4 w-4" /></button>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             {area.assignments[0]?.salesman ? (
-                              <span className="font-medium text-slate-800 dark:text-slate-200">{area.assignments[0].salesman.name}</span>
+                              <span className="font-bold text-text-primary">{area.assignments[0].salesman.name}</span>
                             ) : (
-                              <span className="text-slate-400 italic">Route Default</span>
+                              <span className="text-text-muted italic text-xs font-medium">Route Default</span>
                             )}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-right space-x-3">
+                      <td className="px-6 py-4 text-right space-x-2">
                         <button 
                           onClick={() => { setAssigningAreaId(area.id); setAssignmentSalesmanId(area.assignments[0]?.salesmanId || ''); }}
-                          className="text-xs font-bold uppercase tracking-wider text-alvoun-blue hover:text-alvoun-dark"
+                          className="px-3 py-1.5 bg-brand-teal/10 hover:bg-brand-teal/20 text-brand-teal border border-brand-teal/20 rounded-xl text-xs font-bold shadow-raised-sm active:scale-95 transition-all"
                         >
                           Assign
                         </button>
                         <button 
                           onClick={() => startEditArea(area)}
-                          className="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                          className="px-3 py-1.5 bg-surface-raised hover:bg-surface-sunken border border-border-subtle text-text-secondary rounded-xl text-xs font-bold shadow-raised-sm active:scale-95 transition-all"
                         >
                           Edit
                         </button>
@@ -328,66 +342,66 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
 
       {/* CUSTOMERS TAB */}
       {activeTab === 'CUSTOMERS' && (
-        <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 dark:bg-slate-900/50">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle overflow-hidden">
+          <div className="p-5 border-b border-border-subtle flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface/80">
+            <div className="relative flex-1 max-w-sm w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
               <input 
                 type="text" 
                 placeholder="Search customers..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-alvoun-blue/20 bg-white dark:bg-slate-950"
+                className="w-full pl-10 pr-4 py-2.5 border border-border-subtle rounded-2xl text-sm font-semibold bg-surface-sunken shadow-inset text-text-primary placeholder:text-text-muted focus:border-brand-teal focus:ring-2 focus:ring-brand-teal/20 outline-none"
               />
             </div>
             <button 
               onClick={() => setShowAddCustomer(!showAddCustomer)}
-              className="px-4 py-2 bg-alvoun-blue text-white rounded-lg text-sm font-bold hover:bg-alvoun-dark flex items-center gap-2 transition-colors w-full md:w-auto justify-center"
+              className="px-4 py-2.5 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl text-xs font-black shadow-raised active:scale-95 flex items-center gap-1.5 transition-all w-full md:w-auto justify-center"
             >
               <Plus className="h-4 w-4" /> Add Customer
             </button>
           </div>
 
           {showAddCustomer && (
-            <div className="p-6 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4">New Customer in {route.name}</h3>
+            <div className="p-6 bg-surface-sunken/60 shadow-inset border-b border-border-subtle animate-fade-in">
+              <h3 className="font-black text-text-primary mb-4 tracking-tight">New Customer in {route.name}</h3>
               <form onSubmit={handleAddCustomer} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase">Customer Name</label>
-                  <input required type="text" value={customerForm.customerName} onChange={e => setCustomerForm({...customerForm, customerName: e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-950" />
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Customer Name</label>
+                  <input required type="text" value={customerForm.customerName} onChange={e => setCustomerForm({...customerForm, customerName: e.target.value})} className="w-full mt-1.5 px-3.5 py-2.5 border border-border-subtle rounded-xl text-sm font-semibold bg-surface-raised shadow-inset-sm text-text-primary focus:border-brand-teal outline-none" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase">Phone</label>
-                  <input required type="text" value={customerForm.contact} onChange={e => setCustomerForm({...customerForm, contact: e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-950" />
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Phone</label>
+                  <input required type="text" value={customerForm.contact} onChange={e => setCustomerForm({...customerForm, contact: e.target.value})} className="w-full mt-1.5 px-3.5 py-2.5 border border-border-subtle rounded-xl text-sm font-semibold bg-surface-raised shadow-inset-sm text-text-primary focus:border-brand-teal outline-none" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase">Area (Optional)</label>
-                  <select value={customerForm.areaId} onChange={e => setCustomerForm({...customerForm, areaId: e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-950">
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Area (Optional)</label>
+                  <select value={customerForm.areaId} onChange={e => setCustomerForm({...customerForm, areaId: e.target.value})} className="w-full mt-1.5 px-3.5 py-2.5 border border-border-subtle rounded-xl text-sm font-semibold bg-surface-raised shadow-inset-sm text-text-primary focus:border-brand-teal outline-none">
                     <option value="">No specific area</option>
                     {route.areas.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-500 uppercase">Address</label>
-                  <input required type="text" value={customerForm.address} onChange={e => setCustomerForm({...customerForm, address: e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-950" />
+                  <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Address</label>
+                  <input required type="text" value={customerForm.address} onChange={e => setCustomerForm({...customerForm, address: e.target.value})} className="w-full mt-1.5 px-3.5 py-2.5 border border-border-subtle rounded-xl text-sm font-semibold bg-surface-raised shadow-inset-sm text-text-primary focus:border-brand-teal outline-none" />
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Opening Balance</label>
-                    <input type="number" required min="0" value={customerForm.openingBalance} onChange={e => setCustomerForm({...customerForm, openingBalance: Number(e.target.value)})} className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-950" />
+                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Opening Balance</label>
+                    <input type="number" required min="0" value={customerForm.openingBalance} onChange={e => setCustomerForm({...customerForm, openingBalance: Number(e.target.value)})} className="w-full mt-1.5 px-3.5 py-2.5 border border-border-subtle rounded-xl text-sm font-semibold bg-surface-raised shadow-inset-sm text-text-primary focus:border-brand-teal outline-none" />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Type</label>
-                    <select value={customerForm.openingBalanceType} onChange={e => setCustomerForm({...customerForm, openingBalanceType: e.target.value})} className="w-full mt-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-950">
+                    <label className="text-xs font-bold text-text-muted uppercase tracking-wider">Type</label>
+                    <select value={customerForm.openingBalanceType} onChange={e => setCustomerForm({...customerForm, openingBalanceType: e.target.value})} className="w-full mt-1.5 px-3.5 py-2.5 border border-border-subtle rounded-xl text-sm font-semibold bg-surface-raised shadow-inset-sm text-text-primary focus:border-brand-teal outline-none">
                       <option value="DEBIT">Dues (Debit)</option>
                       <option value="CREDIT">Advance (Credit)</option>
                     </select>
                   </div>
                 </div>
                 
-                <div className="md:col-span-2 flex items-center justify-end gap-3 mt-2">
-                  <button type="button" onClick={() => setShowAddCustomer(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
-                  <button type="submit" disabled={isSavingCustomer} className="px-4 py-2 bg-alvoun-blue text-white rounded-lg text-sm font-bold hover:bg-alvoun-dark disabled:opacity-50">
+                <div className="md:col-span-2 flex items-center justify-end gap-3 mt-3">
+                  <button type="button" onClick={() => setShowAddCustomer(false)} className="px-4 py-2 border border-border-subtle rounded-xl text-xs font-bold text-text-secondary bg-surface-raised shadow-raised-sm active:scale-95 transition-all">Cancel</button>
+                  <button type="submit" disabled={isSavingCustomer} className="px-5 py-2.5 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl text-xs font-black shadow-raised disabled:opacity-50 active:scale-95 transition-all">
                     {isSavingCustomer ? 'Creating...' : 'Create Customer'}
                   </button>
                 </div>
@@ -397,63 +411,67 @@ export default function RouteManageClient({ route, salesmen }: { route: any, sal
 
           <div className="overflow-x-auto min-h-[300px]">
             <table className="w-full text-sm text-left whitespace-nowrap">
-              <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-surface/80 text-text-muted font-bold text-xs uppercase tracking-wider border-b border-border-subtle">
                 <tr>
-                  <th className="px-6 py-3">Customer Name</th>
-                  <th className="px-6 py-3">Area</th>
-                  <th className="px-6 py-3">Phone</th>
-                  <th className="px-6 py-3 text-center">Status</th>
-                  <th className="px-6 py-3 text-right">Actions</th>
+                  <th className="px-6 py-4">Customer Name</th>
+                  <th className="px-6 py-4">Area</th>
+                  <th className="px-6 py-4">Phone</th>
+                  <th className="px-6 py-4 text-center">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border-subtle">
                 {filteredCustomers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                       No customers found in this route matching your criteria.
                     </td>
                   </tr>
                 ) : (
                   filteredCustomers.map((c: any) => (
-                    <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                      <td className="px-6 py-3 font-bold text-slate-900 dark:text-slate-100">{c.customerName}</td>
-                      <td className="px-6 py-3">
+                    <tr key={c.id} className="hover:bg-surface-sunken/40 transition-colors">
+                      <td className="px-6 py-4 font-black text-text-primary text-base">{c.customerName}</td>
+                      <td className="px-6 py-4">
                         {movingCustomerId === c.id ? (
                           <div className="flex items-center gap-2">
                             <select 
                               value={moveToAreaId}
                               onChange={e => setMoveToAreaId(e.target.value)}
-                              className="px-2 py-1 border border-alvoun-blue rounded-md w-32 text-xs"
+                              className="px-2.5 py-1.5 border border-brand-teal rounded-xl w-36 text-xs font-semibold bg-surface-raised shadow-inset-sm text-text-primary outline-none"
                             >
                               <option value="">No Area</option>
                               {route.areas.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}
                             </select>
-                            <button disabled={isMoving} onClick={() => handleMoveCustomer(c)} className="text-alvoun-green disabled:opacity-50"><Check className="h-4 w-4" /></button>
-                            <button disabled={isMoving} onClick={() => setMovingCustomerId(null)} className="text-red-500 disabled:opacity-50"><X className="h-4 w-4" /></button>
+                            <button disabled={isMoving} onClick={() => handleMoveCustomer(c)} className="w-7 h-7 flex items-center justify-center bg-emerald-500/15 text-emerald-600 rounded-lg shadow-raised-sm active:scale-95 disabled:opacity-50"><Check className="h-4 w-4" /></button>
+                            <button disabled={isMoving} onClick={() => setMovingCustomerId(null)} className="w-7 h-7 flex items-center justify-center bg-red-500/15 text-accent-terracotta rounded-lg shadow-raised-sm active:scale-95 disabled:opacity-50"><X className="h-4 w-4" /></button>
                           </div>
                         ) : (
-                          <span className="text-slate-600 dark:text-slate-400">{c.area?.name || <span className="italic text-slate-400">Route Direct</span>}</span>
+                          <span className="text-text-secondary font-medium">{c.area?.name || <span className="italic text-text-muted text-xs">Route Direct</span>}</span>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-slate-600 dark:text-slate-400">{c.contact}</td>
-                      <td className="px-6 py-3 text-center">
+                      <td className="px-6 py-4 text-text-muted font-medium">{c.contact}</td>
+                      <td className="px-6 py-4 text-center">
                         {c.status === 'ACTIVE' ? (
-                          <span className="text-alvoun-green font-bold text-xs uppercase">Active</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> Active
+                          </span>
                         ) : (
-                          <span className="text-slate-400 font-bold text-xs uppercase">Inactive</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-surface-sunken text-text-muted border border-border-subtle">
+                            <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span> Inactive
+                          </span>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-right space-x-3">
+                      <td className="px-6 py-4 text-right space-x-2">
                         <button 
                           onClick={() => { setMovingCustomerId(c.id); setMoveToAreaId(c.areaId || ''); }}
-                          className="text-xs font-bold uppercase tracking-wider text-alvoun-blue hover:text-alvoun-dark"
+                          className="px-3 py-1.5 bg-brand-teal/10 hover:bg-brand-teal/20 text-brand-teal border border-brand-teal/20 rounded-xl text-xs font-bold shadow-raised-sm active:scale-95 transition-all"
                         >
                           Move
                         </button>
                         {c.status === 'ACTIVE' && (
                           <button 
                             onClick={() => handleDeactivateCustomer(c)}
-                            className="text-xs font-bold uppercase tracking-wider text-amber-600 hover:text-amber-800"
+                            className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-accent-terracotta border border-red-500/20 rounded-xl text-xs font-bold shadow-raised-sm active:scale-95 transition-all"
                           >
                             Deactivate
                           </button>

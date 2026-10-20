@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { requireAdminSession } from '@/lib/session';
 
 const ProductSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -13,6 +14,7 @@ const ProductSchema = z.object({
 
 export async function createProduct(formData: FormData) {
   try {
+    await requireAdminSession();
     const rawData = {
       name: formData.get('name') as string,
       bottlesPerCrate: parseInt(formData.get('bottlesPerCrate') as string),
@@ -61,6 +63,7 @@ export async function createProduct(formData: FormData) {
 
 export async function updateProduct(id: string, formData: FormData) {
   try {
+    await requireAdminSession();
     const rawData = {
       name: formData.get('name') as string,
       bottlesPerCrate: parseInt(formData.get('bottlesPerCrate') as string),
@@ -122,6 +125,7 @@ export async function updateProduct(id: string, formData: FormData) {
 
 export async function deactivateProduct(id: string) {
   try {
+    await requireAdminSession();
     await prisma.product.update({
       where: { id },
       data: { isActive: false }
@@ -135,6 +139,7 @@ export async function deactivateProduct(id: string) {
 
 export async function activateProduct(id: string) {
   try {
+    await requireAdminSession();
     await prisma.product.update({
       where: { id },
       data: { isActive: true }

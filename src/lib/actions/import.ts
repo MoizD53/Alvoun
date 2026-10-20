@@ -2,8 +2,10 @@
 
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
+import { requireAdminSession } from '@/lib/session';
 
 export async function processCustomerImport(rows: any[]) {
+  await requireAdminSession();
   const results = {
     success: 0,
     failed: 0,

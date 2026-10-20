@@ -45,12 +45,12 @@ function FitBounds({ salesmen }: { salesmen: SalesmanLocation[] }) {
 }
 
 export default function LeafletMap({ salesmen }: { salesmen: SalesmanLocation[] }) {
-  // Default center if no active salesmen (e.g., center of India)
+  // Default center if no active salesmen (center of India)
   const defaultCenter: L.LatLngExpression = [20.5937, 78.9629];
   const defaultZoom = 5;
 
   return (
-    <div className="w-full h-[450px] lg:h-[600px] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm relative z-0">
+    <div className="w-full h-[450px] lg:h-[600px] rounded-2xl overflow-hidden border border-border-subtle shadow-inset-sm relative z-0">
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}
@@ -65,28 +65,28 @@ export default function LeafletMap({ salesmen }: { salesmen: SalesmanLocation[] 
         {salesmen.filter(s => s.lat && s.lng).map((salesman) => (
           <Marker key={salesman.id} position={[salesman.lat!, salesman.lng!]}>
             <Popup>
-              <div className="text-sm">
-                <strong className="block text-base mb-1">{salesman.name}</strong>
+              <div className="text-sm p-1 font-sans">
+                <strong className="block text-base font-black text-slate-900 mb-1">{salesman.name}</strong>
                 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Status:</span>
+                  <span className="font-bold text-slate-600">Status:</span>
                   <span className={`${
-                    salesman.status === 'Live' ? 'text-green-600' :
-                    salesman.status === 'Stale' ? 'text-yellow-600' :
+                    salesman.status === 'Live' ? 'text-emerald-600' :
+                    salesman.status === 'Stale' ? 'text-amber-600' :
                     'text-slate-400'
-                  } font-bold`}>{salesman.status}</span>
+                  } font-black`}>{salesman.status}</span>
                   
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Last Seen:</span>
-                  <span>{salesman.lastUpdated || 'Never'}</span>
+                  <span className="font-bold text-slate-600">Last Seen:</span>
+                  <span className="font-semibold text-slate-800">{salesman.lastUpdated || 'Never'}</span>
                   
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Age:</span>
-                  <span>{salesman.ageText}</span>
+                  <span className="font-bold text-slate-600">Age:</span>
+                  <span className="text-slate-700">{salesman.ageText}</span>
                   
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Coords:</span>
-                  <span>{salesman.lat?.toFixed(4)}, {salesman.lng?.toFixed(4)}</span>
+                  <span className="font-bold text-slate-600">Coords:</span>
+                  <span className="text-slate-700 font-mono text-[11px]">{salesman.lat?.toFixed(4)}, {salesman.lng?.toFixed(4)}</span>
                   
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Accuracy:</span>
-                  <span>{salesman.accuracy ? `${Math.round(salesman.accuracy)}m` : 'N/A'}</span>
+                  <span className="font-bold text-slate-600">Accuracy:</span>
+                  <span className="text-slate-700">{salesman.accuracy ? `${Math.round(salesman.accuracy)}m` : 'N/A'}</span>
                 </div>
               </div>
             </Popup>

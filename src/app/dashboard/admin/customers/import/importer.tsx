@@ -4,6 +4,12 @@ import { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { processCustomerImport } from '@/lib/actions/import';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  UploadCloud, FileSpreadsheet, ArrowRight, ArrowLeft, 
+  CheckCircle2, XCircle, AlertCircle, FileCheck2, Loader2 
+} from 'lucide-react';
 
 export default function CustomerImporter() {
   const router = useRouter();
@@ -30,9 +36,9 @@ export default function CustomerImporter() {
   const [results, setResults] = useState<any>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFile(file);
+    const uploadedFile = e.target.files?.[0];
+    if (!uploadedFile) return;
+    setFile(uploadedFile);
 
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -64,7 +70,7 @@ export default function CustomerImporter() {
         setStep(2);
       }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsBinaryString(uploadedFile);
   };
 
   const requiredFields = ['customerName', 'route', 'area'];
@@ -105,98 +111,159 @@ export default function CustomerImporter() {
 
   if (results) {
     return (
-      <div className="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
-        <h2 className="text-xl font-bold mb-4">Import Results</h2>
-        <div className="grid grid-cols-2 gap-4 mb-6 text-center">
-          <div className="bg-green-50 dark:bg-green-900/20 text-green-700 p-4 rounded-lg">
-            <div className="text-2xl font-bold">{results.success}</div>
-            <div className="text-sm">Successfully Imported</div>
+      <div className="bg-surface-raised shadow-raised p-6 sm:p-8 rounded-2xl border border-border/40 space-y-6">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Import Results</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Batch execution completed</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl text-center">
+            <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{results.success}</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 mt-1">
+              Successfully Imported
+            </div>
           </div>
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 p-4 rounded-lg">
-            <div className="text-2xl font-bold">{results.failed}</div>
-            <div className="text-sm">Failed</div>
+          <div className="bg-destructive/10 border border-destructive/20 p-5 rounded-2xl text-center">
+            <div className="text-3xl font-extrabold text-destructive">{results.failed}</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-destructive mt-1">
+              Failed Rows
+            </div>
           </div>
         </div>
         
-        {results.errors.length > 0 && (
-          <div className="mt-6">
-            <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Error Log:</h3>
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-4 max-h-64 overflow-y-auto text-sm font-mono text-red-600 space-y-1">
-              {results.errors.map((e: string, i: number) => <div key={i}>{e}</div>)}
+        {results.errors?.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Error Details</h3>
+            <div className="bg-surface-inset shadow-inset border border-border/40 rounded-xl p-4 max-h-60 overflow-y-auto text-xs font-mono text-destructive space-y-1.5">
+              {results.errors.map((e: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{e}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        <button onClick={() => router.push('/dashboard/admin/customers')} className="mt-6 bg-alvoun-blue text-white px-4 py-2 rounded-md hover:bg-alvoun-dark transition-colors">
-          Return to Customers
-        </button>
+        <div className="pt-2">
+          <Button 
+            onClick={() => router.push('/dashboard/admin/customers')} 
+            variant="primary"
+            className="shadow-raised hover:shadow-raised-sm press-active"
+          >
+            Return to Customers
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Step Indicator */}
+      <div className="bg-surface-raised shadow-raised p-4 rounded-2xl border border-border/40 flex items-center justify-between max-w-xl mx-auto">
+        <div className={`flex items-center gap-2 text-xs font-semibold ${step >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 1 ? 'bg-primary text-primary-foreground font-bold' : 'bg-surface-inset text-muted-foreground'}`}>1</span>
+          Upload File
+        </div>
+        <div className="h-0.5 w-12 bg-border/40" />
+        <div className={`flex items-center gap-2 text-xs font-semibold ${step >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 2 ? 'bg-primary text-primary-foreground font-bold' : 'bg-surface-inset text-muted-foreground'}`}>2</span>
+          Map Columns
+        </div>
+        <div className="h-0.5 w-12 bg-border/40" />
+        <div className={`flex items-center gap-2 text-xs font-semibold ${step >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
+          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= 3 ? 'bg-primary text-primary-foreground font-bold' : 'bg-surface-inset text-muted-foreground'}`}>3</span>
+          Preview & Import
+        </div>
+      </div>
+
       {step === 1 && (
-        <div className="bg-white dark:bg-slate-950 p-8 rounded-xl border border-slate-200 dark:border-slate-800 text-center border-dashed">
-          <UploadIcon className="mx-auto h-12 w-12 text-slate-400 mb-4" />
-          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">Upload Excel/CSV File</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">File must contain customer details along with location routing information.</p>
-          <label className="bg-alvoun-blue text-white px-4 py-2 rounded-md cursor-pointer hover:bg-alvoun-dark transition-colors">
-            Select File
-            <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} />
-          </label>
+        <div className="bg-surface-raised shadow-raised p-8 sm:p-12 rounded-2xl border border-border/40 text-center max-w-2xl mx-auto">
+          <div className="bg-surface-inset shadow-inset border-2 border-dashed border-border hover:border-primary/60 rounded-2xl p-10 transition-colors">
+            <div className="w-16 h-16 rounded-2xl bg-surface-raised shadow-raised border border-border/40 flex items-center justify-center mx-auto mb-4 text-primary">
+              <UploadCloud className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-1">Upload Spreadsheet</h3>
+            <p className="text-muted-foreground text-xs sm:text-sm mb-6 max-w-sm mx-auto">
+              Select an .xlsx, .xls, or .csv file with customer records and routing definitions.
+            </p>
+            <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-raised hover:shadow-raised-sm press-active cursor-pointer transition-all">
+              <FileSpreadsheet className="w-4 h-4" />
+              Browse File
+              <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} />
+            </label>
+          </div>
         </div>
       )}
 
       {step === 2 && (
-        <div className="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
-          <h2 className="text-xl font-bold mb-4">Map Columns</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">Match your file's columns to the required system fields.</p>
+        <div className="bg-surface-raised shadow-raised p-6 sm:p-8 rounded-2xl border border-border/40 max-w-3xl mx-auto space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Map Columns</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+              Pair your spreadsheet headers with Alvoun system customer fields.
+            </p>
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+          <div className="bg-surface-inset shadow-inset rounded-2xl p-5 border border-border/40 divide-y divide-border/40">
             {Object.keys(mappings).map(key => (
-              <div key={key} className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {key} {requiredFields.includes(key) && <span className="text-red-500">*</span>}
+              <div key={key} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  {key} {requiredFields.includes(key) && <span className="text-destructive">*</span>}
                 </span>
                 <select 
                   value={mappings[key]}
                   onChange={e => setMappings({...mappings, [key]: e.target.value})}
-                  className="rounded-md border border-slate-300 dark:border-slate-700 text-sm p-1.5 bg-white dark:bg-slate-950 w-48"
+                  className="rounded-xl bg-surface-raised shadow-raised border border-border/40 text-xs sm:text-sm px-3 py-2 text-foreground w-full sm:w-60 focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
                 >
-                  <option value="">-- Ignore --</option>
+                  <option value="">-- Ignore Field --</option>
                   {headers.map(h => <option key={h} value={h}>{h}</option>)}
                 </select>
               </div>
             ))}
           </div>
 
-          <div className="mt-8 flex gap-4">
-            <button onClick={() => setStep(1)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-200 dark:bg-slate-700">Back</button>
-            <button onClick={proceedToPreview} className="px-4 py-2 bg-alvoun-blue text-white rounded-md hover:bg-alvoun-dark">Preview Data</button>
+          <div className="flex items-center justify-between pt-2">
+            <Button variant="outline" onClick={() => setStep(1)}>
+              <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
+            </Button>
+            <Button variant="primary" onClick={proceedToPreview} className="shadow-raised hover:shadow-raised-sm press-active">
+              Preview Data <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
           </div>
         </div>
       )}
 
       {step === 3 && (
-        <div className="bg-white dark:bg-slate-950 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
-          <h2 className="text-xl font-bold mb-4">Preview & Confirm</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">Showing first 5 rows of {data.length} total rows.</p>
+        <div className="bg-surface-raised shadow-raised p-6 sm:p-8 rounded-2xl border border-border/40 max-w-4xl mx-auto space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Preview & Confirm</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm mt-0.5">
+                Previewing top 5 sample rows of {data.length} total rows parsed.
+              </p>
+            </div>
+            <Badge variant="teal" size="md">
+              {data.length} Total Customers
+            </Badge>
+          </div>
           
-          <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 mb-6">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400">
+          <div className="overflow-x-auto rounded-xl border border-border/40">
+            <table className="w-full text-xs text-left whitespace-nowrap">
+              <thead className="bg-surface-inset shadow-inset text-muted-foreground uppercase font-semibold border-b border-border/40">
                 <tr>
                   {Object.keys(mappings).filter(k => mappings[k]).map(k => (
-                    <th key={k} className="px-4 py-2 border-b">{k}</th>
+                    <th key={k} className="px-4 py-3">{k}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border/40 bg-surface-raised">
                 {data.slice(0, 5).map((row, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} className="hover:bg-surface-inset/30">
                     {Object.keys(mappings).filter(k => mappings[k]).map(k => (
-                      <td key={k} className="px-4 py-2">{row[mappings[k]]}</td>
+                      <td key={k} className="px-4 py-2.5 text-foreground">{row[mappings[k]] || '-'}</td>
                     ))}
                   </tr>
                 ))}
@@ -204,22 +271,22 @@ export default function CustomerImporter() {
             </table>
           </div>
 
-          <div className="flex gap-4">
-            <button onClick={() => setStep(2)} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md hover:bg-slate-200 dark:bg-slate-700" disabled={importing}>Back</button>
-            <button onClick={handleImport} disabled={importing} className="px-4 py-2 bg-alvoun-blue text-white rounded-md hover:bg-alvoun-dark disabled:opacity-50">
-              {importing ? 'Importing...' : `Import ${data.length} Customers`}
-            </button>
+          <div className="flex items-center justify-between pt-2">
+            <Button variant="outline" onClick={() => setStep(2)} disabled={importing}>
+              <ArrowLeft className="w-4 h-4 mr-1.5" /> Back
+            </Button>
+            <Button 
+              variant="primary" 
+              onClick={handleImport} 
+              isLoading={importing}
+              className="shadow-raised hover:shadow-raised-sm press-active"
+            >
+              <FileCheck2 className="w-4 h-4 mr-1.5" />
+              {importing ? 'Importing Batch...' : `Import ${data.length} Customers`}
+            </Button>
           </div>
         </div>
       )}
     </div>
-  );
-}
-
-function UploadIcon(props: any) {
-  return (
-    <svg {...props} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-    </svg>
   );
 }

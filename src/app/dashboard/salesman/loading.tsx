@@ -4,34 +4,34 @@ export default function SalesmanLoading() {
       {/* Header Profile skeleton */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
-          <div className="h-4 w-48 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
+          <div className="h-6 w-36 bg-surface-raised shadow-raised rounded-xl"></div>
+          <div className="h-4 w-48 bg-surface-inset shadow-inset rounded-lg"></div>
         </div>
-        <div className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+        <div className="h-10 w-10 bg-surface-raised shadow-raised rounded-xl"></div>
       </div>
 
       {/* KPI Cards skeleton */}
-      <div className="grid grid-cols-2 gap-3">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-24 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2 shadow-sm">
-            <div className="h-3 w-16 bg-slate-200 dark:bg-slate-800 rounded"></div>
-            <div className="h-6 w-20 bg-slate-200 dark:bg-slate-800 rounded"></div>
+      <div className="grid grid-cols-3 gap-3 bg-surface-raised shadow-raised rounded-2xl border border-border/40 p-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-3 w-12 bg-surface-inset shadow-inset rounded"></div>
+            <div className="h-6 w-16 bg-surface-inset shadow-inset rounded"></div>
           </div>
         ))}
       </div>
 
-      {/* Assigned Route Card skeleton */}
-      <div className="h-32 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
-        <div className="h-4 w-28 bg-slate-200 dark:bg-slate-800 rounded"></div>
-        <div className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded"></div>
-        <div className="h-3 w-36 bg-slate-100 dark:bg-slate-800/60 rounded"></div>
+      {/* Route Card skeleton */}
+      <div className="bg-surface-raised shadow-raised border border-border/40 rounded-2xl p-5 space-y-3">
+        <div className="h-4 w-28 bg-surface-inset shadow-inset rounded"></div>
+        <div className="h-6 w-48 bg-surface-inset shadow-inset rounded"></div>
+        <div className="h-3 w-36 bg-surface-inset shadow-inset rounded"></div>
       </div>
 
       {/* Customer List skeleton */}
       <div className="space-y-3">
-        <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded"></div>
+        <div className="h-4 w-32 bg-surface-raised rounded"></div>
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-20 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm"></div>
+          <div key={i} className="h-24 bg-surface-raised shadow-raised border border-border/40 rounded-2xl p-4"></div>
         ))}
       </div>
     </div>

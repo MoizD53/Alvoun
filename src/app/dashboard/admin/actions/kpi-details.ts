@@ -3,8 +3,10 @@
 import { prisma } from '@/lib/db';
 import { getKolkataStartOfDay, getKolkataEndOfDay } from '@/lib/time';
 import { calculateOutstanding } from '@/lib/outstanding';
+import { requireAdminSession } from '@/lib/session';
 
 export async function getSalesDetails(dateStr: string | undefined) {
+  await requireAdminSession();
   const startOfDay = getKolkataStartOfDay(dateStr);
   const endOfDay = getKolkataEndOfDay(dateStr);
 
@@ -34,6 +36,7 @@ export async function getSalesDetails(dateStr: string | undefined) {
 }
 
 export async function getCollectionDetails(dateStr: string | undefined) {
+  await requireAdminSession();
   const startOfDay = getKolkataStartOfDay(dateStr);
   const endOfDay = getKolkataEndOfDay(dateStr);
 
@@ -66,6 +69,7 @@ export async function getCollectionDetails(dateStr: string | undefined) {
 }
 
 export async function getOutstandingDetails() {
+  await requireAdminSession();
   const allCustomers = await prisma.customer.findMany({
     include: { sales: { include: { items: true } }, payments: true },
   });
@@ -101,6 +105,7 @@ export async function getOutstandingDetails() {
 }
 
 export async function getVisitsDetails(dateStr: string | undefined) {
+  await requireAdminSession();
   const startOfDay = getKolkataStartOfDay(dateStr);
   const endOfDay = getKolkataEndOfDay(dateStr);
 
@@ -140,6 +145,7 @@ export async function getVisitsDetails(dateStr: string | undefined) {
 }
 
 export async function getRoutesDetails() {
+  await requireAdminSession();
   const routes = await prisma.route.findMany({
     include: {
       areas: true,
@@ -160,6 +166,7 @@ export async function getRoutesDetails() {
 }
 
 export async function getAreasDetails() {
+  await requireAdminSession();
   const areas = await prisma.area.findMany({
     include: {
       route: true,
@@ -195,6 +202,7 @@ export async function getAreasDetails() {
 }
 
 export async function getSalesmenDetails(dateStr: string | undefined) {
+  await requireAdminSession();
   const startOfDay = getKolkataStartOfDay(dateStr);
   const endOfDay = getKolkataEndOfDay(dateStr);
 
@@ -264,6 +272,7 @@ export async function getSalesmenDetails(dateStr: string | undefined) {
 }
 
 export async function getCustomersDetails() {
+  await requireAdminSession();
   const customers = await prisma.customer.findMany({
     include: {
       route: true,

@@ -3,18 +3,21 @@
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { requireAdminSession, requireAuthSession } from '@/lib/session';
 
 const StateSchema = z.object({
   name: z.string().min(1, "Name is required"),
 });
 
 export async function getStates() {
+  await requireAuthSession();
   return await prisma.state.findMany({
     orderBy: { name: 'asc' }
   });
 }
 
 export async function createState(data: FormData) {
+  await requireAdminSession();
   const result = StateSchema.safeParse(Object.fromEntries(data));
   if (!result.success) return { error: result.error.issues[0].message };
 
@@ -28,6 +31,7 @@ export async function createState(data: FormData) {
 }
 
 export async function updateState(id: string, data: FormData) {
+  await requireAdminSession();
   const result = StateSchema.safeParse(Object.fromEntries(data));
   if (!result.success) return { error: result.error.issues[0].message };
 

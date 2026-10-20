@@ -1,43 +1,376 @@
 @import "tailwindcss";
 
+/* ============================================================
+   ALVOUN — DESIGN TOKEN SYSTEM (Phase 1 Polished)
+   Warm Neumorphic Design Language
+   Palette: Warm Cream base + Deep Teal accent
+   ============================================================ */
+
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   ROOT (LIGHT MODE) — Crisp Enterprise Palette & Tokens
+   ============================================================ */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  
-  /* Alvoun Theme Colors */
-  --color-alvoun-blue: #0055a4;
-  --color-alvoun-light: #e0f2fe;
-  --color-alvoun-dark: #003366;
-  --color-alvoun-navy: #0f172a;
-  --color-alvoun-green: #10b981;
-  --color-alvoun-amber: #f59e0b;
-  --color-alvoun-red: #ef4444;
+  /* ============================================================
+     PRIMARY THEME (LIGHT) — Warm Sand & Cream Neumorphism
+     Matches Target Reference & Design System Kit Exactly
+     ============================================================ */
+
+  /* --- Page & Surface Backgrounds --- */
+  --background:       #F5EFE6;   /* Warm sand base canvas */
+  --surface-sidebar:  #F5EFE6;   /* Continuous warm sand sidebar */
+  --surface-raised:   #EDE4D8;   /* Raised tactile cream cards & panels */
+  --surface-inset:    #DDD3C3;   /* Debossed inset wells, inputs, headers */
+  --surface-overlay:  #EDE4D8;   /* Elevated modals, dropdowns */
+
+  /* --- Primary Brand — Deep Petrol Teal (#1A5F63) --- */
+  --teal-50:  #E8F3F3;
+  --teal-100: #D2E7E8;
+  --teal-200: #A5CFD1;
+  --teal-300: #74B4B7;
+  --teal-400: #3D9397;
+  --teal-500: #1A5F63;   /* Primary reference brand teal */
+  --teal-600: #165154;
+  --teal-700: #124245;
+  --teal-800: #0E3336;
+  --teal-900: #081E20;
+
+  /* --- Deep Warm Espresso & Taupe Typography --- */
+  --text-primary:   #2C2015;   /* Deep espresso charcoal — high contrast, warm */
+  --text-secondary: #6B5744;   /* Warm taupe — subtitles, labels */
+  --text-muted:     #8E7B6A;   /* Warm stone — micro hints, timestamps */
+  --text-disabled:  #B5A595;   /* Disabled states */
+  --text-inverse:   #FFFFFF;
+
+  /* --- Warm Subtle Borders --- */
+  --border-default: #D8CCBB;   /* Thin 1px warm border */
+  --border-strong:  #C5B49F;   /* Focused elements, active tabs */
+  --border-subtle:  #E4DACB;   /* Inner table row dividers */
+
+  /* --- Semantic Status Colors --- */
+  --success:        #2E7D32;
+  --success-bg:     #E8F5E9;
+  --warning:        #D97706;
+  --warning-bg:     #FFF3E0;
+  --danger:         #C62828;
+  --danger-bg:      #FFEBEE;
+  --info:           #1A5F63;
+  --info-bg:        #E0F2F1;
+
+  /* --- Backward Compatibility Bridge --- */
+  --color-alvoun-blue:   #1A5F63;
+  --color-alvoun-light:  #E8F3F3;
+  --color-alvoun-dark:   #124245;
+  --color-alvoun-navy:   #2C2015;
+  --color-alvoun-green:  #2E7D32;
+  --color-alvoun-amber:  #D97706;
+  --color-alvoun-red:    #C62828;
+
+  /* --- Remap Tailwind Gray/Slate to Warm Sand Scale --- */
+  --color-slate-50:  #FAF6F0;
+  --color-slate-100: #F5EFE6;
+  --color-slate-200: #EDE4D8;
+  --color-slate-300: #DDD3C3;
+  --color-slate-400: #B5A595;
+  --color-slate-500: #8E7B6A;
+  --color-slate-600: #6B5744;
+  --color-slate-700: #4A3C2E;
+  --color-slate-800: #352B20;
+  --color-slate-900: #2C2015;
+  --color-slate-950: #1B130B;
+
+  --color-gray-50:   #FAF6F0;
+  --color-gray-100:  #F5EFE6;
+  --color-gray-200:  #EDE4D8;
+  --color-gray-300:  #DDD3C3;
+  --color-gray-400:  #B5A595;
+  --color-gray-500:  #8E7B6A;
+  --color-gray-600:  #6B5744;
+  --color-gray-700:  #4A3C2E;
+  --color-gray-800:  #352B20;
+  --color-gray-900:  #2C2015;
+  --color-gray-950:  #1B130B;
+
+  /* ============================================================
+     DUAL-DIRECTIONAL NEUMORPHIC ELEVATION (Light Mode)
+     Light from Top-Left (#FFFFFF) + Shadow to Bottom-Right (Warm Taupe)
+     ============================================================ */
+  --shadow-flat: none;
+  --shadow-xs:
+    2px 2px 5px rgba(139, 110, 80, 0.12),
+    -2px -2px 5px rgba(255, 255, 255, 0.70);
+  --shadow-hover:
+    6px 6px 16px rgba(139, 110, 80, 0.22),
+    -4px -4px 10px rgba(255, 255, 255, 0.85);
+  --shadow-raised:
+    4px 4px 12px rgba(139, 110, 80, 0.16),
+    -3px -3px 8px rgba(255, 255, 255, 0.75);
+  --shadow-modal:
+    10px 10px 28px rgba(139, 110, 80, 0.25),
+    -6px -6px 16px rgba(255, 255, 255, 0.80);
+  --shadow-popover:
+    16px 16px 36px rgba(139, 110, 80, 0.30),
+    -8px -8px 20px rgba(255, 255, 255, 0.85);
+  --shadow-inset:
+    inset 2px 2px 5px rgba(139, 110, 80, 0.18),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.72);
+  --shadow-inset-strong:
+    inset 3px 3px 7px rgba(139, 110, 80, 0.26),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.80);
+
+  /* ============================================================
+     RADIUS SCALE
+     ============================================================ */
+  --r-xs:   4px;
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   16px;
+  --r-xl:   20px;
+  --r-2xl:  24px;
+  --r-full: 9999px;
+
+  /* ============================================================
+     SPACING SCALE (base-8 system)
+     ============================================================ */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ============================================================
+     TYPOGRAPHY
+     ============================================================ */
+  --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* ============================================================
+     BORDER THICKNESS TOKENS
+     ============================================================ */
+  --border-thin:    1px;
+  --border-regular: 2px;
+  --border-thick:   4px;
+
+  /* ============================================================
+     TRANSITIONS
+     ============================================================ */
+  --transition-fast:   100ms ease;
+  --transition-base:   150ms ease;
+  --transition-slow:   250ms ease;
+  --transition-gentle: 350ms ease;
 }
 
+/* ============================================================
+   ALTERNATIVE THEME (DARK) — Warm Espresso & Charcoal Neumorphism
+   Maintains Tactile Tactility in Dark Mode
+   ============================================================ */
+.dark {
+  /* Page & Surface Backgrounds */
+  --background:       #181512;   /* Deep warm espresso base */
+  --surface-sidebar:  #14120F;   /* Distinct grounded sidebar */
+  --surface-raised:   #221E1A;   /* Tactile dark cream-charcoal cards */
+  --surface-inset:    #1A1613;   /* Debossed dark espresso wells */
+  --surface-overlay:  #28231E;   /* Elevated popovers & modals */
+
+  /* High-Contrast Warm Typography */
+  --text-primary:   #EDE4D8;    /* Warm cream off-white */
+  --text-secondary: #A39282;    /* Warm stone for labels */
+  --text-muted:     #736253;    /* Deep taupe for hints */
+  --text-disabled:  #4E4238;
+  --text-inverse:   #181512;
+
+  /* Controlled Warm Dark Borders */
+  --border-default: #302A24;
+  --border-strong:  #423A32;
+  --border-subtle:  #25201A;
+
+  /* Brand Teal Scale in Dark Mode */
+  --teal-50:  rgba(45, 212, 191, 0.08);
+  --teal-100: rgba(45, 212, 191, 0.15);
+  --teal-200: #5EEAD4;
+  --teal-300: #2DD4BF;
+  --teal-400: #2DD4BF;
+  --teal-500: #14B8A6;
+  --teal-600: #0D9488;
+  --teal-700: #0F766E;
+  --teal-800: #115E59;
+  --teal-900: #042F2E;
+
+  /* Semantic Status Colors in Dark Mode */
+  --success:    #34D399;
+  --success-bg: rgba(52, 211, 153, 0.14);
+  --warning:    #FBBF24;
+  --warning-bg: rgba(251, 191, 36, 0.14);
+  --danger:     #F87171;
+  --danger-bg:  rgba(248, 113, 113, 0.14);
+  --info:       #2DD4BF;
+  --info-bg:    rgba(45, 212, 191, 0.14);
+
+  /* Legacy Bridge Remaps */
+  --color-alvoun-blue:  #2DD4BF;
+  --color-alvoun-light: rgba(45, 212, 191, 0.12);
+  --color-alvoun-dark:  #14B8A6;
+  --color-alvoun-navy:  #EDE4D8;
+  --color-alvoun-green: #34D399;
+  --color-alvoun-amber: #FBBF24;
+  --color-alvoun-red:   #F87171;
+
+  --color-slate-50:  #EDE4D8;
+  --color-slate-100: #D8CCBB;
+  --color-slate-200: #A39282;
+  --color-slate-300: #736253;
+  --color-slate-400: #5A4D41;
+  --color-slate-500: #42382F;
+  --color-slate-600: #302821;
+  --color-slate-700: #26201A;
+  --color-slate-800: #221E1A;
+  --color-slate-900: #1A1613;
+  --color-slate-950: #181512;
+
+  --color-gray-50:   #EDE4D8;
+  --color-gray-100:  #D8CCBB;
+  --color-gray-200:  #A39282;
+  --color-gray-300:  #736253;
+  --color-gray-400:  #5A4D41;
+  --color-gray-500:  #42382F;
+  --color-gray-600:  #302821;
+  --color-gray-700:  #26201A;
+  --color-gray-800:  #221E1A;
+  --color-gray-900:  #1A1613;
+  --color-gray-950:  #181512;
+
+  /* Tactile Dark Neumorphic Shadows */
+  --shadow-flat: none;
+  --shadow-xs:
+    2px 2px 5px rgba(0, 0, 0, 0.45),
+    -1px -1px 3px rgba(255, 255, 255, 0.03);
+  --shadow-hover:
+    5px 5px 14px rgba(0, 0, 0, 0.65),
+    -3px -3px 8px rgba(255, 255, 255, 0.05);
+  --shadow-raised:
+    3px 3px 10px rgba(0, 0, 0, 0.55),
+    -2px -2px 6px rgba(255, 255, 255, 0.04);
+  --shadow-modal:
+    10px 10px 24px rgba(0, 0, 0, 0.75),
+    -4px -4px 12px rgba(255, 255, 255, 0.05);
+  --shadow-popover:
+    16px 16px 36px rgba(0, 0, 0, 0.85),
+    -6px -6px 16px rgba(255, 255, 255, 0.06);
+  --shadow-inset:
+    inset 2px 2px 5px rgba(0, 0, 0, 0.65),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.05);
+  --shadow-inset-strong:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.80),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================================
+   TAILWIND THEME BRIDGE
+   Maps CSS tokens → Tailwind v4 utility classes
+   ============================================================ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  
-  --color-alvoun-blue: var(--color-alvoun-blue);
-  --color-alvoun-light: var(--color-alvoun-light);
-  --color-alvoun-dark: var(--color-alvoun-dark);
-  --color-alvoun-navy: var(--color-alvoun-navy);
-  --color-alvoun-green: var(--color-alvoun-green);
-  --color-alvoun-amber: var(--color-alvoun-amber);
-  --color-alvoun-red: var(--color-alvoun-red);
+  /* Surfaces & Backgrounds */
+  --color-background:      var(--background);
+  --color-foreground:      var(--text-primary);
+  --color-surface-flat:    var(--background);
+  --color-surface-raised:  var(--surface-raised);
+  --color-surface-inset:   var(--surface-inset);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-sidebar: var(--surface-sidebar);
+  --color-white:           #FFFFFF;
+
+  /* Teal scale */
+  --color-teal-50:  var(--teal-50);
+  --color-teal-100: var(--teal-100);
+  --color-teal-200: var(--teal-200);
+  --color-teal-300: var(--teal-300);
+  --color-teal-400: var(--teal-400);
+  --color-teal-500: var(--teal-500);
+  --color-teal-600: var(--teal-600);
+  --color-teal-700: var(--teal-700);
+  --color-teal-800: var(--teal-800);
+  --color-teal-900: var(--teal-900);
+
+  /* Typography Colors */
+  --color-text-primary:   var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted:     var(--text-muted);
+  --color-text-disabled:  var(--text-disabled);
+  --color-text-inverse:   var(--text-inverse);
+
+  /* Borders */
+  --color-border-default: var(--border-default);
+  --color-border-strong:  var(--border-strong);
+  --color-border-subtle:  var(--border-subtle);
+
+  /* Semantic Alerts & Badges */
+  --color-success:     var(--success);
+  --color-success-bg:  var(--success-bg);
+  --color-warning:     var(--warning);
+  --color-warning-bg:  var(--warning-bg);
+  --color-danger:      var(--danger);
+  --color-danger-bg:   var(--danger-bg);
+  --color-info:        var(--info);
+  --color-info-bg:     var(--info-bg);
+
+  /* Legacy Bridge (so existing components render beautifully) */
+  --color-alvoun-blue:   var(--color-alvoun-blue);
+  --color-alvoun-light:  var(--color-alvoun-light);
+  --color-alvoun-dark:   var(--color-alvoun-dark);
+  --color-alvoun-navy:   var(--color-alvoun-navy);
+  --color-alvoun-green:  var(--color-alvoun-green);
+  --color-alvoun-amber:  var(--color-alvoun-amber);
+  --color-alvoun-red:    var(--color-alvoun-red);
+
+  /* Full Complete Neumorphic Shadow Scale */
+  --shadow-flat:    none;
+  --shadow-xs:      var(--shadow-xs);
+  --shadow-sm:      var(--shadow-hover);
+  --shadow:         var(--shadow-raised);
+  --shadow-md:      var(--shadow-raised);
+  --shadow-lg:      var(--shadow-modal);
+  --shadow-xl:      var(--shadow-popover);
+  --shadow-2xl:     var(--shadow-popover);
+  --shadow-inner:   var(--shadow-inset);
+
+  /* Font */
+  --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Radius Scale */
+  --radius-xs:   var(--r-xs);
+  --radius-sm:   var(--r-sm);
+  --radius-md:   var(--r-md);
+  --radius-lg:   var(--r-lg);
+  --radius-xl:   var(--r-xl);
+  --radius-2xl:  var(--r-2xl);
 }
 
+/* ============================================================
+   BASE ELEMENT STYLES
+   ============================================================ */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar styling for tables and sidebars */
+/* Selection */
+::selection {
+  background-color: var(--teal-200);
+  color: var(--teal-800);
+}
+
+/* ============================================================
+   SCROLLBAR — Warm styled
+   ============================================================ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -46,105 +379,206 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 10px;
+  background-color: var(--border-default);
+  border-radius: var(--r-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
+  background-color: var(--border-strong);
 }
 
-@keyframes ripple { 0% { transform: scale(1); opacity: 0.03; } 50% { transform: scale(1.1); opacity: 0.05; } 100% { transform: scale(1); opacity: 0.03; } }
-@keyframes fade-in-up { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
-
-.animate-ripple { animation: ripple 12s infinite ease-in-out; }
-.animate-fade-in-up { animation: fade-in-up 0.3s ease-out forwards; opacity: 0; }
-
-.dark {
-  --background: #070A0F;
-  --foreground: #F5F7FA;
-  
-  /* Alvoun Theme Accents */
-  --color-alvoun-blue: #1677D2;
-  --color-alvoun-light: #10151C; /* Dark subtle highlight */
-  --color-alvoun-dark: #1B83E3;  /* Hover state */
-  --color-alvoun-green: #18B981;
-  --color-alvoun-amber: #F59E0B;
-  --color-alvoun-red: #EF4444;
-  
-  /* Override Tailwind Slate scale for genuine charcoal dark mode */
-  --color-slate-50: #F5F7FA;
-  --color-slate-100: #E4E7EB;
-  --color-slate-200: #CBD2D9;
-  --color-slate-300: #AAB4C3;
-  --color-slate-400: #8B95A5;
-  --color-slate-500: #626C7A;
-  --color-slate-600: #475161;
-  --color-slate-700: #333C4D;
-  --color-slate-800: #1A2029;   /* Borders / Subtle dividers */
-  --color-slate-900: #070A0F;   /* Page Background / Deep wells */
-  --color-slate-950: #0D1117;   /* Cards / Elevated surfaces */
-
-  /* Override Gray just in case it's used anywhere */
-  --color-gray-50: #F5F7FA;
-  --color-gray-100: #E4E7EB;
-  --color-gray-200: #CBD2D9;
-  --color-gray-300: #AAB4C3;
-  --color-gray-400: #8B95A5;
-  --color-gray-500: #626C7A;
-  --color-gray-600: #475161;
-  --color-gray-700: #333C4D;
-  --color-gray-800: #1A2029;
-  --color-gray-900: #070A0F;
-  --color-gray-950: #0D1117;
+/* ============================================================
+   ANIMATIONS & KEYFRAMES
+   ============================================================ */
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-/* Component Overrides to match exactly requested hex codes */
-.dark aside,
-.dark .sidebar,
-.dark aside .h-16 {
-  background-color: #05070B !important;
+@keyframes scale-in {
+  0%   { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
-.dark header {
-  background-color: #080B10 !important;
+@keyframes slide-up {
+  0%   { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-/* Secondary Panels where explicitly used */
-.dark .bg-slate-800 {
-  background-color: #10151C;
+@keyframes slide-in-right {
+  0%   { opacity: 0; transform: translateX(20px); }
+  100% { opacity: 1; transform: translateX(0); }
 }
 
-/* Inputs & Modals */
-.dark input:not([type="checkbox"]):not([type="radio"]), 
-.dark select, 
-.dark textarea {
-  background-color: #0D1117 !important;
-  border-color: #1A2029 !important;
-  color: #F5F7FA !important;
-}
-.dark input::placeholder, 
-.dark textarea::placeholder {
-  color: #626C7A !important;
+@keyframes ripple {
+  0%   { transform: scale(1);   opacity: 0.03; }
+  50%  { transform: scale(1.1); opacity: 0.05; }
+  100% { transform: scale(1);   opacity: 0.03; }
 }
 
-/* Leaflet Dark Mode Support */
-.dark .leaflet-popup-content-wrapper,
-.dark .leaflet-popup-tip {
-  background-color: #0D1117;
-  color: #F5F7FA;
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
 }
-.dark .leaflet-container a.leaflet-popup-close-button {
-  color: #8B95A5;
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.7; }
 }
-.dark .leaflet-container a.leaflet-popup-close-button:hover {
-  color: #F5F7FA;
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
-.dark .leaflet-control-zoom a, 
-.dark .leaflet-control-attribution {
-  background-color: #0D1117 !important;
-  color: #F5F7FA !important;
+
+/* --- Animation Utility Classes --- */
+.animate-fade-in-up    { animation: fade-in-up   0.3s ease-out forwards; opacity: 0; }
+.animate-scale-in      { animation: scale-in      0.2s ease-out forwards; opacity: 0; }
+.animate-slide-up      { animation: slide-up      0.25s ease-out forwards; opacity: 0; }
+.animate-slide-in-right{ animation: slide-in-right 0.25s ease-out forwards; opacity: 0; }
+.animate-ripple        { animation: ripple        12s infinite ease-in-out; }
+.animate-spin          { animation: spin          0.8s linear infinite; }
+.animate-pulse-dot     { animation: pulse-dot     1.5s ease-in-out infinite; }
+
+/* Shimmer skeleton loader (automatically adapts to light/dark via vars) */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-raised) 25%,
+    var(--surface-inset)  50%,
+    var(--surface-raised) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
 }
-.dark .leaflet-control-zoom a:hover {
-  background-color: #1A2029 !important;
+
+/* ============================================================
+   UTILITY CLASSES — Neumorphic 4-Layer System
+   (Matches Reference Kit: Base / Raised / Inset / Pressed)
+   ============================================================ */
+
+/* Layer 1: Base / Flat */
+.surface-flat       { background-color: var(--background); }
+
+/* Layer 2: Raised */
+.surface-raised     { background-color: var(--surface-raised); box-shadow: var(--shadow-raised); }
+
+/* Layer 3: Inset */
+.surface-inset      { background-color: var(--surface-inset);  box-shadow: var(--shadow-inset); }
+
+/* Layer 4: Pressed */
+.surface-pressed    { background-color: var(--surface-inset);  box-shadow: var(--shadow-inset-strong); }
+
+/* Overlay surface for modals, popups, sheets */
+.surface-overlay    { background-color: var(--surface-overlay); box-shadow: var(--shadow-modal); }
+
+/* Direct elevation helper classes */
+.elevation-flat     { box-shadow: var(--shadow-flat); }
+.elevation-xs       { box-shadow: var(--shadow-xs); }
+.elevation-hover     { box-shadow: var(--shadow-hover); }
+.elevation-raised    { box-shadow: var(--shadow-raised); }
+.elevation-modal     { box-shadow: var(--shadow-modal); }
+.elevation-popover   { box-shadow: var(--shadow-popover); }
+.elevation-inset     { box-shadow: var(--shadow-inset); }
+.elevation-pressed   { box-shadow: var(--shadow-inset-strong); }
+
+/* Interactive tactile press affordance */
+.press-active {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.press-active:active {
+  box-shadow: var(--shadow-inset);
+  transform: scale(0.98);
+}
+
+/* ============================================================
+   INPUT DEFAULTS — Clean Zero-Specificity via :where()
+   Ensures base neumorphic styling without fighting Tailwind classes
+   ============================================================ */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):not([type="range"]):not([type="hidden"]):not([type="color"])),
+:where(select),
+:where(textarea) {
+  background-color: var(--surface-inset);
+  border: var(--border-thin) solid var(--border-default);
+  border-radius: var(--r-sm);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-inset);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="file"]):not([type="range"]):not([type="hidden"]):not([type="color"])):focus,
+:where(select):focus,
+:where(textarea):focus {
+  outline: none;
+  border-color: var(--teal-500);
+  box-shadow: var(--shadow-inset), 0 0 0 2px rgba(26, 95, 99, 0.18);
+}
+
+:where(input)::placeholder,
+:where(textarea)::placeholder {
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   LEAFLET MAP — Warm palette styling
+   ============================================================ */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background-color: var(--surface-overlay);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-modal);
+  border: 1px solid var(--border-default);
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-muted);
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: var(--text-primary);
+}
+
+.leaflet-control-zoom a,
+.leaflet-control-attribution {
+  background-color: var(--surface-overlay) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-default) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: var(--surface-raised) !important;
+}
+
+/* ============================================================
+   ACCESSIBILITY — Focus visible ring & Reduced Motion
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   PWA & MOBILE SAFE AREA INSETS (iOS & Android)
+   ============================================================ */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
+}
+
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0.5rem));
+}
+
+.min-touch {
+  min-height: 44px;
+  min-width: 44px;
 }
 

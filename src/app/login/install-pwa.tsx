@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Info, Check, Share } from 'lucide-react';
+import { Download, Share } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertBanner } from '@/components/ui/alert-banner';
 
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -23,12 +25,11 @@ export default function InstallPWA() {
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowManualInstruction(false); // If prompt is available, we don't need manual
+      setShowManualInstruction(false);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Also listen to appinstalled to hide button after success
     window.addEventListener('appinstalled', () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
@@ -45,54 +46,57 @@ export default function InstallPWA() {
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
-      // Show native prompt
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
       }
     } else {
-      // Fallback
       setShowManualInstruction(true);
     }
   };
 
   return (
-    <div className="mt-8 flex flex-col items-center">
-      <div className="flex items-center w-full mb-6">
-        <div className="flex-1 border-t border-slate-300/50"></div>
-        <span className="px-3 text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase">OR</span>
-        <div className="flex-1 border-t border-slate-300/50"></div>
+    <div className="mt-6 flex flex-col items-center w-full">
+      <div className="flex items-center w-full mb-4">
+        <div className="flex-1 border-t border-border-default"></div>
+        <span className="px-3 text-[10px] font-bold text-muted tracking-[0.2em] uppercase select-none">
+          OR
+        </span>
+        <div className="flex-1 border-t border-border-default"></div>
       </div>
 
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="md"
         onClick={handleInstallClick}
-        className="group flex justify-center items-center gap-2 rounded-lg bg-transparent hover:bg-alvoun-blue/5 px-4 h-[44px] text-[14px] font-semibold text-alvoun-blue transition-colors duration-200"
+        leftIcon={<Download className="h-4 w-4" />}
+        className="w-full text-xs font-semibold"
       >
-        <Download className="h-4 w-4" strokeWidth={2} />
         Install Alvoun App
-      </button>
-      <p className="text-slate-500 text-[11px] font-medium mt-1">
-        Install for faster access
+      </Button>
+      <p className="text-muted text-[11px] font-medium mt-1.5 text-center">
+        Install as a PWA for faster offline access
       </p>
 
       {showManualInstruction && (
-        <div className="mt-4 p-4 rounded-[12px] bg-slate-50 border border-slate-200 text-left animate-fade-in-up shadow-sm">
-          <div className="flex items-start gap-2 text-[#0874C9] mb-2">
-            <Info className="h-4 w-4 mt-0.5 shrink-0" />
-            <h4 className="text-[12px] font-bold tracking-[0.1em] uppercase">Installation Manual</h4>
-          </div>
-          {isIOS ? (
-            <p className="text-[12px] text-slate-600 leading-relaxed">
-              To install Alvoun:<br/>
-              Tap the <span className="inline-flex items-center gap-1 font-bold text-slate-800"><Share className="h-3 w-3"/> Share</span> button, then select <strong>Add to Home Screen</strong>.
-            </p>
-          ) : (
-            <p className="text-[12px] text-slate-600 leading-relaxed">
-              Install isn't available automatically on this browser. Use your browser menu → <strong>Add to Home Screen</strong> / <strong>Install App</strong>.
-            </p>
-          )}
+        <div className="mt-4 w-full animate-fade-in-up">
+          <AlertBanner
+            variant="info"
+            title="Installation Instructions"
+            onClose={() => setShowManualInstruction(false)}
+          >
+            {isIOS ? (
+              <p className="text-xs leading-relaxed">
+                Tap the <span className="inline-flex items-center gap-1 font-bold"><Share className="h-3 w-3" /> Share</span> button in Safari, then select <strong>Add to Home Screen</strong>.
+              </p>
+            ) : (
+              <p className="text-xs leading-relaxed">
+                Use your browser menu (⋮) → select <strong>Install App</strong> or <strong>Add to Home Screen</strong>.
+              </p>
+            )}
+          </AlertBanner>
         </div>
       )}
     </div>

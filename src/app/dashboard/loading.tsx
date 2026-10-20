@@ -3,12 +3,11 @@ import { Loader2 } from 'lucide-react';
 export default function Loading() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] w-full animate-fade-in-up">
-      <div className="relative flex items-center justify-center">
-        <Loader2 className="h-10 w-10 text-alvoun-blue animate-spin" />
-        <div className="absolute inset-0 h-10 w-10 rounded-full border-4 border-alvoun-blue/20"></div>
+      <div className="w-16 h-16 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center mb-4 text-brand-teal">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-      <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-slate-100">Loading...</h3>
-      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Please wait while we prepare your dashboard.</p>
+      <h3 className="text-lg font-black text-text-primary tracking-tight">Loading...</h3>
+      <p className="text-xs font-semibold text-text-muted mt-1">Please wait while we prepare your dashboard.</p>
     </div>
   );
 }

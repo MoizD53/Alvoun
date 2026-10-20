@@ -1,7 +1,7 @@
 import { getSalesmenAccounts } from '@/lib/actions/admin/salesman-management';
 import SalesmanList from './components/SalesmanList';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Users, MapPin } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,24 +9,38 @@ export default async function SalesmenPage() {
   const salesmen = await getSalesmenAccounts();
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6 animate-fade-in-up">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/admin" className="p-2 bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+          <Link 
+            href="/dashboard/admin" 
+            className="p-2.5 bg-surface-raised shadow-raised hover:shadow-raised-sm press-active rounded-xl text-muted-foreground hover:text-foreground transition-all border border-border/40"
+            aria-label="Back to Admin Dashboard"
+          >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Salesmen</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">Manage salesman profiles, login credentials, and territory</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Sales Force</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Manage field salesman profiles, app credentials, and territory assignments</p>
           </div>
         </div>
       </div>
 
-      <div className="flex gap-4 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <Link href="/dashboard/admin/salesmen" className="px-4 py-2 text-sm font-medium border-b-2 border-alvoun-blue text-alvoun-blue">
+      {/* Neumorphic Navigation Tabs Strip */}
+      <div className="inline-flex bg-surface-inset shadow-inset p-1 rounded-2xl border border-border/40 gap-1">
+        <Link 
+          href="/dashboard/admin/salesmen" 
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-surface-raised shadow-raised text-primary border border-border/40 transition-all"
+        >
+          <Users className="w-4 h-4" />
           Accounts & Profiles
         </Link>
-        <Link href="/dashboard/admin/salesmen-access" className="px-4 py-2 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+        <Link 
+          href="/dashboard/admin/salesmen-access" 
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-all"
+        >
+          <MapPin className="w-4 h-4" />
           Territory Assignment
         </Link>
       </div>

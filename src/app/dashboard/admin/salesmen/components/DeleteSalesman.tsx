@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Trash2, AlertTriangle } from 'lucide-react';
 import { deleteSalesman } from '@/lib/actions/admin/salesman-management';
+import { Button } from '@/components/ui/button';
+import { AlertBanner } from '@/components/ui/alert-banner';
 
 export default function DeleteSalesman({ id, name }: { id: string; name: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,7 +25,7 @@ export default function DeleteSalesman({ id, name }: { id: string; name: string 
 
     try {
       const result = await deleteSalesman(id);
-      if (result.error) throw new Error(result.error);
+      if (result?.error) throw new Error(result.error);
       
       router.push('/dashboard/admin/salesmen');
       router.refresh();
@@ -34,61 +36,78 @@ export default function DeleteSalesman({ id, name }: { id: string; name: string 
   };
 
   return (
-    <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-red-200 dark:border-red-900/30 overflow-hidden mt-6">
-      <div className="px-6 py-4 border-b border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-950/20">
-        <h2 className="text-lg font-semibold text-red-700 dark:text-red-400 flex items-center">
-          <AlertTriangle className="w-5 h-5 mr-2" />
+    <div className="bg-surface-raised shadow-raised rounded-2xl border border-destructive/30 overflow-hidden">
+      <div className="px-6 py-4 border-b border-destructive/20 bg-destructive/5 flex items-center justify-between">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-destructive flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4" />
           Danger Zone
         </h2>
       </div>
 
-      <div className="p-6">
-        <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">
-          Deleting this salesman will permanently wipe out their profile, login access, territory assignments, and active sessions. Historical sales and visit records will be anonymized or cascade deleted depending on the schema structure.
+      <div className="p-6 space-y-4">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Deleting this salesman permanently removes their user account, credentials, and territory assignments.
         </p>
 
-        {!isOpen ? (
-          <button
-            onClick={() => setIsOpen(true)}
-            className="px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 rounded-lg text-sm font-medium transition-colors flex items-center"
+        {error && (
+          <AlertBanner
+            variant="danger"
+            onClose={() => setError(null)}
           >
-            <Trash2 className="w-4 h-4 mr-2" />
+            {error}
+          </AlertBanner>
+        )}
+
+        {!isOpen ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsOpen(true)}
+            className="w-full text-destructive border-destructive/40 hover:bg-destructive/10"
+          >
+            <Trash2 className="w-4 h-4 mr-1.5" />
             Delete Salesman
-          </button>
+          </Button>
         ) : (
-          <div className="space-y-4 bg-red-50 dark:bg-red-900/10 p-4 rounded-lg border border-red-100 dark:border-red-900/30">
-            <p className="text-sm font-medium text-red-800 dark:text-red-300">
-              Type <strong className="font-bold select-all">{name}</strong> to confirm.
+          <div className="space-y-3 bg-surface-inset shadow-inset p-4 rounded-xl border border-border/40">
+            <p className="text-xs font-medium text-foreground">
+              Type <strong className="text-destructive select-all font-bold">{name}</strong> to confirm deletion:
             </p>
             <input
               type="text"
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
-              placeholder="Confirm salesman name"
-              className="w-full px-3 py-2 border border-red-300 dark:border-red-800 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-slate-900 dark:text-white text-sm"
+              placeholder="Confirm full name"
+              className="w-full rounded-xl bg-surface-raised shadow-raised-sm border border-border/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-destructive/40 transition-all"
             />
             
-            {error && <p className="text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>}
-            
-            <div className="flex gap-3">
-              <button
+            <div className="flex gap-2 pt-1">
+              <Button
+                type="button"
+                variant="danger"
+                size="sm"
                 onClick={handleDelete}
                 disabled={isDeleting || confirmName !== name}
-                className="flex-1 flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                isLoading={isDeleting}
+                className="flex-1 shadow-raised hover:shadow-raised-sm press-active"
               >
-                {isDeleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Deleting...</> : 'Confirm Delete'}
-              </button>
-              <button
+                Confirm Delete
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setIsOpen(false);
                   setConfirmName('');
                   setError(null);
                 }}
                 disabled={isDeleting}
-                className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                className="flex-1"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

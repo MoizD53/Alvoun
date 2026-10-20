@@ -2,7 +2,10 @@ import { prisma } from '@/lib/db';
 import { formatMoney } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
 import Link from 'next/link';
+import { ArrowLeft, Download, CreditCard, ChevronRight } from 'lucide-react';
 import OutstandingFilterBar from './OutstandingFilterBar';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Badge } from '@/components/ui/badge';
 
 export default async function OutstandingReportPage({
   searchParams
@@ -39,25 +42,47 @@ export default async function OutstandingReportPage({
       city: true,
       state: true,
       sales: { 
-        where: Object.keys(salesDateFilter).length > 0 ? { saleDate: salesDateFilter } : undefined,
         select: { totalAmount: true, saleDate: true },
         orderBy: { saleDate: 'desc' }
       },
       payments: { 
-        where: Object.keys(paymentsDateFilter).length > 0 ? { paymentDate: paymentsDateFilter } : undefined,
         select: { amount: true, paymentDate: true },
         orderBy: { paymentDate: 'desc' }
       }
     }
   });
 
+  const filterStartDate = fromDate ? new Date(`${fromDate}T00:00:00+05:30`) : null;
+  const filterEndDate = toDate ? new Date(`${toDate}T23:59:59+05:30`) : null;
+
   let reportData = customers.map(c => {
-    const outstanding = calculateOutstanding(c as any);
-    const totalSales = c.sales.reduce((sum, s) => sum + s.totalAmount, 0);
-    const totalPayments = c.payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalLifetimeSales = c.sales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalLifetimePayments = c.payments.reduce((sum, p) => sum + p.amount, 0);
+    const base = c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance;
+    const outstanding = base + totalLifetimeSales - totalLifetimePayments;
+
+    const periodSalesList = (filterStartDate || filterEndDate)
+      ? c.sales.filter(s => {
+          const d = new Date(s.saleDate);
+          if (filterStartDate && d < filterStartDate) return false;
+          if (filterEndDate && d > filterEndDate) return false;
+          return true;
+        })
+      : c.sales;
+
+    const periodPaymentsList = (filterStartDate || filterEndDate)
+      ? c.payments.filter(p => {
+          const d = new Date(p.paymentDate);
+          if (filterStartDate && d < filterStartDate) return false;
+          if (filterEndDate && d > filterEndDate) return false;
+          return true;
+        })
+      : c.payments;
+
+    const totalSales = periodSalesList.reduce((sum, s) => sum + s.totalAmount, 0);
+    const totalPayments = periodPaymentsList.reduce((sum, p) => sum + p.amount, 0);
     const periodDues = totalSales - totalPayments;
 
-    // Get last active transaction date in this period or overall
     const lastSaleDate = c.sales[0]?.saleDate ? new Date(c.sales[0].saleDate) : null;
     const lastPaymentDate = c.payments[0]?.paymentDate ? new Date(c.payments[0].paymentDate) : null;
     
@@ -91,22 +116,45 @@ export default async function OutstandingReportPage({
   const totalPeriodDues = reportData.reduce((sum, c) => sum + c.periodDues, 0);
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Dues Report</h1>
-          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
-            <span>
-              Total Market Dues: <span className="font-bold text-alvoun-red ml-1">{formatMoney(totalMarketOutstanding)}</span>
-            </span>
-            {(fromDate || toDate) && (
-              <span>
-                • Period Net Dues: <span className="font-bold text-amber-600 ml-1">{formatMoney(totalPeriodDues)}</span>
-              </span>
-            )}
+    <div className="space-y-6">
+      {/* Header and Filter Card */}
+      <div className="bg-surface-raised shadow-raised p-5 sm:p-6 rounded-2xl border border-border/40 space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Link 
+              href="/dashboard/admin" 
+              className="p-2.5 bg-surface-raised shadow-raised hover:shadow-raised-sm press-active rounded-xl text-muted-foreground hover:text-foreground transition-all border border-border/40"
+              aria-label="Back to Admin Dashboard"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Market Outstanding & Dues</h1>
+              <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-muted-foreground mt-0.5">
+                <span>
+                  Total Market Dues: <span className="font-bold text-destructive text-base ml-1">{formatMoney(totalMarketOutstanding)}</span>
+                </span>
+                {(fromDate || toDate) && (
+                  <span>
+                    • Period Net Dues: <span className="font-bold text-amber-600 dark:text-amber-400 ml-1">{formatMoney(totalPeriodDues)}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full md:w-auto">
+            <a 
+              href={`/api/admin/export?type=outstanding&salesmanId=${salesmanId||''}&routeId=${routeId||''}&outstandingOnly=${outstandingOnly}`} 
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-surface-raised shadow-raised hover:shadow-raised-sm press-active border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
+            >
+              <Download className="h-4 w-4" /> Export CSV
+            </a>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+
+        {/* Filters */}
+        <div className="pt-2 border-t border-border/40 flex justify-end">
           <OutstandingFilterBar 
             fromDate={fromDate}
             toDate={toDate}
@@ -116,58 +164,63 @@ export default async function OutstandingReportPage({
             salesmen={salesmen}
             routes={routes}
           />
-          <a href={`/api/admin/export?type=outstanding&salesmanId=${salesmanId||''}&routeId=${routeId||''}&outstandingOnly=${outstandingOnly}`} className="px-4 py-2 bg-alvoun-green/10 text-alvoun-green border border-alvoun-green/20 hover:bg-alvoun-green/20 rounded-xl text-sm font-bold transition-colors whitespace-nowrap">
-            Export CSV
-          </a>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {/* Outstanding Table Card */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
+          <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
+            <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
               <tr>
-                <th className="px-6 py-3">Customer</th>
-                <th className="px-6 py-3">Route / Salesman</th>
-                <th className="px-6 py-3 text-right">Total Sales</th>
-                <th className="px-6 py-3 text-right">Total Payments</th>
-                <th className="px-6 py-3 text-center">Last Active Date</th>
-                <th className="px-6 py-3 text-right">Total Dues</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-5 py-3.5">Customer</th>
+                <th className="px-5 py-3.5">Route / Salesman</th>
+                <th className="px-5 py-3.5 text-right">Total Sales</th>
+                <th className="px-5 py-3.5 text-right">Total Payments</th>
+                <th className="px-5 py-3.5 text-center">Last Active Date</th>
+                <th className="px-5 py-3.5 text-right">Total Dues</th>
+                <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border/40 bg-surface-raised">
               {reportData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
-                    No customers with dues found for this criteria.
+                  <td colSpan={7} className="p-8 text-center">
+                    <EmptyState
+                      icon={<CreditCard className="w-8 h-8 text-primary" />}
+                      title="No Outstanding Dues"
+                      description="No active customer accounts match the selected filters or outstanding criteria."
+                    />
                   </td>
                 </tr>
               ) : (
                 reportData.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
-                    <td className="px-6 py-3">
-                      <div className="font-bold text-slate-900 dark:text-slate-100">{c.customerName}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{c.city.name}, {c.state.name}</div>
+                  <tr key={c.id} className="hover:bg-surface-inset/30 transition-colors group">
+                    <td className="px-5 py-4">
+                      <div className="font-bold text-foreground text-sm tracking-tight">{c.customerName}</div>
+                      <div className="text-xs text-muted-foreground">{c.city.name}, {c.state.name}</div>
                     </td>
-                    <td className="px-6 py-3">
-                      <div className="font-medium text-slate-700 dark:text-slate-300">{c.route.name}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{c.salesman?.name}</div>
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-foreground">{c.route.name}</div>
+                      <div className="text-xs text-muted-foreground">{c.salesman?.name || 'Unassigned'}</div>
                     </td>
-                    <td className="px-6 py-3 text-right font-medium text-slate-700 dark:text-slate-300">{formatMoney(c.totalSales)}</td>
-                    <td className="px-6 py-3 text-right font-medium text-alvoun-green">{formatMoney(c.totalPayments)}</td>
-                    <td className="px-6 py-3 text-center text-xs text-slate-500 dark:text-slate-400">{c.lastDate}</td>
-                    <td className="px-6 py-3 text-right font-bold text-alvoun-red">
-                      <div>{formatMoney(c.outstanding)}</div>
+                    <td className="px-5 py-4 text-right font-medium text-foreground">{formatMoney(c.totalSales)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(c.totalPayments)}</td>
+                    <td className="px-5 py-4 text-center text-xs text-muted-foreground">{c.lastDate}</td>
+                    <td className="px-5 py-4 text-right">
+                      <div className="font-bold text-destructive text-sm">{formatMoney(c.outstanding)}</div>
                       {(fromDate || toDate) && (
-                        <div className="text-[11px] font-normal text-slate-400">
+                        <div className="text-[11px] text-muted-foreground">
                           Period: {formatMoney(c.periodDues)}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-right">
-                      <Link href={`/dashboard/admin/customers/${c.id}`} className="text-alvoun-blue hover:text-alvoun-dark font-medium text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                        View Profile
+                    <td className="px-5 py-4 text-right">
+                      <Link 
+                        href={`/dashboard/admin/customers/${c.id}`} 
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        Profile <ChevronRight className="w-3.5 h-3.5" />
                       </Link>
                     </td>
                   </tr>

@@ -22,20 +22,19 @@ export default function LogoutButton() {
     <button
       onClick={handleLogout}
       disabled={loggingOut}
-      className="flex items-center justify-center gap-2 w-full py-4 bg-white dark:bg-slate-950 border border-alvoun-red/20 text-alvoun-red rounded-xl font-bold active:bg-alvoun-red/10 transition-colors shadow-sm text-base disabled:opacity-50"
+      className="flex items-center justify-center gap-2 w-full min-h-[52px] py-4 bg-surface-raised border border-accent-terracotta/30 text-accent-terracotta hover:bg-accent-terracotta/10 rounded-2xl font-black active:scale-[0.98] transition-all shadow-raised-sm active:shadow-inset text-base disabled:opacity-50"
     >
       {loggingOut ? (
         <>
           <Loader2 className="h-5 w-5 animate-spin" />
-          LOGGING OUT...
+          <span>LOGGING OUT...</span>
         </>
       ) : (
         <>
           <LogOut className="h-5 w-5" />
-          LOGOUT
+          <span>LOGOUT</span>
         </>
       )}
     </button>
   );
 }
-

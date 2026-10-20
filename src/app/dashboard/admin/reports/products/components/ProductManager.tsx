@@ -2,8 +2,11 @@
 
 import { useState } from 'react';
 import { createProduct, updateProduct, deactivateProduct, activateProduct } from '@/lib/actions/admin/product';
-import { Plus, Edit2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, AlertTriangle, Package, Edit, Power, Save } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AlertBanner } from '@/components/ui/alert-banner';
 
 type Product = {
   id: string;
@@ -26,7 +29,6 @@ export default function ProductManager({ initialProducts: products }: { initialP
     
     const formData = new FormData(e.currentTarget);
     
-    // The modal forces string isActive for updates
     if (isUpdate) {
       formData.set('isActive', (e.currentTarget.elements.namedItem('isActive') as HTMLSelectElement).value);
     }
@@ -56,98 +58,174 @@ export default function ProductManager({ initialProducts: products }: { initialP
   return (
     <div className="space-y-4">
       {/* Header & Add Button */}
-      <div className="flex justify-between items-center bg-white dark:bg-slate-950 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Product Master</h2>
-          <p className="text-sm text-slate-500">Manage active products, pack sizes, and current rates.</p>
+      <div className="bg-surface-raised shadow-raised p-5 sm:p-6 rounded-2xl border border-border/40 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-inset shadow-inset border border-border/40 flex items-center justify-center text-primary shrink-0">
+            <Package className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">Product Master Catalog</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Manage bottle pack sizes, crate quantities, and standard unit rates</p>
+          </div>
         </div>
-        <button 
+
+        <Button 
           onClick={() => setIsAdding(true)}
-          className="px-4 py-2 bg-alvoun-blue text-white rounded-md text-sm font-medium hover:bg-alvoun-dark flex items-center gap-2"
+          variant="primary"
+          className="shadow-raised hover:shadow-raised-sm press-active"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 mr-1.5" />
           Add Product
-        </button>
+        </Button>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4" />
+        <AlertBanner
+          variant="danger"
+          onClose={() => setError(null)}
+        >
           {error}
-        </div>
+        </AlertBanner>
       )}
 
-      {/* Add Form */}
+      {/* Add Form Container */}
       {isAdding && (
-        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 animate-fade-in-up">
+        <div className="bg-surface-raised shadow-raised p-6 rounded-2xl border border-border/40 animate-fade-in-up">
+          <div className="flex items-center gap-2 pb-4 mb-4 border-b border-border/40">
+            <Plus className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">Add New Catalog Product</h3>
+          </div>
+
           <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Product Name</label>
-                <input required name="name" type="text" placeholder="e.g. 1 Litre" className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100" />
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Product Name <span className="text-destructive">*</span>
+                </label>
+                <input 
+                  required 
+                  name="name" 
+                  type="text" 
+                  placeholder="e.g. 1 Litre" 
+                  className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bottles per Crate</label>
-                <input required name="bottlesPerCrate" type="number" min="1" placeholder="e.g. 12" className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100" />
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Bottles per Crate <span className="text-destructive">*</span>
+                </label>
+                <input 
+                  required 
+                  name="bottlesPerCrate" 
+                  type="number" 
+                  min="1" 
+                  placeholder="e.g. 12" 
+                  className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Current Rate per Crate (₹)</label>
-                <input required name="rate" type="number" step="0.01" min="0.01" placeholder="e.g. 500" className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100" />
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Current Rate per Crate (₹) <span className="text-destructive">*</span>
+                </label>
+                <input 
+                  required 
+                  name="rate" 
+                  type="number" 
+                  step="0.01" 
+                  min="0.01" 
+                  placeholder="e.g. 500.00" 
+                  className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" 
+                />
               </div>
             </div>
-            <div className="flex gap-2 justify-end">
-              <button type="button" onClick={() => setIsAdding(false)} className="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700">Cancel</button>
-              <button type="submit" disabled={loading} className="px-4 py-2 bg-alvoun-blue text-white rounded-md text-sm font-medium hover:bg-alvoun-dark disabled:opacity-50">Save Product</button>
+
+            <div className="flex gap-2.5 justify-end pt-2">
+              <Button type="button" variant="outline" onClick={() => setIsAdding(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" isLoading={loading} className="shadow-raised hover:shadow-raised-sm press-active">
+                <Save className="w-4 h-4 mr-1.5" />
+                Save Product
+              </Button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Products Table */}
-      <div className="bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+      {/* Products Table Card */}
+      <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-800">
+          <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
+            <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
               <tr>
-                <th className="px-6 py-3">Product Name</th>
-                <th className="px-6 py-3">Pack Size</th>
-                <th className="px-6 py-3">Current Rate</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3 text-right">Actions</th>
+                <th className="px-5 py-3.5">Product Name</th>
+                <th className="px-5 py-3.5">Pack Size</th>
+                <th className="px-5 py-3.5">Current Rate</th>
+                <th className="px-5 py-3.5">Status</th>
+                <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-border/40 bg-surface-raised">
               {products.map(product => {
                 const isEditing = editingId === product.id;
                 const currentRate = product.rates[0]?.rate || 0;
 
                 if (isEditing) {
                   return (
-                    <tr key={product.id} className="bg-slate-50 dark:bg-slate-900/50">
-                      <td colSpan={5} className="px-6 py-4">
-                        <form onSubmit={(e) => handleSubmit(e, true, product.id)} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <tr key={product.id} className="bg-surface-inset/30">
+                      <td colSpan={5} className="px-5 py-4">
+                        <form onSubmit={(e) => handleSubmit(e, true, product.id)} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">Name</label>
-                            <input required name="name" defaultValue={product.name} type="text" className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100" />
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Name</label>
+                            <input 
+                              required 
+                              name="name" 
+                              defaultValue={product.name} 
+                              type="text" 
+                              className="w-full rounded-xl bg-surface-raised shadow-raised-sm border border-border/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" 
+                            />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">Bottles/Crate</label>
-                            <input required name="bottlesPerCrate" defaultValue={product.bottlesPerCrate} type="number" min="1" className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100" />
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Bottles/Crate</label>
+                            <input 
+                              required 
+                              name="bottlesPerCrate" 
+                              defaultValue={product.bottlesPerCrate} 
+                              type="number" 
+                              min="1" 
+                              className="w-full rounded-xl bg-surface-raised shadow-raised-sm border border-border/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" 
+                            />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">Rate (₹)</label>
-                            <input required name="rate" defaultValue={currentRate / 100} type="number" step="0.01" min="0" className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100" />
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Rate (₹)</label>
+                            <input 
+                              required 
+                              name="rate" 
+                              defaultValue={currentRate / 100} 
+                              type="number" 
+                              step="0.01" 
+                              min="0" 
+                              className="w-full rounded-xl bg-surface-raised shadow-raised-sm border border-border/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40" 
+                            />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-slate-500 mb-1">Status</label>
-                            <select name="isActive" defaultValue={product.isActive.toString()} className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-sm text-slate-900 dark:text-slate-100">
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Status</label>
+                            <select 
+                              name="isActive" 
+                              defaultValue={product.isActive.toString()} 
+                              className="w-full rounded-xl bg-surface-raised shadow-raised-sm border border-border/40 px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+                            >
                               <option value="true">Active</option>
                               <option value="false">Inactive</option>
                             </select>
                           </div>
-                          <div className="flex gap-2 justify-end h-[38px]">
-                            <button type="button" onClick={() => setEditingId(null)} className="px-3 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium">Cancel</button>
-                            <button type="submit" disabled={loading} className="px-3 py-2 bg-alvoun-blue text-white rounded-md text-sm font-medium">Save</button>
+                          <div className="flex gap-2 justify-end">
+                            <Button type="button" variant="outline" size="sm" onClick={() => setEditingId(null)}>
+                              Cancel
+                            </Button>
+                            <Button type="submit" variant="primary" size="sm" isLoading={loading} className="shadow-raised hover:shadow-raised-sm press-active">
+                              Save
+                            </Button>
                           </div>
                         </form>
                       </td>
@@ -156,34 +234,34 @@ export default function ProductManager({ initialProducts: products }: { initialP
                 }
 
                 return (
-                  <tr key={product.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">{product.name}</td>
-                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{product.bottlesPerCrate} bottles/crate</td>
-                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">{formatMoney(currentRate)}</td>
-                    <td className="px-6 py-4">
+                  <tr key={product.id} className="hover:bg-surface-inset/30 transition-colors">
+                    <td className="px-5 py-4 font-bold text-foreground">{product.name}</td>
+                    <td className="px-5 py-4 text-muted-foreground">{product.bottlesPerCrate} bottles / crate</td>
+                    <td className="px-5 py-4 font-bold text-foreground">{formatMoney(currentRate)}</td>
+                    <td className="px-5 py-4">
                       {product.isActive ? (
-                        <span className="inline-flex items-center gap-1 text-alvoun-green text-xs font-medium">
-                          <CheckCircle2 className="h-4 w-4" /> Active
-                        </span>
+                        <Badge variant="success" size="sm">Active</Badge>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-slate-400 text-xs font-medium">
-                          <XCircle className="h-4 w-4" /> Inactive
-                        </span>
+                        <Badge variant="neutral" styleType="outline" size="sm">Inactive</Badge>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right space-x-3">
+                    <td className="px-5 py-4 text-right space-x-2">
                       <button 
                         onClick={() => setEditingId(product.id)}
-                        className="text-alvoun-blue hover:text-alvoun-dark font-medium text-sm"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2 py-1"
                       >
-                        Edit
+                        <Edit className="w-3.5 h-3.5" /> Edit
                       </button>
                       <button 
                         onClick={() => toggleStatus(product.id, product.isActive)}
-                        className={`${product.isActive ? 'text-red-500 hover:text-red-600' : 'text-green-600 hover:text-green-700'} font-medium text-sm`}
+                        className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 ${
+                          product.isActive 
+                            ? 'text-destructive hover:underline' 
+                            : 'text-emerald-600 dark:text-emerald-400 hover:underline'
+                        }`}
                         disabled={loading}
                       >
-                        {product.isActive ? 'Deactivate' : 'Activate'}
+                        <Power className="w-3.5 h-3.5" /> {product.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                     </td>
                   </tr>
@@ -191,7 +269,7 @@ export default function ProductManager({ initialProducts: products }: { initialP
               })}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No products configured.</td>
+                  <td colSpan={5} className="px-5 py-8 text-center text-muted-foreground">No products configured yet.</td>
                 </tr>
               )}
             </tbody>
