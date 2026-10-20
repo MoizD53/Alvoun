@@ -12,6 +12,7 @@ export default function CustomerFilterBar({
 }: {
   initialFilters: {
     search?: string;
+    category?: string;
     routeId?: string;
     salesmanId?: string;
     status?: string;
@@ -83,13 +84,24 @@ export default function CustomerFilterBar({
             type="text" 
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
-            placeholder="Search customers, phone, city..." 
+            placeholder="Search customers, firm name, phone, code..." 
             className="w-full pl-10 pr-3.5 py-2.5 bg-surface-inset border border-border-default shadow-inset rounded-xl text-xs font-medium text-primary placeholder:text-muted focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
           />
         </div>
         
         {/* Filter Dropdowns */}
         <div className="flex w-full lg:w-auto gap-2.5 overflow-x-auto pb-1 lg:pb-0">
+          <select 
+            defaultValue={initialFilters.category || ''} 
+            onChange={(e) => updateParam('category', e.target.value)}
+            className="bg-surface-inset border border-border-default shadow-inset rounded-xl px-3 py-2 text-xs font-semibold text-primary focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 min-w-[130px] cursor-pointer"
+          >
+            <option value="">All Categories</option>
+            <option value="RETAILER">Retailers</option>
+            <option value="DEALER">Dealers</option>
+            <option value="DISTRIBUTOR">Distributors</option>
+          </select>
+
           <select 
             defaultValue={initialFilters.routeId || ''} 
             onChange={(e) => updateParam('routeId', e.target.value)}

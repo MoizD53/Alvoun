@@ -82,10 +82,38 @@ export default function CustomerForm({
               required
               type="text"
               name="customerName"
-              placeholder="e.g. Metro Mart"
+              placeholder="e.g. Ramesh Bhai Parmar"
               defaultValue={initialData?.customerName}
               className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Firm / Shop Name
+            </label>
+            <input
+              type="text"
+              name="firmName"
+              placeholder="e.g. Jay Ambe Cold Drinks"
+              defaultValue={initialData?.firmName}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Customer Category <span className="text-destructive">*</span>
+            </label>
+            <select
+              name="category"
+              defaultValue={initialData?.category || 'RETAILER'}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+            >
+              <option value="RETAILER">Retailer (Kirana / Hotel / Stall)</option>
+              <option value="DEALER">Dealer (Wholesaler / Bulk)</option>
+              <option value="DISTRIBUTOR">Distributor (Area / Town Agent)</option>
+            </select>
           </div>
 
           <div>

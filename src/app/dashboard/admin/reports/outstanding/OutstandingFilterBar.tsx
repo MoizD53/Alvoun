@@ -80,6 +80,19 @@ export default function OutstandingFilterBar({
 
       <div className="w-px h-5 bg-border/40"></div>
 
+      <select 
+        defaultValue={searchParams.get('category') || ''} 
+        onChange={(e) => updateParam('category', e.target.value)}
+        className="text-xs bg-transparent border-none focus:outline-none text-foreground font-semibold cursor-pointer"
+      >
+        <option value="" className="bg-surface-raised text-foreground">All Categories</option>
+        <option value="RETAILER" className="bg-surface-raised text-foreground">Retailers</option>
+        <option value="DEALER" className="bg-surface-raised text-foreground">Dealers</option>
+        <option value="DISTRIBUTOR" className="bg-surface-raised text-foreground">Distributors</option>
+      </select>
+
+      <div className="w-px h-5 bg-border/40"></div>
+
       <label className="flex items-center gap-1.5 text-xs font-semibold text-foreground cursor-pointer select-none">
         <input 
           type="checkbox" 

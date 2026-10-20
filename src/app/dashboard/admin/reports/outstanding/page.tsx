@@ -15,6 +15,7 @@ export default async function OutstandingReportPage({
   const resolvedParams = await searchParams;
   const salesmanId = resolvedParams.salesmanId;
   const routeId = resolvedParams.routeId;
+  const category = resolvedParams.category;
   const outstandingOnly = resolvedParams.outstandingOnly !== 'false';
   const fromDate = resolvedParams.from || '';
   const toDate = resolvedParams.to || '';
@@ -22,6 +23,7 @@ export default async function OutstandingReportPage({
   const where: any = { status: 'ACTIVE' };
   if (salesmanId) where.salesmanId = salesmanId;
   if (routeId) where.routeId = routeId;
+  if (category && category !== 'ALL') where.category = category as any;
 
   const salesDateFilter: any = {};
   const paymentsDateFilter: any = {};
@@ -173,7 +175,8 @@ export default async function OutstandingReportPage({
           <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
             <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
               <tr>
-                <th className="px-5 py-3.5">Customer</th>
+                <th className="px-5 py-3.5">Customer / Firm</th>
+                <th className="px-5 py-3.5">Category</th>
                 <th className="px-5 py-3.5">Route / Salesman</th>
                 <th className="px-5 py-3.5 text-right">Total Sales</th>
                 <th className="px-5 py-3.5 text-right">Total Payments</th>
@@ -185,7 +188,7 @@ export default async function OutstandingReportPage({
             <tbody className="divide-y divide-border/40 bg-surface-raised">
               {reportData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center">
+                  <td colSpan={8} className="p-8 text-center">
                     <EmptyState
                       icon={<CreditCard className="w-8 h-8 text-primary" />}
                       title="No Outstanding Dues"
@@ -197,8 +200,26 @@ export default async function OutstandingReportPage({
                 reportData.map((c) => (
                   <tr key={c.id} className="hover:bg-surface-inset/30 transition-colors group">
                     <td className="px-5 py-4">
-                      <div className="font-bold text-foreground text-sm tracking-tight">{c.customerName}</div>
-                      <div className="text-xs text-muted-foreground">{c.city.name}, {c.state.name}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-foreground text-sm tracking-tight">{c.customerName}</span>
+                        {c.code && (
+                          <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-surface-inset text-muted-foreground border border-border/40">
+                            {c.code}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {c.firmName ? `${c.firmName} • ` : ''}{c.city.name}, {c.state.name}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <Badge
+                        variant={c.category === 'DISTRIBUTOR' ? 'teal' : c.category === 'DEALER' ? 'warning' : 'neutral'}
+                        styleType="subtle"
+                        size="sm"
+                      >
+                        {c.category}
+                      </Badge>
                     </td>
                     <td className="px-5 py-4">
                       <div className="font-semibold text-foreground">{c.route.name}</div>

@@ -18,7 +18,11 @@ import {
   X,
   LogOut,
   Bell,
-  History
+  History,
+  Factory,
+  Boxes,
+  Receipt,
+  Users2
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -34,6 +38,13 @@ const mainItems = [
   { name: 'Locations', href: '/dashboard/admin/locations', icon: MapPin },
   { name: 'Dues', href: '/dashboard/admin/reports/outstanding', icon: CreditCard },
   { name: 'Reports', href: '/dashboard/admin/reports/monthly', icon: BarChart3 },
+];
+
+const operationsItems = [
+  { name: 'Production Batches', href: '/dashboard/admin/production', icon: Factory },
+  { name: 'Stock & Inventory', href: '/dashboard/admin/stock', icon: Boxes },
+  { name: 'Company Expenses', href: '/dashboard/admin/expenses', icon: Receipt },
+  { name: 'Staff & Payroll', href: '/dashboard/admin/payroll', icon: Users2 },
 ];
 
 const masterDataItems = [
@@ -117,6 +128,38 @@ export default function AdminNav({ user }: { user: any }) {
             </div>
             <nav className="space-y-1">
               {mainItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`
+                      group relative flex items-center px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 select-none
+                      ${active 
+                        ? 'bg-surface-inset text-teal-800 dark:text-teal-300 shadow-inset border border-border-default font-bold' 
+                        : 'text-secondary hover:text-primary hover:bg-surface-inset/60 border border-transparent'
+                      }
+                    `}
+                  >
+                    {active && (
+                      <span className="absolute left-1.5 top-2.5 bottom-2.5 w-1 rounded-full bg-teal-500 shadow-xs" />
+                    )}
+                    <item.icon className={`h-4 w-4 shrink-0 transition-colors ${active ? 'text-teal-600 dark:text-teal-400 pl-1' : 'text-muted group-hover:text-primary'}`} strokeWidth={2} />
+                    <span className={active ? 'ml-2.5 font-bold tracking-tight' : 'ml-3'}>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Operations & Factory Section */}
+          <div>
+            <div className="px-3 text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-2 select-none">
+              Operations & Factory
+            </div>
+            <nav className="space-y-1">
+              {operationsItems.map((item) => {
                 const active = isActive(item.href);
                 return (
                   <Link

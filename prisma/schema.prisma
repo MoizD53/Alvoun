@@ -138,6 +138,9 @@ model Customer {
   salesman           Salesman?   @relation(fields: [salesmanId], references: [id], onDelete: SetNull)
   openingBalance     Int         @default(0)
   openingBalanceType String      @default("DEBIT")
+  category           String      @default("RETAILER") // RETAILER, DEALER, DISTRIBUTOR
+  firmName           String?
+  code               String?
   status             String      @default("ACTIVE")
   createdAt          DateTime    @default(now())
   updatedAt          DateTime    @updatedAt
@@ -162,8 +165,9 @@ model Product {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  rates           Rate[]
-  saleItems       SaleItem[]
+  rates             Rate[]
+  saleItems         SaleItem[]
+  productionBatches ProductionBatch[]
 }
 
 model Rate {
@@ -298,4 +302,129 @@ model ActivityLog {
 
   @@index([salesmanId])
   @@index([createdAt])
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  category      String   // SALARY, FUEL, TRANSPORTATION, VEHICLE_MAINTENANCE, LABOUR, ELECTRICITY, MISCELLANEOUS
+  title         String
+  amount        Int      // stored in Paise
+  expenseDate   DateTime @default(now())
+  paymentMethod String   @default("CASH") // CASH, BANK_TRANSFER, UPI, CHEQUE
+  recipient     String?
+  referenceNo   String?
+  notes         String?
+  recordedBy    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([expenseDate])
+}
+
+model ProductionBatch {
+  id             String   @id @default(cuid())
+  batchNumber    String   @unique
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  cratesProduced Int
+  looseBottles   Int      @default(0)
+  totalBottles   Int
+  volumeLitres   Float
+  productionDate DateTime @default(now())
+  shift          String   @default("DAY") // DAY, NIGHT
+  supervisor     String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([productId])
+  @@index([productionDate])
+}
+
+model RawMaterial {
+  id              String   @id @default(cuid())
+  name            String   @unique // e.g. "Preform (1 Litre)", "Stickers (500ml)", "Cap", "Shrink Roll", "Ink/Make-up/Cleaner"
+  category        String   // PREFORM, STICKER, CAP, SHRINK_ROLL, INK_CHEMICAL
+  unit            String   // KG, BAG, PCS, BOX, NOS, BOTTLE
+  currentStock    Float    @default(0)
+  minReorderLevel Float    @default(0)
+  targetProduct   String?  // 1 Litre, 500ml, 250ml, 2 Litre, or ALL
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  movements       RawMaterialMovement[]
+}
+
+model RawMaterialMovement {
+  id           String      @id @default(cuid())
+  materialId   String
+  material     RawMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  type         String      // INWARD, CONSUMED, ADJUSTMENT
+  quantity     Float
+  openingStock Float
+  closingStock Float
+  referenceNo  String?
+  movementDate DateTime    @default(now())
+  notes        String?
+  createdAt    DateTime    @default(now())
+
+  @@index([materialId])
+  @@index([movementDate])
+  @@index([type])
+}
+
+model StaffMember {
+  id            String   @id @default(cuid())
+  employeeCode  String   @unique // e.g. EMP-001
+  name          String
+  role          String   // PRODUCTION_STAFF, ACCOUNTANT, DRIVER, LABOUR, SUPERVISOR, SALESMAN
+  phone         String?
+  monthlySalary Int      // stored in Paise
+  joinDate      DateTime @default(now())
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  attendances   StaffAttendance[]
+  payrolls      PayrollRecord[]
+}
+
+model StaffAttendance {
+  id        String      @id @default(cuid())
+  staffId   String
+  staff     StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  date      DateTime    @default(now())
+  status    String      @default("PRESENT") // PRESENT, ABSENT, HALF_DAY
+  checkIn   DateTime?
+  checkOut  DateTime?
+  notes     String?
+  createdAt DateTime    @default(now())
+
+  @@unique([staffId, date])
+  @@index([staffId])
+  @@index([date])
+}
+
+model PayrollRecord {
+  id            String      @id @default(cuid())
+  staffId       String
+  staff         StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  month         Int         // 1 - 12
+  year          Int         // e.g. 2026
+  basicSalary   Int         // in Paise
+  allowances    Int         @default(0) // in Paise
+  deductions    Int         @default(0) // in Paise
+  advances      Int         @default(0) // in Paise
+  netPayable    Int         // in Paise
+  status        String      @default("PENDING") // PENDING, PAID
+  paymentDate   DateTime?
+  paymentMethod String?     // CASH, BANK_TRANSFER, UPI, CHEQUE
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([staffId, month, year])
+  @@index([staffId])
+  @@index([year, month])
 }

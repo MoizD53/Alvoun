@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
-import { Sun, ChevronDown } from 'lucide-react';
+import { Sun, ChevronDown, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 
@@ -38,6 +38,7 @@ export default function ExecutiveHeader({
         timeZone: 'Asia/Kolkata',
         hour: '2-digit',
         minute: '2-digit',
+        second: '2-digit',
         hour12: true,
       }).format(now);
 
@@ -46,7 +47,7 @@ export default function ExecutiveHeader({
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 30000);
+    const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -93,6 +94,18 @@ export default function ExecutiveHeader({
           <div className="flex flex-col leading-tight">
             <span className="font-bold text-primary">28°C</span>
             <span className="text-[10px] text-secondary">Clear · Dahod 📍</span>
+          </div>
+        </div>
+
+        {/* Encrypted Auto-Backup Indicator */}
+        <div 
+          className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none text-xs" 
+          title="Automatic Encrypted Database Backup Scheduled Daily at 11:59 PM"
+        >
+          <ShieldCheck className="h-4 w-4 text-teal-600 shrink-0" />
+          <div className="flex flex-col leading-tight">
+            <span className="font-bold text-primary">Auto-Backup</span>
+            <span className="text-[10px] text-teal-700 font-medium">11:59 PM Encrypted</span>
           </div>
         </div>
 

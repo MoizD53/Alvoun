@@ -164,6 +164,66 @@ export default function QuickActionsRail() {
             </div>
             <ChevronRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
           </Link>
+
+          {/* Action 6: Production Batches */}
+          <Link
+            href="/dashboard/admin/production"
+            className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-raised hover:bg-surface-inset/60 border border-border-default/80 shadow-xs hover:shadow-hover transition-all duration-150 cursor-pointer group active:scale-[0.98]"
+            title="Log batch runs for 1L, 500ml, 250ml & 2L lines"
+          >
+            <div className="h-7 w-7 rounded-lg bg-surface-inset border border-border-default shadow-inset flex items-center justify-center shrink-0 text-teal-800 dark:text-teal-400 group-hover:scale-105 transition-all">
+              <FileText className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-primary truncate leading-tight">
+                Bottling Production
+              </div>
+              <div className="text-[10px] text-secondary truncate mt-0.5">
+                1L, 500ml, 250ml & 2L yields
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
+
+          {/* Action 7: Stock & Raw Materials */}
+          <Link
+            href="/dashboard/admin/stock"
+            className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-raised hover:bg-surface-inset/60 border border-border-default/80 shadow-xs hover:shadow-hover transition-all duration-150 cursor-pointer group active:scale-[0.98]"
+            title="Check inventory of finished crates, preforms, caps & stickers"
+          >
+            <div className="h-7 w-7 rounded-lg bg-surface-inset border border-border-default shadow-inset flex items-center justify-center shrink-0 text-teal-800 dark:text-teal-400 group-hover:scale-105 transition-all">
+              <FileText className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-primary truncate leading-tight">
+                Stock & Raw Materials
+              </div>
+              <div className="text-[10px] text-secondary truncate mt-0.5">
+                Opening, consumed & closing
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
+
+          {/* Action 8: Company Expenses */}
+          <Link
+            href="/dashboard/admin/expenses"
+            className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-raised hover:bg-surface-inset/60 border border-border-default/80 shadow-xs hover:shadow-hover transition-all duration-150 cursor-pointer group active:scale-[0.98]"
+            title="Log fuel, salary, electricity & factory expenses"
+          >
+            <div className="h-7 w-7 rounded-lg bg-surface-inset border border-border-default shadow-inset flex items-center justify-center shrink-0 text-rose-700 dark:text-rose-400 group-hover:scale-105 transition-all">
+              <CreditCard className="h-3.5 w-3.5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-primary truncate leading-tight">
+                Company Expenses
+              </div>
+              <div className="text-[10px] text-secondary truncate mt-0.5">
+                Fuel, maintenance & labour
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
         </div>
       </div>
 

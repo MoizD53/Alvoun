@@ -7,6 +7,9 @@ import { requireAdminSession, requireAuthSession } from '@/lib/session';
 
 const CustomerSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
+  firmName: z.string().optional().nullable().transform(v => (v && v.trim() ? v.trim() : null)),
+  category: z.enum(['RETAILER', 'DEALER', 'DISTRIBUTOR']).default('RETAILER'),
+  code: z.string().optional().nullable().transform(v => (v && v.trim() ? v.trim() : null)),
   contact: z.string().min(1, "Contact is required"),
   address: z.string().min(1, "Address is required"),
   stateId: z.string().min(1, "State is required"),
@@ -25,9 +28,12 @@ export async function getCustomers(filters: any) {
   if (filters.search) {
     where.OR = [
       { customerName: { contains: filters.search } },
-      { contact: { contains: filters.search } }
+      { firmName: { contains: filters.search } },
+      { contact: { contains: filters.search } },
+      { code: { contains: filters.search } }
     ];
   }
+  if (filters.category && filters.category !== 'ALL') where.category = filters.category;
   if (filters.stateId) where.stateId = filters.stateId;
   if (filters.cityId) where.cityId = filters.cityId;
   if (filters.routeId) where.routeId = filters.routeId;
@@ -82,7 +88,17 @@ export async function createCustomer(data: any) {
   }
 
   try {
-    const customer = await prisma.customer.create({ data: result.data });
+    let code = result.data.code;
+    if (!code) {
+      const count = await prisma.customer.count();
+      code = `CUST-${String(count + 1).padStart(4, '0')}`;
+    }
+    const customer = await prisma.customer.create({
+      data: {
+        ...result.data,
+        code,
+      },
+    });
     try {
       revalidatePath('/dashboard/admin/customers');
       revalidatePath(`/dashboard/admin/routes/${result.data.routeId}`);

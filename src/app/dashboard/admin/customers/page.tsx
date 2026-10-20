@@ -21,6 +21,7 @@ export default async function CustomersPage({
   
   const filters = {
     search: typeof resolvedParams.search === 'string' ? resolvedParams.search : undefined,
+    category: typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined,
     stateId: typeof resolvedParams.stateId === 'string' ? resolvedParams.stateId : undefined,
     cityId: typeof resolvedParams.cityId === 'string' ? resolvedParams.cityId : undefined,
     routeId: typeof resolvedParams.routeId === 'string' ? resolvedParams.routeId : undefined,
@@ -35,9 +36,12 @@ export default async function CustomersPage({
       ...(filters.search ? { 
         OR: [
           { customerName: { contains: filters.search } },
-          { contact: { contains: filters.search } }
+          { firmName: { contains: filters.search } },
+          { contact: { contains: filters.search } },
+          { code: { contains: filters.search } },
         ]
       } : {}),
+      ...(filters.category && filters.category !== 'ALL' ? { category: filters.category as any } : {}),
       ...(filters.stateId ? { stateId: filters.stateId } : {}),
       ...(filters.cityId ? { cityId: filters.cityId } : {}),
       ...(filters.routeId ? { routeId: filters.routeId } : {}),
@@ -49,7 +53,7 @@ export default async function CustomersPage({
       city: true,
       route: true,
       salesman: true,
-      sales: { select: { totalAmount: true } },
+      sales: { select: { totalAmount: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 },
       payments: { select: { amount: true } },
       visits: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 }
     },
@@ -110,7 +114,8 @@ export default async function CustomersPage({
           <table className="w-full text-xs text-left whitespace-nowrap hidden lg:table">
             <thead className="bg-surface-inset text-secondary font-semibold uppercase tracking-wider border-b border-border-default">
               <tr>
-                <th className="px-6 py-3.5">Customer</th>
+                <th className="px-6 py-3.5">Customer / Firm</th>
+                <th className="px-6 py-3.5">Category</th>
                 <th className="px-6 py-3.5">Route & Salesman</th>
                 <th className="px-6 py-3.5 text-right">Dues</th>
                 <th className="px-6 py-3.5">Last Visit</th>
@@ -121,7 +126,7 @@ export default async function CustomersPage({
             <tbody className="divide-y divide-border-subtle">
               {customers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <EmptyState 
                       icon={<Users className="h-7 w-7" />}
                       title="No customers found"
@@ -141,14 +146,32 @@ export default async function CustomersPage({
                   const outstanding = calculateOutstanding(c as any);
                   const isNegative = outstanding > 0;
                   const lastVisit = c.visits[0]?.createdAt 
-                    ? new Date(c.visits[0].createdAt).toLocaleDateString() 
+                    ? new Date(c.visits[0].createdAt).toLocaleDateString('en-IN') 
                     : 'Never';
                   
                   return (
                     <tr key={c.id} className="hover:bg-surface-inset/50 transition-colors group">
                       <td className="px-6 py-4">
-                        <div className="font-bold text-primary text-sm">{c.customerName}</div>
-                        <div className="text-[11px] text-muted mt-0.5">{c.contact} • {c.city.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-primary text-sm">{c.customerName}</span>
+                          {c.code && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-inset text-secondary border border-border-default">
+                              {c.code}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-muted mt-0.5 font-medium">
+                          {c.firmName ? `${c.firmName} • ` : ''}{c.contact} • {c.city.name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge
+                          variant={c.category === 'DISTRIBUTOR' ? 'info' : c.category === 'DEALER' ? 'warning' : 'neutral'}
+                          styleType="subtle"
+                          size="sm"
+                        >
+                          {c.category}
+                        </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-primary">{c.route.name}</div>
@@ -220,17 +243,35 @@ export default async function CustomersPage({
                 <div key={c.id} className="p-4 bg-surface-raised hover:bg-surface-inset/40 transition-colors">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-bold text-sm text-primary">{c.customerName}</h3>
-                      <p className="text-xs text-secondary mt-0.5">{c.contact} • {c.city.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-bold text-sm text-primary">{c.customerName}</h3>
+                        {c.code && (
+                          <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-surface-inset text-secondary">
+                            {c.code}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-secondary mt-0.5">
+                        {c.firmName ? `${c.firmName} • ` : ''}{c.contact} • {c.city.name}
+                      </p>
                     </div>
-                    <Badge 
-                      variant={c.status === 'ACTIVE' ? 'success' : 'neutral'}
-                      styleType="subtle"
-                      size="sm"
-                      dot
-                    >
-                      {c.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge 
+                        variant={c.status === 'ACTIVE' ? 'success' : 'neutral'}
+                        styleType="subtle"
+                        size="sm"
+                        dot
+                      >
+                        {c.status}
+                      </Badge>
+                      <Badge
+                        variant={c.category === 'DISTRIBUTOR' ? 'info' : c.category === 'DEALER' ? 'warning' : 'neutral'}
+                        styleType="subtle"
+                        size="sm"
+                      >
+                        {c.category}
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-y-2 text-xs mt-3 pt-3 border-t border-border-subtle">
