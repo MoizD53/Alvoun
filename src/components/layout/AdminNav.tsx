@@ -98,16 +98,10 @@ export default function AdminNav({ user }: { user: any }) {
               <span className="text-base font-extrabold tracking-tight text-primary leading-none">
                 ALVOUN
               </span>
-              <span className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mt-0.5">
-                Operations
-              </span>
             </div>
           </Link>
 
           <div className="flex items-center gap-2">
-            <Badge variant="teal" styleType="subtle" size="sm" className="hidden sm:inline-flex">
-              Admin
-            </Badge>
             <button 
               type="button"
               onClick={() => setSidebarOpen(false)}
@@ -255,16 +249,17 @@ export default function AdminNav({ user }: { user: any }) {
           <div className="flex items-center gap-3 p-2 rounded-2xl bg-surface-inset border border-border-default shadow-inset">
             <Avatar 
               size="sm" 
-              fallback={user?.name?.charAt(0) || 'A'} 
+              src="/niyazuddin.png"
+              fallback={user?.name?.charAt(0) || 'N'} 
               status="online" 
               className="shrink-0"
             />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold text-primary truncate leading-tight">
-                {user?.name || 'Administrator'}
+                {user?.name || 'Niyazuddin Kazi'}
               </p>
               <p className="text-[10px] font-medium text-secondary truncate uppercase tracking-wider mt-0.5">
-                {user?.role || 'Admin'}
+                {user?.role === 'OWNER' ? 'Founder & CEO' : (user?.role || 'Admin')}
               </p>
             </div>
             <div className="flex items-center gap-1 shrink-0">

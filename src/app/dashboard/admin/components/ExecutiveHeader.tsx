@@ -116,15 +116,16 @@ export default function ExecutiveHeader({
         <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none">
           <Avatar 
             size="xs" 
-            fallback={userName?.charAt(0) || 'A'} 
+            src="/niyazuddin.png"
+            fallback={userName?.charAt(0) || 'N'} 
             status="online" 
           />
           <div className="flex flex-col text-left leading-tight">
-            <span className="text-xs font-bold text-primary truncate max-w-[100px]">
-              {userName}
+            <span className="text-xs font-bold text-primary truncate max-w-[110px]">
+              {userName || 'Niyazuddin Kazi'}
             </span>
             <span className="text-[9px] font-medium text-secondary truncate">
-              {userRole}
+              {userRole === 'OWNER' ? 'Founder & CEO' : userRole}
             </span>
           </div>
           <ChevronDown className="h-3.5 w-3.5 text-secondary ml-0.5" />
