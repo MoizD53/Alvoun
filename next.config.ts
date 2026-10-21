@@ -30,6 +30,12 @@ const nextConfig: NextConfig = {
       './scripts/**',
       './dev.db',
       './prisma/dev.db',
+      'node_modules/@prisma/client/runtime/query_engine_bg.postgresql.wasm',
+      'node_modules/@prisma/client/runtime/query_engine_bg.mysql.wasm',
+      '**/node_modules/@prisma/client/runtime/query_engine_bg.postgresql.wasm',
+      '**/node_modules/@prisma/client/runtime/query_engine_bg.mysql.wasm',
+      '**/query_engine_bg.postgresql.wasm',
+      '**/query_engine_bg.mysql.wasm',
     ],
   },
   async headers() {

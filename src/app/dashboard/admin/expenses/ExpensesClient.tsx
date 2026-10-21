@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { createExpense, deleteExpense } from '@/lib/actions/admin/expense';
-import * as xlsx from 'xlsx';
 
 interface ExpenseItem {
   id: string;
@@ -151,7 +150,8 @@ export default function ExpensesClient({
     }
   };
 
-  const exportToExcel = () => {
+  const exportToExcel = async () => {
+    const xlsx = await import('xlsx');
     const rows = initialData.expenses.map((e) => ({
       Date: new Date(e.expenseDate).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }),
       Category: e.category,

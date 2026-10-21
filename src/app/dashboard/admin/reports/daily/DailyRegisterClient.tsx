@@ -38,8 +38,8 @@ export default function DailyRegisterClient({
     
     const headers = [
       'Date', 'Customer', 'Area', 
-      ...products.map(p => `${p.name} Crates`), 
-      'Total Crates', 'Sale Amount', 'Received', 'Due'
+      ...products.map(p => `${p.name} PKGs`),
+      'Total PKGs', 'Sale Amount', 'Received', 'Due'
     ];
     csv += headers.join(',') + '\n';
     
@@ -139,7 +139,7 @@ export default function DailyRegisterClient({
           <p className="text-xl font-bold tracking-tight text-destructive">{formatMoney(summary.dueAmount)}</p>
         </div>
         <div className="bg-surface-raised shadow-raised p-4 rounded-2xl border border-border/40">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Total Crates</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Total PKGs</p>
           <p className="text-xl font-bold tracking-tight text-foreground">{formatNumber(summary.totalCrates)}</p>
         </div>
         <div className="bg-surface-raised shadow-raised p-4 rounded-2xl border border-border/40">
@@ -197,7 +197,7 @@ function DaySection({ day, products }: { day: any; products: any[] }) {
             {formatMoney(day.dayTotals.saleAmount)}
           </div>
           <div className="text-xs text-muted-foreground">
-            {formatNumber(day.dayTotals.totalCrates)} crates sold
+            {formatNumber(day.dayTotals.totalCrates)} PKGs sold
           </div>
         </div>
       </div>
@@ -212,7 +212,7 @@ function DaySection({ day, products }: { day: any; products: any[] }) {
                 {products.map(p => (
                   <th key={p.id} className="px-4 py-3.5 text-center">{p.name}</th>
                 ))}
-                <th className="px-4 py-3.5 text-center">Total Crates</th>
+                <th className="px-4 py-3.5 text-center">Total PKGs</th>
                 <th className="px-4 py-3.5 text-right">Sale Amount</th>
                 <th className="px-4 py-3.5 text-right">Received</th>
                 <th className="px-4 py-3.5 text-right">Due</th>

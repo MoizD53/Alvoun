@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import * as XLSX from 'xlsx';
 import { processCustomerImport } from '@/lib/actions/import';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,8 @@ export default function CustomerImporter() {
   const [importing, setImporting] = useState(false);
   const [results, setResults] = useState<any>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const XLSX = await import('xlsx');
     const uploadedFile = e.target.files?.[0];
     if (!uploadedFile) return;
     setFile(uploadedFile);

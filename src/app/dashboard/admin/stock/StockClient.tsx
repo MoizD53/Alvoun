@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { recordRawMaterialInward, recordRawMaterialConsumption } from '@/lib/actions/admin/stock';
-import * as xlsx from 'xlsx';
 
 interface RawMaterialItem {
   id: string;
@@ -159,7 +158,8 @@ export default function StockClient({ initialData }: StockClientProps) {
     }
   };
 
-  const handleExportXLSX = () => {
+  const handleExportXLSX = async () => {
+    const xlsx = await import('xlsx');
     const wb = xlsx.utils.book_new();
 
     // 1. Finished Goods Sheet

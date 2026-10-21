@@ -285,7 +285,7 @@ export default function ExecutiveKPIRow({
 
         <div className="my-2">
           <div className="text-2xl sm:text-[26px] font-black text-primary tracking-tight font-sans tabular-nums leading-none">
-            {formatNumber(production?.todayCrates ?? 0)} <span className="text-base font-semibold text-secondary font-sans">Crates</span>
+            {formatNumber(production?.todayCrates ?? 0)} <span className="text-base font-semibold text-secondary font-sans">PKGs</span>
           </div>
         </div>
 
@@ -324,7 +324,7 @@ export default function ExecutiveKPIRow({
 
         <div className="my-2">
           <div className="text-2xl sm:text-[26px] font-black text-primary tracking-tight font-sans tabular-nums leading-none">
-            {formatNumber(stock?.totalAvailableCrates ?? 0)} <span className="text-base font-semibold text-secondary font-sans">Crates</span>
+            {formatNumber(stock?.totalAvailableCrates ?? 0)} <span className="text-base font-semibold text-secondary font-sans">PKGs</span>
           </div>
         </div>
 

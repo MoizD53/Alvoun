@@ -111,7 +111,7 @@ export default async function MonthlyReportsPage({
               <th className="px-5 py-3.5 text-right">Total Sales</th>
               <th className="px-5 py-3.5 text-right">Total Collection</th>
               <th className="px-5 py-3.5 text-right">Invoices</th>
-              <th className="px-5 py-3.5 text-right">Crates Dispatched</th>
+              <th className="px-5 py-3.5 text-right">PKGs Dispatched</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40 bg-surface-raised">

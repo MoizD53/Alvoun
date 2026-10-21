@@ -179,7 +179,7 @@ export default function ProductSalesDonut({
               </span>
               <span className="text-base sm:text-lg font-black text-primary font-mono tabular-nums leading-tight">
                 {hoveredIdx !== null 
-                  ? `${segments[hoveredIdx]?.crates} cr`
+                  ? `${segments[hoveredIdx]?.crates} PKG`
                   : `${totalLitres} L`}
               </span>
               <span className="text-[10px] font-bold text-teal-800 dark:text-teal-400 font-mono">

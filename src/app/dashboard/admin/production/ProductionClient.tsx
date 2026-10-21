@@ -21,7 +21,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { createProductionBatch, deleteProductionBatch } from '@/lib/actions/admin/production';
-import * as xlsx from 'xlsx';
 
 interface ProductItem {
   id: string;
@@ -177,7 +176,8 @@ export default function ProductionClient({
     }
   };
 
-  const handleExportXLSX = () => {
+  const handleExportXLSX = async () => {
+    const xlsx = await import('xlsx');
     const sheetData = initialData.batches.map((b) => ({
       'Batch Number': b.batchNumber,
       'Date': new Date(b.productionDate).toLocaleDateString('en-IN'),

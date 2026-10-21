@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
-import * as xlsx from 'xlsx';
 import { 
   getKolkataMonthBoundaries, 
   getKolkataStartOfDay, 
@@ -32,6 +31,7 @@ function sanitizeRows(rows: Record<string, any>[]): Record<string, any>[] {
 }
 
 export async function GET(request: Request) {
+  const xlsx = await import('xlsx');
   const session = await auth();
   if (!session?.user) {
     return new NextResponse('Unauthorized', { status: 401 });
@@ -82,7 +82,7 @@ export async function GET(request: Request) {
             'Salesman': sale.salesman.name,
             'Employee Code': sale.salesman.employeeCode,
             'Product': item.product.name,
-            'Crates': item.crates,
+            'PKGs': item.crates,
             'Bottles': item.crates * item.product.bottlesPerCrate,
             'Standard Rate (₹)': (item.standardRate / 100).toFixed(2),
             'Actual Rate (₹)': (item.actualRate / 100).toFixed(2),
@@ -223,7 +223,7 @@ export async function GET(request: Request) {
           'Product SKU': p.id,
           'Product Name': p.name,
           'Packaging (Bottles/Crate)': p.bottlesPerCrate,
-          'Crates Dispatched': crates,
+          'PKGs Dispatched': crates,
           'Bottles Dispatched': crates * p.bottlesPerCrate,
           'Gross Revenue (₹)': (amount / 100).toFixed(2),
           'Status': p.isActive ? 'Active' : 'Inactive',

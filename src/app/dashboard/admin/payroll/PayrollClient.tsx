@@ -25,7 +25,6 @@ import {
   saveDailyAttendance, 
   recordPayrollPayment 
 } from '@/lib/actions/admin/payroll';
-import * as xlsx from 'xlsx';
 
 interface StaffItem {
   id: string;
@@ -258,7 +257,8 @@ export default function PayrollClient({
   };
 
   // Export Excel
-  const handleExportXLSX = () => {
+  const handleExportXLSX = async () => {
+    const xlsx = await import('xlsx');
     const wb = xlsx.utils.book_new();
 
     // 1. Payroll Ledger
