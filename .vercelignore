@@ -1,0 +1,11 @@
+# Vercel Deployment Ignore
+backups/
+scripts/
+scratch/
+dev.db
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.xlsx
+*.enc

@@ -7,7 +7,9 @@ import { getKolkataDateString, getCurrentKolkataTime } from './time';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
-const BACKUP_DIR = path.resolve(process.cwd(), 'backups');
+const BACKUP_DIR = process.env.VERCEL
+  ? path.join('/tmp', 'backups')
+  : path.resolve(process.cwd(), 'backups');
 
 function getEncryptionKey(): Buffer {
   const secret = process.env.BACKUP_ENCRYPTION_KEY || process.env.AUTH_SECRET || 'alvoun-production-backup-master-secret-key-32b';

@@ -5,18 +5,25 @@ import Link from 'next/link';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import type { AreaSaleItem } from '@/lib/dashboard-data';
+import AdminDatePicker from './AdminDatePicker';
 
 interface AreaWiseSalesCardProps {
   areaSales: AreaSaleItem[];
+  selectedDate?: string;
+  isToday?: boolean;
 }
 
-export default function AreaWiseSalesCard({ areaSales }: AreaWiseSalesCardProps) {
+export default function AreaWiseSalesCard({ 
+  areaSales,
+  selectedDate,
+  isToday = true,
+}: AreaWiseSalesCardProps) {
   const maxAreaSales = areaSales.length > 0 ? Math.max(...areaSales.map((a) => a.salesPaise), 1) : 1;
 
   return (
     <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 flex flex-col justify-between h-full select-none">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-lg bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-800 dark:text-teal-400 shrink-0">
             <MapPin className="h-4 w-4" />
@@ -25,14 +32,17 @@ export default function AreaWiseSalesCard({ areaSales }: AreaWiseSalesCardProps)
             Area-Wise Sales
           </h3>
         </div>
-        <Link
-          href="/dashboard/admin/routes"
-          className="text-[11px] font-semibold text-secondary hover:text-primary transition-colors inline-flex items-center gap-0.5"
-          title="Open Routes & Sectors Master"
-        >
-          <span>Routes</span>
-          <ChevronRight className="h-3 w-3" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <AdminDatePicker currentDate={selectedDate || ''} compact />
+          <Link
+            href="/dashboard/admin/routes"
+            className="text-[11px] font-semibold text-secondary hover:text-primary transition-colors inline-flex items-center gap-0.5 shrink-0"
+            title="Open Routes & Sectors Master"
+          >
+            <span>Routes</span>
+            <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
       </div>
 
       {/* Area List with Visual Contribution Bars */}

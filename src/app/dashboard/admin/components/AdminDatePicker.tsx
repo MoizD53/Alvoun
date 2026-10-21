@@ -7,10 +7,12 @@ import { getKolkataDateString, getCurrentKolkataTime } from '@/lib/time';
 
 export default function AdminDatePicker({ 
   currentDate, 
-  basePath = '/dashboard/admin' 
+  basePath = '/dashboard/admin',
+  compact = false,
 }: { 
   currentDate: string; 
   basePath?: string;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,22 +40,26 @@ export default function AdminDatePicker({
   };
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 shrink-0">
       <div className="relative inline-flex items-center">
         {isPending ? (
-          <Loader2 className="absolute left-3 h-4 w-4 text-teal-600 dark:text-teal-400 animate-spin shrink-0" />
+          <Loader2 className={`absolute ${compact ? 'left-2 h-3 w-3' : 'left-3 h-4 w-4'} text-teal-600 dark:text-teal-400 animate-spin shrink-0`} />
         ) : (
-          <Calendar className="pointer-events-none absolute left-3 h-4 w-4 text-muted shrink-0" />
+          <Calendar className={`pointer-events-none absolute ${compact ? 'left-2 h-3 w-3' : 'left-3 h-4 w-4'} text-muted shrink-0`} />
         )}
         <input 
           type="date" 
           value={currentDate || todayStr}
           onChange={handleDateChange}
           disabled={isPending}
-          className={`h-10 text-xs font-semibold rounded-xl pl-9 pr-3.5 bg-surface-inset border shadow-inset text-primary focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all ${
+          className={`${
+            compact 
+              ? 'h-7 sm:h-8 text-[11px] pl-6 sm:pl-7 pr-2 rounded-lg' 
+              : 'h-10 text-xs pl-9 pr-3.5 rounded-xl'
+          } font-semibold bg-surface-inset border shadow-inset text-primary focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 cursor-pointer transition-all ${
             isPending ? 'opacity-60 cursor-wait' : ''
           } ${
-            isHistorical ? 'border-amber-500/40 text-amber-900 dark:text-amber-200' : 'border-border-default'
+            isHistorical ? 'border-amber-500/40 text-amber-900 dark:text-amber-200 bg-amber-500/5' : 'border-border-default'
           }`}
           aria-label="Filter dashboard by date"
         />
@@ -65,7 +71,11 @@ export default function AdminDatePicker({
           type="button"
           onClick={() => navigateToDate(null)}
           disabled={isPending}
-          className="h-10 px-2.5 rounded-xl bg-surface-raised border border-border-default shadow-raised text-xs font-bold text-teal-800 dark:text-teal-300 hover:text-teal-900 hover:border-teal-500/50 flex items-center gap-1 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+          className={`${
+            compact 
+              ? 'h-7 sm:h-8 px-2 text-[10px] rounded-lg' 
+              : 'h-10 px-2.5 text-xs rounded-xl'
+          } bg-surface-raised border border-border-default shadow-raised font-bold text-teal-800 dark:text-teal-300 hover:text-teal-900 hover:border-teal-500/50 flex items-center gap-1 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shrink-0`}
           title="Reset to today's operations"
         >
           <RotateCcw className="h-3 w-3" />

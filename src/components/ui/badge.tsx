@@ -26,8 +26,8 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
     ref
   ) => {
     const sizeStyles = {
-      sm: "h-5 px-2 text-[10px] gap-1 rounded-md font-semibold",
-      md: "h-6 px-2.5 text-xs gap-1.5 rounded-lg font-semibold",
+      sm: "h-5 px-2 text-[10px] gap-1 rounded-md font-semibold shrink-0",
+      md: "h-6 px-2.5 text-xs gap-1.5 rounded-lg font-semibold shrink-0",
     };
 
     const variantStyles = {
@@ -76,7 +76,7 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       <span
         ref={ref}
         className={cn(
-          "inline-flex items-center tracking-wide uppercase transition-colors shadow-2xs select-none",
+          "inline-flex items-center justify-center tracking-wide uppercase transition-colors shadow-2xs select-none whitespace-nowrap",
           sizeStyles[size],
           variantStyles[variant][styleType],
           className
@@ -92,8 +92,8 @@ export const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
             )}
           />
         )}
-        {leftIcon && <span className="shrink-0 inline-flex">{leftIcon}</span>}
-        <span>{children}</span>
+        {leftIcon && <span className="shrink-0 inline-flex items-center justify-center mr-0.5">{leftIcon}</span>}
+        <span className="inline-flex items-center gap-1 shrink-0 whitespace-nowrap leading-none">{children}</span>
       </span>
     );
   }

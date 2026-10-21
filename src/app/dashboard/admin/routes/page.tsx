@@ -1,10 +1,11 @@
-import { getRoutes, createRoute } from '@/lib/actions/route';
+import { getRoutes } from '@/lib/actions/route';
 import { getCities } from '@/lib/actions/city';
 import { getSalesmen } from '@/lib/actions/salesman';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import RouteListClient from './RouteListClient';
 import TerritoryNav from './components/TerritoryNav';
+import AddTerritoryForms from './components/AddTerritoryForms';
 
 export default async function RoutesPage() {
   const routes = await getRoutes();
@@ -40,57 +41,9 @@ export default async function RoutesPage() {
           <RouteListClient routes={routes} cities={cities} salesmen={salesmen} />
         </div>
 
-        {/* Add Route Form Column */}
+        {/* Add Territory (Route & Area) Forms Column */}
         <div className="lg:col-span-1">
-          <div className="bg-surface-raised p-6 rounded-3xl shadow-raised border border-border-subtle sticky top-24">
-            <h2 className="text-base font-black text-text-primary mb-4 flex items-center gap-2 tracking-tight">
-              <Plus className="h-4 w-4 text-brand-teal" />
-              Add New Route
-            </h2>
-            <form action={async (data) => { 'use server'; await createRoute(data); }} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">City</label>
-                <select 
-                  name="cityId" 
-                  required 
-                  className="w-full rounded-2xl border border-border-subtle px-3.5 py-2.5 text-sm font-semibold bg-surface-sunken shadow-inset text-text-primary focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all"
-                >
-                  <option value="">Select City</option>
-                  {cities.map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.state.name})</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Route Name</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  required 
-                  placeholder="e.g. Downtown Sector A"
-                  className="w-full rounded-2xl border border-border-subtle px-3.5 py-2.5 text-sm font-semibold bg-surface-sunken shadow-inset text-text-primary placeholder:text-text-muted focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Default Salesman (Optional)</label>
-                <select 
-                  name="salesmanId" 
-                  className="w-full rounded-2xl border border-border-subtle px-3.5 py-2.5 text-sm font-semibold bg-surface-sunken shadow-inset text-text-primary focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/20 transition-all"
-                >
-                  <option value="">None</option>
-                  {salesmen.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-              <button 
-                type="submit" 
-                className="w-full min-h-[44px] bg-brand-teal hover:bg-brand-teal-dark text-white rounded-2xl px-4 py-3 text-sm font-black shadow-raised active:scale-[0.98] transition-all tracking-wide mt-2"
-              >
-                Create Route
-              </button>
-            </form>
-          </div>
+          <AddTerritoryForms cities={cities} routes={routes} salesmen={salesmen} />
         </div>
       </div>
     </div>

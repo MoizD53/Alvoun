@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Package, ChevronRight, Layers, Loader2, RotateCcw } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import type { ProductSalesData } from '@/lib/dashboard-data';
+import AdminDatePicker from './AdminDatePicker';
 
 // Standard 3-Product Color Assignment as strictly specified:
 // 1 Litre: Blue (#2583C5)
@@ -29,6 +30,7 @@ export function getProductColor(productName: string): { color: string; isStandar
 
 interface ProductSalesDonutProps {
   productSales: ProductSalesData;
+  selectedDate?: string;
   selectedDateLabel?: string;
   isDateOverridden?: boolean;
   onResetDate?: () => void;
@@ -37,6 +39,7 @@ interface ProductSalesDonutProps {
 
 export default function ProductSalesDonut({ 
   productSales,
+  selectedDate,
   selectedDateLabel,
   isDateOverridden,
   onResetDate,
@@ -82,7 +85,7 @@ export default function ProductSalesDonut({
 
   return (
     <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-full select-none relative">
-      {/* 1. Header with Inset Well + Title + Catalog Link */}
+      {/* 1. Header with Inset Well + Title + DatePicker + Catalog Link */}
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-800 dark:text-teal-400 shrink-0">
@@ -112,44 +115,41 @@ export default function ProductSalesDonut({
           </div>
         </div>
 
-        <Link
-          href="/dashboard/admin/reports/products"
-          className="text-xs sm:text-sm font-bold text-secondary hover:text-primary transition-colors inline-flex items-center gap-1 whitespace-nowrap shrink-0"
-          title="Open Products & Rates Master"
-        >
-          <span>Catalog</span>
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <AdminDatePicker currentDate={selectedDate || ''} compact />
+          <Link
+            href="/dashboard/admin/reports/products"
+            className="text-xs sm:text-sm font-bold text-secondary hover:text-primary transition-colors inline-flex items-center gap-1 whitespace-nowrap shrink-0"
+            title="Open Products & Rates Master"
+          >
+            <span>Catalog</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
+      {/* 2. Visual Content Area */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center my-auto py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-teal-700 dark:text-teal-400 mb-2" />
-          <span className="text-xs font-semibold text-secondary">Loading product breakdown...</span>
+        <div className="flex flex-col items-center justify-center my-auto py-10 text-center">
+          <Loader2 className="h-8 w-8 text-teal-600 dark:text-teal-400 animate-spin" />
+          <span className="text-xs text-secondary mt-2">Loading product sales...</span>
         </div>
       ) : hasSales ? (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-auto">
-          {/* Donut Chart Visual (Distance Readable) */}
+        <div className="flex flex-col sm:flex-row items-center gap-5 my-auto py-2">
+          {/* Donut Chart SVG */}
           <div className="relative shrink-0 flex items-center justify-center">
-            <svg
-              width={size}
-              height={size}
-              viewBox={`0 0 ${size} ${size}`}
-              className="transform -rotate-90 overflow-visible"
-              aria-label="Product revenue distribution"
-            >
-              {/* Background Track */}
+            <svg width={size} height={size} className="transform -rotate-90">
+              {/* Background circle track */}
               <circle
                 cx={center}
                 cy={center}
                 r={radius}
                 fill="transparent"
                 stroke="currentColor"
-                className="text-border-default/40"
                 strokeWidth={strokeWidth}
+                className="text-surface-inset"
               />
-
-              {/* Individual Product Segments */}
+              {/* Segment arcs */}
               {segments.map((seg, idx) => {
                 const isHovered = hoveredIdx === idx;
                 return (
@@ -163,6 +163,7 @@ export default function ProductSalesDonut({
                     strokeWidth={isHovered ? strokeWidth + 4 : strokeWidth}
                     strokeDasharray={seg.strokeDasharray}
                     strokeDashoffset={seg.strokeDashoffset}
+                    strokeLinecap="round"
                     className="transition-all duration-200 cursor-pointer"
                     onMouseEnter={() => setHoveredIdx(idx)}
                     onMouseLeave={() => setHoveredIdx(null)}
@@ -171,28 +172,26 @@ export default function ProductSalesDonut({
               })}
             </svg>
 
-            {/* Distance-Readable Center Hole Readout */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none px-2">
-              <span className="text-[11px] sm:text-xs font-bold text-secondary uppercase tracking-wider leading-none">
-                {hoveredIdx !== null && segments[hoveredIdx]
-                  ? segments[hoveredIdx].productName
-                  : 'Total Sales'}
+            {/* Donut Center Display */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider">
+                {hoveredIdx !== null ? segments[hoveredIdx]?.productName : 'Total Volume'}
               </span>
-              <span className="text-base sm:text-lg lg:text-xl font-black text-primary font-mono tracking-tight mt-1 leading-none tabular-nums">
-                {hoveredIdx !== null && segments[hoveredIdx]
-                  ? formatMoney(segments[hoveredIdx].salesPaise)
+              <span className="text-base sm:text-lg font-black text-primary font-mono tabular-nums leading-tight">
+                {hoveredIdx !== null 
+                  ? `${segments[hoveredIdx]?.crates} cr`
+                  : `${totalLitres} L`}
+              </span>
+              <span className="text-[10px] font-bold text-teal-800 dark:text-teal-400 font-mono">
+                {hoveredIdx !== null 
+                  ? `${segments[hoveredIdx]?.percentDisplay}%` 
                   : formatMoney(totalSalesPaise)}
-              </span>
-              <span className="text-[11px] sm:text-xs text-muted font-mono font-bold mt-1">
-                {hoveredIdx !== null && segments[hoveredIdx]
-                  ? `${segments[hoveredIdx].crates} PKG · ${segments[hoveredIdx].volumeLitres}L`
-                  : `${totalLitres}L Vol`}
               </span>
             </div>
           </div>
 
-          {/* Distance-Readable Legend Table */}
-          <div className="flex-1 w-full sm:w-auto min-w-0 space-y-1.5">
+          {/* Product Breakdown Legend */}
+          <div className="flex-1 w-full space-y-2">
             {segments.map((prod, idx) => {
               const isHovered = hoveredIdx === idx;
               return (

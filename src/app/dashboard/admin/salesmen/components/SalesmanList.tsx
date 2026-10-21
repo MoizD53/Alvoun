@@ -171,12 +171,22 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                     <div className="text-sm font-medium text-foreground">{salesman.profile?.email || 'N/A'}</div>
                     <div className="mt-1">
                       {salesman.profile?.isActive ? (
-                        <Badge variant="success" size="sm" className="gap-1">
-                          <UserCheck className="w-3 h-3" /> Login Active
+                        <Badge 
+                          variant="success" 
+                          size="sm" 
+                          leftIcon={<UserCheck className="w-3.5 h-3.5 shrink-0" />}
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5"
+                        >
+                          Login Active
                         </Badge>
                       ) : (
-                        <Badge variant="danger" size="sm" className="gap-1">
-                          <UserX className="w-3 h-3" /> Login Disabled
+                        <Badge 
+                          variant="danger" 
+                          size="sm" 
+                          leftIcon={<UserX className="w-3.5 h-3.5 shrink-0" />}
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5"
+                        >
+                          Login Disabled
                         </Badge>
                       )}
                     </div>
@@ -199,8 +209,15 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                       return uniqueRoutes.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5 max-w-xs">
                           {uniqueRoutes.map(([id, name]) => (
-                            <Badge key={id} variant="neutral" styleType="outline" size="sm" className="gap-1 bg-surface-inset shadow-inset border-border/40">
-                              <MapPin className="w-3 h-3 text-primary" /> {name}
+                            <Badge 
+                              key={id} 
+                              variant="neutral" 
+                              styleType="outline" 
+                              size="sm" 
+                              leftIcon={<MapPin className="w-3 h-3 text-primary shrink-0" />}
+                              className="gap-1 bg-surface-inset shadow-inset border-border/40 whitespace-nowrap"
+                            >
+                              {name}
                             </Badge>
                           ))}
                         </div>

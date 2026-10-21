@@ -24,6 +24,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingExcludes: {
+    '*': [
+      './backups/**',
+      './scripts/**',
+      './dev.db',
+      './prisma/dev.db',
+    ],
+  },
   async headers() {
     return [
       {

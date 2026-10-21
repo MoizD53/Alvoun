@@ -87,11 +87,16 @@ export default function MainDashboardGrid({
       {/* ROW 2: AREA-WISE SALES <--> SALES BY PRODUCT (EXACTLY MATCHING SKETCH) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch">
         <div className="flex flex-col min-h-[340px]">
-          <AreaWiseSalesCard areaSales={areaSales} />
+          <AreaWiseSalesCard 
+            areaSales={areaSales} 
+            selectedDate={selectedDate}
+            isToday={isToday}
+          />
         </div>
         <div className="flex flex-col min-h-[340px]">
           <ProductSalesDonut
             productSales={productSales}
+            selectedDate={selectedDate}
             selectedDateLabel={activeDateLabel}
             isDateOverridden={isOverridden}
             onResetDate={handleReset}
