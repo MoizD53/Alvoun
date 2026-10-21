@@ -51,3 +51,7 @@ dev.db
 /scratch/
 
 /Alvoun/
+
+# excel and data files
+*.xlsx
+*.enc

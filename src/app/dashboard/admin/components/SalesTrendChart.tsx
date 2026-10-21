@@ -9,10 +9,17 @@ import { fetchSalesTrends } from '../actions/dashboard-data';
 interface SalesTrendChartProps {
   initialPoints: TrendPoint[];
   selectedDate: string;
+  activeDateKey?: string;
+  onSelectDate?: (dateKey: string, dateLabel: string) => void;
 }
 
-export default function SalesTrendChart({ initialPoints, selectedDate }: SalesTrendChartProps) {
-  const [period, setPeriod] = useState<'7D' | '30D' | '90D'>('7D');
+export default function SalesTrendChart({ 
+  initialPoints, 
+  selectedDate,
+  activeDateKey,
+  onSelectDate
+}: SalesTrendChartProps) {
+  const [period, setPeriod] = useState<'7D' | '14D' | '30D'>('7D');
   const [points, setPoints] = useState<TrendPoint[]>(initialPoints || []);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -24,12 +31,12 @@ export default function SalesTrendChart({ initialPoints, selectedDate }: SalesTr
     }
   }, [initialPoints, selectedDate, period]);
 
-  const handlePeriodChange = (newPeriod: '7D' | '30D' | '90D') => {
+  const handlePeriodChange = (newPeriod: '7D' | '14D' | '30D') => {
     if (newPeriod === period) return;
     setPeriod(newPeriod);
     setHoveredIdx(null);
 
-    const daysCount = newPeriod === '7D' ? 7 : newPeriod === '30D' ? 30 : 90;
+    const daysCount = newPeriod === '7D' ? 7 : newPeriod === '14D' ? 14 : 30;
     startTransition(async () => {
       try {
         const trends = await fetchSalesTrends(selectedDate, daysCount);
@@ -87,15 +94,24 @@ export default function SalesTrendChart({ initialPoints, selectedDate }: SalesTr
     coords[0]?.x || padLeft
   } ${padTop + chartHeight} Z`;
 
+  // Find index of activeDateKey if present
+  const activeDateIdx = activeDateKey ? currentPoints.findIndex(p => p.dateKey === activeDateKey) : -1;
+
   // Determine peak or latest point for reference callout pin
   const highestIdx = values.length > 0 ? values.indexOf(Math.max(...values)) : 0;
-  const activePinIdx = hoveredIdx !== null ? hoveredIdx : hasData ? highestIdx : null;
+  const activePinIdx = hoveredIdx !== null 
+    ? hoveredIdx 
+    : activeDateIdx !== -1 
+    ? activeDateIdx 
+    : hasData 
+    ? highestIdx 
+    : null;
 
   // Decide which x-axis labels to render based on point count
   const shouldRenderLabel = (idx: number, total: number) => {
     if (total <= 7) return true;
-    if (total <= 30) return idx === 0 || idx === total - 1 || idx % 5 === 0;
-    return idx === 0 || idx === total - 1 || idx % 15 === 0;
+    if (total <= 14) return idx % 2 === 0 || idx === total - 1;
+    return idx === 0 || idx === total - 1 || idx % 5 === 0;
   };
 
   return (
@@ -113,12 +129,17 @@ export default function SalesTrendChart({ initialPoints, selectedDate }: SalesTr
                 (Avg: {formatMoney(avgSales)}/day)
               </span>
             </div>
+            {onSelectDate && (
+              <span className="text-[10px] text-muted">
+                Click any point to inspect date
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Reference Period Pill Tabs: [7D] [30D] [90D] */}
+        {/* Reference Period Pill Tabs: [7D] [14D] [30D] */}
         <div className="flex items-center p-0.5 rounded-full bg-surface-inset border border-border-default shadow-inset text-xs">
-          {(['7D', '30D', '90D'] as const).map((tab) => {
+          {(['7D', '14D', '30D'] as const).map((tab) => {
             const isActive = period === tab;
             return (
               <button
@@ -202,29 +223,37 @@ export default function SalesTrendChart({ initialPoints, selectedDate }: SalesTr
           {/* Interactive Data Points */}
           {coords.map((c, i) => {
             const isHovered = hoveredIdx === i;
+            const isPointSelected = c.point.dateKey === activeDateKey;
             const showLabel = shouldRenderLabel(i, coords.length);
             return (
-              <g key={i}>
+              <g 
+                key={i}
+                className="cursor-pointer"
+                onClick={() => {
+                  if (onSelectDate) {
+                    onSelectDate(c.point.dateKey, c.point.label);
+                  }
+                }}
+              >
                 {/* Hit target */}
                 <rect
-                  x={c.x - Math.max(stepX / 2, 6)}
+                  x={c.x - Math.max(stepX / 2, 8)}
                   y={padTop}
-                  width={Math.max(stepX, 12)}
+                  width={Math.max(stepX, 16)}
                   height={chartHeight}
                   fill="transparent"
-                  className="cursor-pointer"
                   onMouseEnter={() => setHoveredIdx(i)}
                 />
 
                 {/* Point dot */}
-                {(isHovered || coords.length <= 14 || activePinIdx === i) && (
+                {(isHovered || isPointSelected || coords.length <= 14 || activePinIdx === i) && (
                   <circle
                     cx={c.x}
                     cy={c.y}
-                    r={isHovered ? 4.5 : 3}
-                    fill={isHovered ? '#1A5F63' : '#EDE4D8'}
-                    stroke="#1A5F63"
-                    strokeWidth={2}
+                    r={isPointSelected ? 5.5 : isHovered ? 4.5 : 3}
+                    fill={isPointSelected ? '#D97706' : isHovered ? '#1A5F63' : '#EDE4D8'}
+                    stroke={isPointSelected ? '#FDE68A' : '#1A5F63'}
+                    strokeWidth={isPointSelected ? 2.5 : 2}
                     className="transition-all duration-150"
                   />
                 )}
@@ -236,7 +265,11 @@ export default function SalesTrendChart({ initialPoints, selectedDate }: SalesTr
                     y={svgHeight - 4}
                     textAnchor="middle"
                     className={`text-[9px] font-mono select-none transition-colors ${
-                      isHovered ? 'fill-[#1A5F63] font-bold' : 'fill-muted'
+                      isPointSelected 
+                        ? 'fill-amber-600 font-bold'
+                        : isHovered 
+                        ? 'fill-[#1A5F63] font-bold' 
+                        : 'fill-muted'
                     }`}
                   >
                     {c.point.label}

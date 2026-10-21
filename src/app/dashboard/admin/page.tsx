@@ -7,9 +7,7 @@ import { isFinancialRole } from '@/lib/rbac';
 import ExecutiveHeader from './components/ExecutiveHeader';
 import ExecutiveKPIRow from './components/ExecutiveKPIRow';
 import SecondaryMetricsBar from './components/SecondaryMetricsBar';
-import SalesTrendChart from './components/SalesTrendChart';
-import ProductSalesDonut from './components/ProductSalesDonut';
-import OperationalAlertsCard from './components/OperationalAlertsCard';
+import DateLinkedAnalytics from './components/DateLinkedAnalytics';
 import QuickActionsRail from './components/QuickActionsRail';
 import LowerInformationGrid from './components/LowerInformationGrid';
 
@@ -55,11 +53,13 @@ export default async function AdminDashboard({
         greeting={greeting}
       />
 
-      {/* 2. PRIMARY 4-CARD KPI ROW (MATCHES REFERENCE ROW 1) */}
+      {/* 2. PRIMARY 6-CARD KPI ROW (SALES, RECEIVABLES, CASH FLOW, EXPENSES, PRODUCTION, STOCK) */}
       <ExecutiveKPIRow
         trends={data.trends}
-        dispatches={data.dispatches}
         expenses={data.expenses}
+        production={data.production}
+        stock={data.stock}
+        cashFlow={data.cashFlow}
         isToday={data.isToday}
         selectedDate={data.selectedDate}
       />
@@ -68,35 +68,20 @@ export default async function AdminDashboard({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 items-start">
         {/* LEFT / CENTER CONTENT AREA (9 COLS ON XL) */}
         <div className="xl:col-span-9 space-y-4 sm:space-y-5">
-          {/* REFERENCE ROW 2: 3-PANEL ANALYTICS & SIGNALS GRID (TREND + DONUT + ALERTS) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-5 items-stretch">
-            {/* 1. SALES TREND AREA CHART (5 COLS ON XL) */}
-            <div className="md:col-span-2 xl:col-span-5 flex flex-col">
-              <SalesTrendChart
-                initialPoints={data.trends.points}
-                selectedDate={data.selectedDate}
-              />
-            </div>
+          {/* REFERENCE ROW 2: DATE-LINKED ANALYTICS (SALES TREND + 3-COLOR DONUT + ALERTS) */}
+          <DateLinkedAnalytics
+            initialPoints={data.trends.points}
+            initialProductSales={data.productSales}
+            alerts={data.alerts}
+            selectedDate={data.selectedDate}
+          />
 
-            {/* 2. SALES BY PRODUCT DONUT & TABLE (4 COLS ON XL) */}
-            <div className="md:col-span-1 xl:col-span-4 flex flex-col">
-              <ProductSalesDonut
-                productSales={data.productSales}
-              />
-            </div>
-
-            {/* 3. ALERTS & NOTIFICATIONS (3 COLS ON XL) */}
-            <div className="md:col-span-1 xl:col-span-3 flex flex-col">
-              <OperationalAlertsCard
-                alerts={data.alerts}
-              />
-            </div>
-          </div>
-
-          {/* REFERENCE ROW 3: SECONDARY METRICS HORIZONTAL STRIP */}
+          {/* REFERENCE ROW 3: OPERATIONS & SECONDARY METRICS HORIZONTAL STRIP */}
           <SecondaryMetricsBar
             meta={data.meta}
             attendance={data.attendance}
+            customerActivity={data.customerActivity}
+            payroll={data.payroll}
           />
 
           {/* REFERENCE ROW 4 & 5: LOWER OPERATIONAL TABLES & MODULES */}

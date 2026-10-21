@@ -136,6 +136,36 @@ export interface ExpenseSummary {
   expensesCount: number;
 }
 
+export interface ProductionSummary {
+  todayCrates: number;
+  todayLooseBottles: number;
+  todayLitres: number;
+  batchesCount: number;
+}
+
+export interface StockSummary {
+  totalAvailableCrates: number;
+  totalAvailableLitres: number;
+}
+
+export interface CashFlowSummary {
+  inflowPaise: number;
+  outflowPaise: number;
+  netPaise: number;
+}
+
+export interface CustomerActivitySummary {
+  totalActiveCustomers: number;
+  purchasedTodayCount: number;
+  purchasePercentage: number;
+}
+
+export interface PayrollSummary {
+  activeStaffCount: number;
+  monthlyLiabilityPaise: number;
+  paidThisMonthPaise: number;
+}
+
 export interface DashboardExecutiveData {
   selectedDate: string; // YYYY-MM-DD
   isToday: boolean;
@@ -146,7 +176,12 @@ export interface DashboardExecutiveData {
   attendance: AttendanceData;
   alerts: OperationalAlert[];
   dispatches: DispatchSummary;
-  expenses?: ExpenseSummary;
+  expenses: ExpenseSummary;
+  production: ProductionSummary;
+  stock: StockSummary;
+  cashFlow: CashFlowSummary;
+  customerActivity: CustomerActivitySummary;
+  payroll: PayrollSummary;
   meta: {
     totalCustomersCount: number;
     activeCustomersCount: number;
@@ -841,6 +876,149 @@ export async function getInventoryAndDispatches(
 }
 
 // ---------------------------------------------------------------------------
+// 8. PRODUCTION SUMMARY (BATCHES RUN FOR SELECTED DATE)
+// ---------------------------------------------------------------------------
+
+export async function getProductionSummary(startOfDay: Date, endOfDay: Date): Promise<ProductionSummary> {
+  const batches = await prisma.productionBatch.findMany({
+    where: { productionDate: { gte: startOfDay, lte: endOfDay } },
+    select: { cratesProduced: true, looseBottles: true, volumeLitres: true }
+  });
+
+  let todayCrates = 0;
+  let todayLooseBottles = 0;
+  let todayLitres = 0;
+  for (const b of batches) {
+    todayCrates += b.cratesProduced;
+    todayLooseBottles += b.looseBottles;
+    todayLitres += b.volumeLitres;
+  }
+
+  return {
+    todayCrates,
+    todayLooseBottles,
+    todayLitres: Math.round(todayLitres),
+    batchesCount: batches.length
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 9. STOCK SUMMARY (FINISHED PRODUCT CRATES IN INVENTORY)
+// ---------------------------------------------------------------------------
+
+export async function getStockSummary(): Promise<StockSummary> {
+  const [prodAggregate, soldAggregate] = await Promise.all([
+    prisma.productionBatch.aggregate({
+      _sum: { cratesProduced: true, volumeLitres: true }
+    }),
+    prisma.saleItem.aggregate({
+      _sum: { crates: true }
+    })
+  ]);
+
+  const producedCrates = prodAggregate._sum.cratesProduced || 0;
+  const soldCrates = soldAggregate._sum.crates || 0;
+  const availableCrates = Math.max(0, producedCrates - soldCrates);
+  const availableLitres = Math.round(Math.max(0, prodAggregate._sum.volumeLitres || 0));
+
+  return {
+    totalAvailableCrates: availableCrates,
+    totalAvailableLitres: availableLitres
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 10. EXPENSES SUMMARY (TODAY + MTD)
+// ---------------------------------------------------------------------------
+
+export async function getExpensesSummary(
+  startOfDay: Date,
+  endOfDay: Date,
+  targetDate: Date
+): Promise<ExpenseSummary> {
+  const targetDetails = getKolkataTimeDetails(targetDate);
+  const startOfMonth = getKolkataStartOfDay(new Date(Date.UTC(targetDetails.year, targetDetails.month - 1, 1)));
+
+  const [todayExpensesAgg, monthExpensesAgg, countToday] = await Promise.all([
+    prisma.expense.aggregate({
+      where: { expenseDate: { gte: startOfDay, lte: endOfDay } },
+      _sum: { amount: true }
+    }),
+    prisma.expense.aggregate({
+      where: { expenseDate: { gte: startOfMonth, lte: endOfDay } },
+      _sum: { amount: true }
+    }),
+    prisma.expense.count({
+      where: { expenseDate: { gte: startOfDay, lte: endOfDay } }
+    })
+  ]);
+
+  return {
+    todayExpensesPaise: todayExpensesAgg._sum.amount || 0,
+    monthExpensesPaise: monthExpensesAgg._sum.amount || 0,
+    expensesCount: countToday
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 11. CUSTOMER ACTIVITY (ACTIVE PURCHASERS TODAY)
+// ---------------------------------------------------------------------------
+
+export async function getCustomerActivity(
+  startOfDay: Date,
+  endOfDay: Date,
+  totalActiveCustomers: number
+): Promise<CustomerActivitySummary> {
+  const salesToday = await prisma.sale.findMany({
+    where: { saleDate: { gte: startOfDay, lte: endOfDay } },
+    select: { customerId: true }
+  });
+
+  const purchasingSet = new Set(salesToday.map((s) => s.customerId));
+  const purchasedTodayCount = purchasingSet.size;
+  const purchasePercentage =
+    totalActiveCustomers > 0
+      ? Number(((purchasedTodayCount / totalActiveCustomers) * 100).toFixed(1))
+      : 0;
+
+  return {
+    totalActiveCustomers,
+    purchasedTodayCount,
+    purchasePercentage
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 12. PAYROLL SUMMARY (SALARY LIABILITY & ACTIVE STAFF)
+// ---------------------------------------------------------------------------
+
+export async function getPayrollSummary(targetDate: Date): Promise<PayrollSummary> {
+  const targetDetails = getKolkataTimeDetails(targetDate);
+  const [activeStaff, monthPayrolls] = await Promise.all([
+    prisma.staffMember.findMany({
+      where: { isActive: true },
+      select: { monthlySalary: true }
+    }),
+    prisma.payrollRecord.aggregate({
+      where: {
+        month: targetDetails.month,
+        year: targetDetails.year,
+        status: 'PAID'
+      },
+      _sum: { netPayable: true }
+    })
+  ]);
+
+  const monthlyLiabilityPaise = activeStaff.reduce((sum, s) => sum + s.monthlySalary, 0);
+
+  return {
+    activeStaffCount: activeStaff.length,
+    monthlyLiabilityPaise,
+    paidThisMonthPaise: monthPayrolls._sum.netPayable || 0
+  };
+}
+
+// ---------------------------------------------------------------------------
 // MAIN EXECUTIVE DASHBOARD AGGREGATOR
 // ---------------------------------------------------------------------------
 
@@ -852,7 +1030,9 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
   const startOfDay = getKolkataStartOfDay(selectedDate);
   const endOfDay = getKolkataEndOfDay(selectedDate);
 
-  // Parallel execution of all 7 core modules + system metadata
+  const targetDate = new Date(selectedDate);
+
+  // Parallel execution of all core modules + system metadata
   const [
     trendsResult,
     productSales,
@@ -861,15 +1041,23 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
     attendance,
     alerts,
     dispatches,
+    expenses,
+    production,
+    stock,
+    payroll,
     metaCounts
   ] = await Promise.all([
     getSalesAndCollectionTrends(selectedDate),
     getProductWiseSales(startOfDay, endOfDay),
-    getTopCustomers(startOfDay, endOfDay, 5),
+    getTopCustomers(startOfDay, endOfDay, 10),
     getAreaWiseSales(startOfDay, endOfDay),
     getAttendanceAndFieldActivity(startOfDay, endOfDay),
     getOperationalAlerts(startOfDay, endOfDay, isToday),
     getInventoryAndDispatches(startOfDay, endOfDay),
+    getExpensesSummary(startOfDay, endOfDay, targetDate),
+    getProductionSummary(startOfDay, endOfDay),
+    getStockSummary(),
+    getPayrollSummary(targetDate),
     Promise.all([
       prisma.customer.count(),
       prisma.customer.count({ where: { status: 'ACTIVE' } }),
@@ -877,6 +1065,16 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
       prisma.area.count()
     ])
   ]);
+
+  const activeCustomersCount = metaCounts[1];
+  const customerActivity = await getCustomerActivity(startOfDay, endOfDay, activeCustomersCount);
+
+  // Cash flow is actual collections received today minus actual cash/bank expense outflows today
+  const cashFlow: CashFlowSummary = {
+    inflowPaise: trendsResult.trends.todayCollectionsPaise,
+    outflowPaise: expenses.todayExpensesPaise,
+    netPaise: trendsResult.trends.todayCollectionsPaise - expenses.todayExpensesPaise
+  };
 
   return {
     selectedDate,
@@ -888,6 +1086,12 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
     attendance,
     alerts,
     dispatches,
+    expenses,
+    production,
+    stock,
+    cashFlow,
+    customerActivity,
+    payroll,
     meta: {
       totalCustomersCount: metaCounts[0],
       activeCustomersCount: metaCounts[1],
