@@ -10,15 +10,17 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   Minus,
-  ChevronRight
+  ChevronRight,
+  Receipt
 } from 'lucide-react';
 import MiniSparkline from './MiniSparkline';
 import { formatMoney, formatNumber } from '@/lib/format';
-import type { SalesTrendsData, DispatchSummary } from '@/lib/dashboard-data';
+import type { SalesTrendsData, DispatchSummary, ExpenseSummary } from '@/lib/dashboard-data';
 
 interface ExecutiveKPIRowProps {
   trends: SalesTrendsData;
-  dispatches: DispatchSummary;
+  dispatches?: DispatchSummary;
+  expenses?: ExpenseSummary;
   isToday?: boolean;
   selectedDate?: string;
 }
@@ -36,6 +38,7 @@ const embossedViewButtonClass =
 export default function ExecutiveKPIRow({ 
   trends, 
   dispatches,
+  expenses,
   isToday = true,
   selectedDate
 }: ExecutiveKPIRowProps) {
@@ -202,23 +205,23 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 4. DISPATCHES / CLOSING VALUE (Distance-Readable 32-40px) */}
+      {/* 4. COMPANY EXPENSES (Distance-Readable 32-40px) */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-10 w-10 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
-              <TrendingUp className="h-5 w-5" />
+              <Receipt className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <span className="text-sm sm:text-base font-bold text-primary truncate block tracking-tight">
-                Dispatches ({isToday ? 'Today' : selectedDate})
+                Expenses ({isToday ? 'Today' : selectedDate})
               </span>
             </div>
           </div>
           <Link
-            href="/dashboard/admin/reports/products"
+            href="/dashboard/admin/expenses"
             className={embossedViewButtonClass}
-            title="Open Products & Inventory"
+            title="Open Company Expenses"
           >
             <span>View</span>
             <ChevronRight className="h-3.5 w-3.5 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
@@ -227,15 +230,16 @@ export default function ExecutiveKPIRow({
 
         <div className="mt-3 mb-2 flex items-baseline gap-2">
           <span className="text-3xl sm:text-[34px] lg:text-[38px] font-black text-primary tracking-tight font-sans tabular-nums leading-none">
-            {formatNumber(dispatches?.totalLitres ?? 0)}
+            {formatMoney(expenses?.todayExpensesPaise ?? 0)}
           </span>
-          <span className="text-sm sm:text-base font-bold text-secondary">Ltr Volume</span>
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-border-subtle text-xs sm:text-sm">
-          <div>{renderDelta(trends?.dispatchedLitresChangePercent ?? 0)}</div>
+          <span className="text-xs sm:text-sm font-semibold text-secondary truncate">
+            {expenses?.expensesCount ? `${expenses.expensesCount} Vouchers` : 'Operational Fleet & Plant'}
+          </span>
           <span className="text-xs sm:text-sm font-extrabold text-muted font-mono tracking-wide">
-            {dispatches?.totalCrates ?? 0} PKG
+            {expenses?.monthExpensesPaise ? `MTD: ${formatMoney(expenses.monthExpensesPaise)}` : 'Active'}
           </span>
         </div>
       </div>

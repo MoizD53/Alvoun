@@ -1,4 +1,4 @@
-import { Clock, Building2, Shield, DollarSign, ArrowLeft } from 'lucide-react';
+import { Clock, Building2, Shield, IndianRupee, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -84,7 +84,7 @@ export default async function SettingsPage() {
         <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle overflow-hidden">
           <div className="p-5 border-b border-border-subtle flex items-center gap-3 bg-surface/80">
             <div className="w-10 h-10 rounded-2xl bg-surface-sunken shadow-inset border border-border-subtle flex items-center justify-center text-brand-teal">
-              <DollarSign className="h-5 w-5" />
+              <IndianRupee className="h-5 w-5" />
             </div>
             <div>
               <h2 className="font-black text-text-primary tracking-tight">Financial Settings</h2>

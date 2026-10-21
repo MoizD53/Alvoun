@@ -130,6 +130,12 @@ export interface DispatchSummary {
   byProduct: DispatchProductItem[];
 }
 
+export interface ExpenseSummary {
+  todayExpensesPaise: number;
+  monthExpensesPaise: number;
+  expensesCount: number;
+}
+
 export interface DashboardExecutiveData {
   selectedDate: string; // YYYY-MM-DD
   isToday: boolean;
@@ -140,6 +146,7 @@ export interface DashboardExecutiveData {
   attendance: AttendanceData;
   alerts: OperationalAlert[];
   dispatches: DispatchSummary;
+  expenses?: ExpenseSummary;
   meta: {
     totalCustomersCount: number;
     activeCustomersCount: number;

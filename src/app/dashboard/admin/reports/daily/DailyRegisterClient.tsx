@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatMoney, formatNumber } from '@/lib/format';
-import { ChevronDown, ChevronRight, Download, Calendar, DollarSign, Package, Users, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, Calendar, IndianRupee, Package, Users, CheckCircle2 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 

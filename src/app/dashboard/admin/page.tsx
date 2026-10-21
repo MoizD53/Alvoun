@@ -59,6 +59,7 @@ export default async function AdminDashboard({
       <ExecutiveKPIRow
         trends={data.trends}
         dispatches={data.dispatches}
+        expenses={data.expenses}
         isToday={data.isToday}
         selectedDate={data.selectedDate}
       />

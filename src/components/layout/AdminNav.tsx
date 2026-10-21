@@ -10,7 +10,7 @@ import {
   MapPin, 
   Truck, 
   Box, 
-  DollarSign, 
+  IndianRupee, 
   CreditCard, 
   BarChart3, 
   Settings, 
@@ -54,7 +54,7 @@ export default function AdminNav({ user }: { user: any }) {
     ...(isFounderCeo || isDirector
       ? [{ name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard }]
       : []),
-    { name: 'Daily Sales', href: '/dashboard/admin/reports/daily', icon: DollarSign },
+    { name: 'Daily Sales', href: '/dashboard/admin/reports/daily', icon: IndianRupee },
     { name: 'Customers & Ledgers', href: '/dashboard/admin/customers', icon: Users },
     ...(isFounderCeo
       ? [

@@ -170,36 +170,36 @@
    Maintains Tactile Tactility in Dark Mode
    ============================================================ */
 .dark {
-  /* Page & Surface Backgrounds */
-  --background:       #181512;   /* Deep warm espresso base */
-  --surface-sidebar:  #14120F;   /* Distinct grounded sidebar */
-  --surface-raised:   #221E1A;   /* Tactile dark cream-charcoal cards */
-  --surface-inset:    #1A1613;   /* Debossed dark espresso wells */
-  --surface-overlay:  #28231E;   /* Elevated popovers & modals */
+  /* Page & Surface Backgrounds — Matte Charcoal Scale */
+  --background:       #191C1F;   /* Deep charcoal base canvas */
+  --surface-sidebar:  #141719;   /* Grounded midnight-charcoal sidebar */
+  --surface-raised:   #23272B;   /* Tactile matte charcoal cards */
+  --surface-inset:    #181B1D;   /* Debossed charcoal wells & search bars */
+  --surface-overlay:  #2B3035;   /* Elevated charcoal popovers & modals */
 
-  /* High-Contrast Warm Typography */
-  --text-primary:   #EDE4D8;    /* Warm cream off-white */
-  --text-secondary: #A39282;    /* Warm stone for labels */
-  --text-muted:     #736253;    /* Deep taupe for hints */
-  --text-disabled:  #4E4238;
-  --text-inverse:   #181512;
+  /* High-Contrast Crisp Cool Typography */
+  --text-primary:   #F0F4F6;    /* Crisp ice-white for supreme readability */
+  --text-secondary: #9AA8B0;    /* Silver charcoal for labels & subtitles */
+  --text-muted:     #68767E;    /* Muted slate for hints */
+  --text-disabled:  #434E54;
+  --text-inverse:   #191C1F;
 
-  /* Controlled Warm Dark Borders */
-  --border-default: #302A24;
-  --border-strong:  #423A32;
-  --border-subtle:  #25201A;
+  /* Controlled Charcoal Borders */
+  --border-default: #2E343A;    /* Crisp 1px charcoal divider */
+  --border-strong:  #085868;    /* Signature rich teal border on active elements */
+  --border-subtle:  #22262A;    /* Inner table row divider */
 
-  /* Brand Teal Scale in Dark Mode */
-  --teal-50:  rgba(45, 212, 191, 0.08);
-  --teal-100: rgba(45, 212, 191, 0.15);
+  /* Brand Teal Scale in Dark Mode (Rich Petrol Teal from reference image) */
+  --teal-50:  rgba(8, 88, 104, 0.12);
+  --teal-100: rgba(8, 88, 104, 0.22);
   --teal-200: #5EEAD4;
   --teal-300: #2DD4BF;
-  --teal-400: #2DD4BF;
-  --teal-500: #14B8A6;
-  --teal-600: #0D9488;
-  --teal-700: #0F766E;
-  --teal-800: #115E59;
-  --teal-900: #042F2E;
+  --teal-400: #14B8A6;
+  --teal-500: #0E7490;
+  --teal-600: #085868;          /* Exact reference image deep teal */
+  --teal-700: #064450;
+  --teal-800: #04333D;
+  --teal-900: #022026;
 
   /* Semantic Status Colors in Dark Mode */
   --success:    #34D399;
@@ -208,65 +208,65 @@
   --warning-bg: rgba(251, 191, 36, 0.14);
   --danger:     #F87171;
   --danger-bg:  rgba(248, 113, 113, 0.14);
-  --info:       #2DD4BF;
-  --info-bg:    rgba(45, 212, 191, 0.14);
+  --info:       #085868;
+  --info-bg:    rgba(8, 88, 104, 0.18);
 
   /* Legacy Bridge Remaps */
   --color-alvoun-blue:  #2DD4BF;
-  --color-alvoun-light: rgba(45, 212, 191, 0.12);
-  --color-alvoun-dark:  #14B8A6;
-  --color-alvoun-navy:  #EDE4D8;
+  --color-alvoun-light: rgba(8, 88, 104, 0.15);
+  --color-alvoun-dark:  #085868;
+  --color-alvoun-navy:  #F0F4F6;
   --color-alvoun-green: #34D399;
   --color-alvoun-amber: #FBBF24;
   --color-alvoun-red:   #F87171;
 
-  --color-slate-50:  #EDE4D8;
-  --color-slate-100: #D8CCBB;
-  --color-slate-200: #A39282;
-  --color-slate-300: #736253;
-  --color-slate-400: #5A4D41;
-  --color-slate-500: #42382F;
-  --color-slate-600: #302821;
-  --color-slate-700: #26201A;
-  --color-slate-800: #221E1A;
-  --color-slate-900: #1A1613;
-  --color-slate-950: #181512;
+  --color-slate-50:  #F0F4F6;
+  --color-slate-100: #DCE3E8;
+  --color-slate-200: #9AA8B0;
+  --color-slate-300: #68767E;
+  --color-slate-400: #4F5A62;
+  --color-slate-500: #3C464C;
+  --color-slate-600: #2E363C;
+  --color-slate-700: #252C31;
+  --color-slate-800: #23272B;
+  --color-slate-900: #181B1D;
+  --color-slate-950: #141719;
 
-  --color-gray-50:   #EDE4D8;
-  --color-gray-100:  #D8CCBB;
-  --color-gray-200:  #A39282;
-  --color-gray-300:  #736253;
-  --color-gray-400:  #5A4D41;
-  --color-gray-500:  #42382F;
-  --color-gray-600:  #302821;
-  --color-gray-700:  #26201A;
-  --color-gray-800:  #221E1A;
-  --color-gray-900:  #1A1613;
-  --color-gray-950:  #181512;
+  --color-gray-50:   #F0F4F6;
+  --color-gray-100:  #DCE3E8;
+  --color-gray-200:  #9AA8B0;
+  --color-gray-300:  #68767E;
+  --color-gray-400:  #4F5A62;
+  --color-gray-500:  #3C464C;
+  --color-gray-600:  #2E363C;
+  --color-gray-700:  #252C31;
+  --color-gray-800:  #23272B;
+  --color-gray-900:  #181B1D;
+  --color-gray-950:  #141719;
 
-  /* Tactile Dark Neumorphic Shadows */
+  /* Tactile Charcoal Neumorphic Shadows with Subtle Specular Illumination */
   --shadow-flat: none;
   --shadow-xs:
     2px 2px 5px rgba(0, 0, 0, 0.45),
-    -1px -1px 3px rgba(255, 255, 255, 0.03);
+    -1px -1px 3px rgba(255, 255, 255, 0.04);
   --shadow-hover:
-    5px 5px 14px rgba(0, 0, 0, 0.65),
-    -3px -3px 8px rgba(255, 255, 255, 0.05);
+    6px 6px 16px rgba(0, 0, 0, 0.65),
+    -3px -3px 8px rgba(8, 88, 104, 0.20);
   --shadow-raised:
-    3px 3px 10px rgba(0, 0, 0, 0.55),
+    4px 4px 12px rgba(0, 0, 0, 0.50),
     -2px -2px 6px rgba(255, 255, 255, 0.04);
   --shadow-modal:
-    10px 10px 24px rgba(0, 0, 0, 0.75),
-    -4px -4px 12px rgba(255, 255, 255, 0.05);
+    10px 10px 28px rgba(0, 0, 0, 0.80),
+    -4px -4px 14px rgba(8, 88, 104, 0.25);
   --shadow-popover:
-    16px 16px 36px rgba(0, 0, 0, 0.85),
-    -6px -6px 16px rgba(255, 255, 255, 0.06);
+    16px 16px 36px rgba(0, 0, 0, 0.88),
+    -6px -6px 16px rgba(8, 88, 104, 0.25);
   --shadow-inset:
-    inset 2px 2px 5px rgba(0, 0, 0, 0.65),
-    inset -1px -1px 3px rgba(255, 255, 255, 0.05);
+    inset 2px 2px 5px rgba(0, 0, 0, 0.60),
+    inset -1px -1px 3px rgba(255, 255, 255, 0.04);
   --shadow-inset-strong:
-    inset 3px 3px 7px rgba(0, 0, 0, 0.80),
-    inset -2px -2px 4px rgba(255, 255, 255, 0.06);
+    inset 3px 3px 7px rgba(0, 0, 0, 0.75),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.05);
 }
 
 /* ============================================================
