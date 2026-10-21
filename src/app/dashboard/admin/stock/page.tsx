@@ -2,13 +2,13 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getStockDashboard } from '@/lib/actions/admin/stock';
 import StockClient from './StockClient';
-import { isExecutiveRole } from '@/lib/rbac';
+import { isFinancialRole } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 
 export default async function StockPage() {
   const session = await auth();
-  if (!session?.user || (!isExecutiveRole(session.user.role) && session.user.role !== 'PRODUCTION')) {
+  if (!session?.user || !isFinancialRole(session.user.role)) {
     redirect('/dashboard');
   }
 

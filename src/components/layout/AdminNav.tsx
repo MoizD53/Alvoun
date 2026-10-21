@@ -130,9 +130,7 @@ export default function AdminNav({ user }: { user: any }) {
               <span className="text-base font-extrabold tracking-tight text-primary leading-none font-sans">
                 ALVOUN
               </span>
-              <span className="text-[10px] font-bold text-teal-800 dark:text-teal-400 uppercase tracking-widest mt-0.5">
-                ERP Management
-              </span>
+              
             </div>
           </Link>
 

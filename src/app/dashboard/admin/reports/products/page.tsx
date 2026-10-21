@@ -92,7 +92,7 @@ export default async function ProductReportPage({
             <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
               <tr>
                 <th className="px-5 py-3.5">Product</th>
-                <th className="px-5 py-3.5 text-right">Crates Sold</th>
+                <th className="px-5 py-3.5 text-right">PKG Sold</th>
                 <th className="px-5 py-3.5 text-right">Bottles Sold</th>
                 <th className="px-5 py-3.5 text-right">Total Revenue</th>
               </tr>

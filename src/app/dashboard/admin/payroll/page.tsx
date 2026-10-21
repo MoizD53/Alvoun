@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getDailyAttendance, getPayrollLedger, getStaffDirectory } from '@/lib/actions/admin/payroll';
 import PayrollClient from './PayrollClient';
 import { getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
-import { isExecutiveRole } from '@/lib/rbac';
+import { isFinancialRole } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +11,7 @@ export default async function PayrollPage(props: {
   searchParams: Promise<{ date?: string; month?: string; year?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user || !isExecutiveRole(session.user.role)) {
+  if (!session?.user || !isFinancialRole(session.user.role)) {
     redirect('/dashboard');
   }
 

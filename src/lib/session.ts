@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { getCurrentKolkataTime, getKolkataTimeDetails, getKolkataDateOnly, isWorkingHours } from './time';
+import { normalizeRole, isFinancialRole } from './rbac';
 
 export async function requireActiveSalesmanSession() {
   const session = await auth();
@@ -31,7 +32,7 @@ export async function requireActiveSalesmanSession() {
       where: {
         salesmanId: salesman.id,
         workDate: workDate,
-        status: 'ACTIVE'
+        status: 'FORCE_CLOSED'
       },
       data: {
         status: 'FORCE_CLOSED',
@@ -100,7 +101,12 @@ export async function requireAdminSession() {
   if (!session?.user) {
     throw new Error('NOT_AUTHENTICATED');
   }
-  if (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN') {
+  const canonical = normalizeRole(session.user.role);
+  if (
+    canonical === 'SALESMAN' &&
+    session.user.role !== 'OWNER' &&
+    session.user.role !== 'ADMIN'
+  ) {
     throw new Error('NOT_AUTHORIZED');
   }
   return session;

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { getRoleDisplayTitle } from '@/lib/rbac';
 
 interface ExecutiveHeaderProps {
-  userName: string;
+  userName?: string;
   userRole: string;
   selectedDate: string;
   greeting: string;
@@ -53,23 +53,15 @@ export default function ExecutiveHeader({
   }, []);
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3">
-      {/* Left: Distance-Readable Greeting & Subtitle */}
-      <div className="min-w-0">
-        <div className="text-xs sm:text-sm font-bold text-secondary uppercase tracking-wider">
-          {greeting}:
-        </div>
-        <div className="flex items-center gap-3 flex-wrap mt-0.5">
-          <h1 className="text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-primary tracking-tight font-sans">
-            {userName}
-          </h1>
-          <Badge variant="teal" styleType="subtle" size="md" dot pulse>
-            {displayRoleTitle}
-          </Badge>
-        </div>
-        <p className="text-sm font-semibold text-secondary mt-1">
-          Naphareese Maschroubat (ALVOUN) · Dairy & Beverage Operations
-        </p>
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
+      {/* Left: Just Greetings and Role */}
+      <div className="min-w-0 flex items-center gap-3 flex-wrap">
+        <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-primary tracking-tight font-sans">
+          {greeting}
+        </h1>
+        <Badge variant="teal" styleType="subtle" size="md" dot pulse>
+          {displayRoleTitle}
+        </Badge>
       </div>
 
       {/* Center: Global Search Bar */}
@@ -79,7 +71,7 @@ export default function ExecutiveHeader({
 
       {/* Right: Inset Time Card + Plant Location + Auto Backup + Date Selector */}
       <div className="flex items-center gap-3 flex-wrap md:flex-nowrap shrink-0">
-        {/* Inset Time Card (Distance Readable) */}
+        {/* Inset Time Card */}
         <div className="flex flex-col items-center justify-center px-4 py-2 rounded-xl bg-surface-inset border border-border-default shadow-inset select-none">
           <span className="text-xs font-bold text-secondary tabular-nums">
             {dateStr || 'Today'}

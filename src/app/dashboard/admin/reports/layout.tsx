@@ -2,6 +2,7 @@ import ReportsNav from './ReportsNav';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { BarChart3 } from 'lucide-react';
+import { isFinancialRole } from '@/lib/rbac';
 
 export default async function ReportsLayout({
   children,
@@ -9,7 +10,7 @@ export default async function ReportsLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN')) {
+  if (!session?.user || !isFinancialRole(session.user.role)) {
     redirect('/dashboard');
   }
 

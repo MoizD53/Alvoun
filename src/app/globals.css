@@ -284,6 +284,10 @@
   --color-surface-sidebar: var(--surface-sidebar);
   --color-white:           #FFFFFF;
 
+  /* Brand Teal Tokens for components */
+  --color-brand-teal:      #17666A;
+  --color-brand-teal-dark: #124245;
+
   /* Teal scale */
   --color-teal-50:  var(--teal-50);
   --color-teal-100: var(--teal-100);

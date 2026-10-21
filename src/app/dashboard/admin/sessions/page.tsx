@@ -6,10 +6,11 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { Clock, CheckCircle2, AlertCircle, ArrowLeft, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { isFinancialRole } from '@/lib/rbac';
 
 export default async function AdminSessionsPage() {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN')) {
+  if (!session?.user || !isFinancialRole(session.user.role)) {
     redirect('/dashboard');
   }
   const today = getKolkataDateOnly(getCurrentKolkataTime());
@@ -35,14 +36,14 @@ export default async function AdminSessionsPage() {
         <div className="flex items-center gap-3">
           <Link 
             href="/dashboard/admin" 
-            className="w-10 h-10 flex items-center justify-center bg-surface-raised rounded-2xl shadow-raised-sm border border-border-subtle text-text-primary active:shadow-inset active:scale-95 transition-all"
+            className="w-10 h-10 flex items-center justify-center bg-surface-raised rounded-2xl shadow-raised-sm border border-border-default text-primary active:shadow-inset active:scale-95 transition-all"
             aria-label="Back to dashboard"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-black text-text-primary tracking-tight">Work Sessions</h1>
-            <p className="text-xs font-semibold text-text-muted mt-0.5">Monitor daily attendance, active logins, and field staff work sessions.</p>
+            <h1 className="text-2xl font-black text-primary tracking-tight">Work Sessions</h1>
+            <p className="text-xs font-semibold text-secondary mt-0.5">Monitor daily attendance, active logins, and field staff work sessions.</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -55,7 +56,7 @@ export default async function AdminSessionsPage() {
           </div>
           <Link 
             href="/dashboard/admin/locations" 
-            className="flex items-center gap-1.5 px-4 py-2 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-2xl text-xs font-black shadow-raised active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 bg-teal-800 hover:bg-teal-900 text-white rounded-2xl text-xs font-black shadow-raised active:scale-95 transition-all"
           >
             <MapPin className="h-3.5 w-3.5" />
             <span>View Live Map</span>
@@ -64,10 +65,10 @@ export default async function AdminSessionsPage() {
       </div>
       
       {/* Sessions Table Container */}
-      <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle overflow-hidden">
+      <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-default overflow-hidden">
         <div className="overflow-x-auto min-h-[260px]">
           <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="bg-surface/80 text-text-muted font-bold text-xs uppercase tracking-wider border-b border-border-subtle">
+            <thead className="bg-surface-inset text-primary font-extrabold text-xs uppercase tracking-wider border-b border-border-default">
               <tr>
                 <th className="px-6 py-4">Salesman</th>
                 <th className="px-6 py-4">Status</th>
@@ -80,12 +81,12 @@ export default async function AdminSessionsPage() {
               {sessions.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center justify-center text-text-muted">
-                      <div className="w-14 h-14 bg-surface-sunken shadow-inset border border-border-subtle rounded-2xl flex items-center justify-center mb-3 text-text-muted">
+                    <div className="flex flex-col items-center justify-center text-secondary">
+                      <div className="w-14 h-14 bg-surface-inset shadow-inset border border-border-default rounded-2xl flex items-center justify-center mb-3 text-secondary">
                         <Clock className="h-7 w-7" />
                       </div>
-                      <p className="text-base font-black text-text-primary">No sessions today</p>
-                      <p className="text-xs font-semibold text-text-muted mt-1">Field staff have not logged in for work yet.</p>
+                      <p className="text-base font-black text-primary">No sessions today</p>
+                      <p className="text-xs font-semibold text-secondary mt-1">Field staff have not logged in for work yet.</p>
                     </div>
                   </td>
                 </tr>
@@ -105,8 +106,8 @@ export default async function AdminSessionsPage() {
                   }
 
                   return (
-                    <tr key={ws.id} className="hover:bg-surface-sunken/40 transition-colors">
-                      <td className="px-6 py-4 font-black text-text-primary text-base">{ws.salesman.name}</td>
+                    <tr key={ws.id} className="hover:bg-surface-inset/40 transition-colors">
+                      <td className="px-6 py-4 font-black text-primary text-base">{ws.salesman.name}</td>
                       <td className="px-6 py-4">
                         {ws.status === 'ACTIVE' && (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 shadow-raised-sm">
@@ -115,25 +116,25 @@ export default async function AdminSessionsPage() {
                           </span>
                         )}
                         {ws.status === 'COMPLETED' && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-surface-sunken text-text-secondary border border-border-subtle shadow-inset-sm">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-text-muted" />
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-surface-inset text-secondary border border-border-default shadow-inset-sm">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-secondary" />
                             Logged Out
                           </span>
                         )}
                         {ws.status === 'FORCE_CLOSED' && (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/15 text-accent-terracotta border border-red-500/30 shadow-raised-sm">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-500/15 text-danger border border-red-500/30 shadow-raised-sm">
                             <AlertCircle className="h-3.5 w-3.5" />
                             Force Closed
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-text-secondary font-bold">
+                      <td className="px-6 py-4 text-secondary font-bold">
                         {ws.loginAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td className="px-6 py-4 text-text-secondary font-bold">
-                        {ws.logoutAt ? ws.logoutAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : <span className="text-text-muted font-normal">—</span>}
+                      <td className="px-6 py-4 text-secondary font-bold">
+                        {ws.logoutAt ? ws.logoutAt.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : <span className="text-secondary font-normal">—</span>}
                       </td>
-                      <td className="px-6 py-4 text-text-muted font-medium text-xs">
+                      <td className="px-6 py-4 text-secondary font-medium text-xs">
                         {duration}
                       </td>
                     </tr>

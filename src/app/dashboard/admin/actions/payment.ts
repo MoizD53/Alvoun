@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { getCurrentKolkataTime, getKolkataDateOnly } from '@/lib/time';
+import { isFinancialRole } from '@/lib/rbac';
 
 export interface AdminPaymentPayload {
   customerId: string;
@@ -15,7 +16,7 @@ export interface AdminPaymentPayload {
 
 export async function recordAdminPayment(payload: AdminPaymentPayload) {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN')) {
+  if (!session?.user || !isFinancialRole(session.user.role)) {
     throw new Error('Unauthorized');
   }
 
@@ -38,32 +39,29 @@ export async function recordAdminPayment(payload: AdminPaymentPayload) {
     throw new Error('Customer not found');
   }
 
-  // Determine effective date in Asia/Kolkata
-  const paymentDate = paymentDateStr
-    ? new Date(`${paymentDateStr}T12:00:00+05:30`)
-    : getKolkataDateOnly(getCurrentKolkataTime());
-
-  // Use customer's assigned salesman if exists, otherwise fallback to active or available salesman
   let salesmanId = customer.salesmanId;
   if (!salesmanId) {
-    const activeSalesman = await prisma.salesman.findFirst({
+    const defaultSalesman = await prisma.salesman.findFirst({
       where: { isActive: true },
-      select: { id: true },
+      orderBy: { createdAt: 'asc' },
     });
-    if (activeSalesman) {
-      salesmanId = activeSalesman.id;
-    } else {
-      const anySalesman = await prisma.salesman.findFirst({
-        select: { id: true },
-      });
-      if (anySalesman) {
-        salesmanId = anySalesman.id;
-      }
-    }
+    salesmanId = defaultSalesman?.id || null;
   }
 
   if (!salesmanId) {
-    throw new Error('A registered field salesman is required to record payment vouchers. Please add a salesman first.');
+    const adminSalesman = await prisma.salesman.findFirst();
+    salesmanId = adminSalesman?.id || null;
+  }
+
+  if (!salesmanId) {
+    throw new Error('No active staff member found to record this receipt against.');
+  }
+
+  let paymentDate: Date;
+  if (paymentDateStr) {
+    paymentDate = new Date(`${paymentDateStr}T12:00:00+05:30`);
+  } else {
+    paymentDate = getCurrentKolkataTime();
   }
 
   const payment = await prisma.payment.create({
@@ -111,7 +109,7 @@ export async function recordAdminPayment(payload: AdminPaymentPayload) {
  */
 export async function getCustomersForPayment(query: string = '') {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN')) {
+  if (!session?.user || !isFinancialRole(session.user.role)) {
     throw new Error('Unauthorized');
   }
 
