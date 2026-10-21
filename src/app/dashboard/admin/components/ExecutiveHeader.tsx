@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
-import { Sun, Moon, LogOut, X, ShieldCheck, Mail, MapPin, User, Settings } from 'lucide-react';
+import { Sun, MoonStar, LogOut, X, ShieldCheck, Mail, MapPin, User, Settings } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getRoleDisplayTitle } from '@/lib/rbac';
@@ -30,11 +30,13 @@ export default function ExecutiveHeader({
   const [weather, setWeather] = useState<{ temp: number; condition: string } | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
-  // Normalize 'Owner' / 'Admin' to 'Niyaz' for canonical Founder
-  const displayName = (userName && userName !== 'Owner' && userName !== 'Admin') ? userName : 'Niyaz';
+  // Normalize 'Owner' / 'Admin' / 'Niyaz' to 'Niyazuddin' for canonical Founder
+  const displayName = (userName && userName !== 'Owner' && userName !== 'Admin' && userName !== 'Niyaz')
+    ? (userName.includes('Niyaz') ? 'Niyazuddin' : userName)
+    : 'Niyazuddin';
   
   // Post/Designation: 'Founder' for Founder & CEO
-  const displayPost = (userRole === 'FOUNDER_CEO' || userRole === 'OWNER' || displayName === 'Niyaz')
+  const displayPost = (userRole === 'FOUNDER_CEO' || userRole === 'OWNER' || displayName === 'Niyazuddin')
     ? 'Founder'
     : getRoleDisplayTitle(userRole);
 
@@ -57,7 +59,17 @@ export default function ExecutiveHeader({
         10
       );
 
-      setIsNight(hourKolkata < 6 || hourKolkata >= 19);
+      const minuteKolkata = parseInt(
+        new Intl.DateTimeFormat('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          minute: 'numeric',
+        }).format(now),
+        10
+      );
+
+      // Sunset in Dahod is ~18:10 IST; night/evening starts after 18:15 IST
+      const night = hourKolkata < 6 || hourKolkata > 18 || (hourKolkata === 18 && minuteKolkata >= 15);
+      setIsNight(night);
       setTimeStr(timePart);
     };
 
@@ -75,6 +87,9 @@ export default function ExecutiveHeader({
           const data = await res.json();
           if (data?.current_weather) {
             const code = data.current_weather.weathercode;
+            if (data.current_weather.is_day !== undefined) {
+              setIsNight(data.current_weather.is_day === 0);
+            }
             let cond = 'Clear';
             if ([1, 2, 3].includes(code)) cond = 'Partly Cloudy';
             else if ([45, 48].includes(code)) cond = 'Haze';
@@ -89,13 +104,29 @@ export default function ExecutiveHeader({
           }
         }
       } catch {
-        // Fallback to reasonable diurnal baseline for Dahod
+        // Fallback to diurnal baseline for Dahod
       }
 
-      const hour = new Date().getHours();
-      const night = hour < 6 || hour >= 19;
+      const now = new Date();
+      const hour = parseInt(
+        new Intl.DateTimeFormat('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          hour: 'numeric',
+          hour12: false,
+        }).format(now),
+        10
+      );
+      const min = parseInt(
+        new Intl.DateTimeFormat('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          minute: 'numeric',
+        }).format(now),
+        10
+      );
+      const night = hour < 6 || hour > 18 || (hour === 18 && min >= 15);
+      setIsNight(night);
       setWeather({
-        temp: night ? 24 : 31,
+        temp: night ? 26 : 31,
         condition: night ? 'Clear Night' : 'Sunny',
       });
     };
@@ -128,7 +159,7 @@ export default function ExecutiveHeader({
           >
             <div className="flex items-center gap-2">
               {isNight ? (
-                <Moon className="h-5 w-5 text-indigo-400 shrink-0" />
+                <MoonStar className="h-5 w-5 text-amber-300 dark:text-amber-200 shrink-0 animate-pulse" />
               ) : (
                 <Sun className="h-5 w-5 text-amber-500 shrink-0 animate-[spin_16s_linear_infinite]" />
               )}
@@ -137,7 +168,7 @@ export default function ExecutiveHeader({
                   {weather ? `${weather.temp}°C` : '28°C'}
                 </span>
                 <span className="text-[10px] font-bold text-secondary truncate max-w-[80px]">
-                  {weather?.condition || 'Dahod'}
+                  {weather?.condition || (isNight ? 'Clear Night' : 'Dahod')}
                 </span>
               </div>
             </div>
