@@ -6,10 +6,9 @@ import { isFinancialRole } from '@/lib/rbac';
 
 import ExecutiveHeader from './components/ExecutiveHeader';
 import ExecutiveKPIRow from './components/ExecutiveKPIRow';
-import SecondaryMetricsBar from './components/SecondaryMetricsBar';
-import DateLinkedAnalytics from './components/DateLinkedAnalytics';
-import QuickActionsRail from './components/QuickActionsRail';
-import LowerInformationGrid from './components/LowerInformationGrid';
+import MainDashboardGrid from './components/MainDashboardGrid';
+import BottomOperationalStrip from './components/BottomOperationalStrip';
+import QuickAccessCard from './components/QuickAccessCard';
 
 export default async function AdminDashboard({
   searchParams,
@@ -39,7 +38,7 @@ export default async function AdminDashboard({
     greeting = "Good night";
   }
 
-  // Fetch complete real data via Phase 2 data layer
+  // Fetch complete real data via server data layer
   const data = await getDashboardExecutiveData(dateStr);
 
   return (
@@ -53,7 +52,7 @@ export default async function AdminDashboard({
         greeting={greeting}
       />
 
-      {/* 2. PRIMARY 6-CARD KPI ROW (SALES, RECEIVABLES, CASH FLOW, EXPENSES, PRODUCTION, STOCK) */}
+      {/* 2. TOP KPI CARDS (6 CARDS: SALES, RECEIVABLES, CASH FLOW, EXPENSES, PRODUCTION, STOCK) */}
       <ExecutiveKPIRow
         trends={data.trends}
         expenses={data.expenses}
@@ -64,40 +63,34 @@ export default async function AdminDashboard({
         selectedDate={data.selectedDate}
       />
 
-      {/* 3. MAIN COCKPIT ENTERPRISE GRID */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 items-start">
-        {/* LEFT / CENTER CONTENT AREA (9 COLS ON XL) */}
-        <div className="xl:col-span-9 space-y-4 sm:space-y-5">
-          {/* REFERENCE ROW 2: DATE-LINKED ANALYTICS (SALES TREND + 3-COLOR DONUT + ALERTS) */}
-          <DateLinkedAnalytics
-            initialPoints={data.trends.points}
-            initialProductSales={data.productSales}
-            alerts={data.alerts}
-            selectedDate={data.selectedDate}
-          />
+      {/* 3. MAIN DASHBOARD CONTENT (MATCHING REFERENCE SKETCH 2X2 GRID) */}
+      {/* ROW 1: TOP 10 CUSTOMERS <--> SALES TREND */}
+      {/* ROW 2: AREA-WISE SALES <--> SALES BY PRODUCT */}
+      <MainDashboardGrid
+        topCustomers={data.topCustomers}
+        trendPoints={data.trends.points}
+        areaSales={data.areaSales}
+        initialProductSales={data.productSales}
+        selectedDate={data.selectedDate}
+        isToday={data.isToday}
+      />
 
-          {/* REFERENCE ROW 3: OPERATIONS & SECONDARY METRICS HORIZONTAL STRIP */}
-          <SecondaryMetricsBar
-            meta={data.meta}
-            attendance={data.attendance}
-            customerActivity={data.customerActivity}
-            payroll={data.payroll}
-          />
-
-          {/* REFERENCE ROW 4 & 5: LOWER OPERATIONAL TABLES & MODULES */}
-          <LowerInformationGrid
-            topCustomers={data.topCustomers}
-            areaSales={data.areaSales}
-            attendance={data.attendance}
-            dispatches={data.dispatches}
-            isToday={data.isToday}
-            selectedDate={data.selectedDate}
+      {/* 4. BOTTOM OPERATIONAL STRIP & QUICK ACCESS (MATCHING REFERENCE SKETCH) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+        {/* LEFT: DAHOD ACTIVE CUSTOMERS & ACTIVE AREAS (8 COLS ON LG/XL) */}
+        <div className="lg:col-span-8 flex flex-col">
+          <BottomOperationalStrip
+            activeCustomersCount={data.meta.activeCustomersCount}
+            totalCustomersCount={data.meta.totalCustomersCount}
+            activeAreasCount={data.meta.totalAreasCount}
+            activeRoutesCount={data.meta.activeRoutesCount}
+            trends={data.trends}
           />
         </div>
 
-        {/* RIGHT RAIL: BRAND INSPIRATION + QUICK ACTIONS (3 COLS ON XL) */}
-        <div className="xl:col-span-3 space-y-4 sm:space-y-5">
-          <QuickActionsRail />
+        {/* RIGHT: QUICK ACCESS - ADD NEW CUSTOMER, STAFF ATT., STAFF SALARY (4 COLS ON LG/XL) */}
+        <div className="lg:col-span-4 flex flex-col">
+          <QuickAccessCard />
         </div>
       </div>
     </div>
