@@ -31,7 +31,8 @@ export default async function CustomersPage({
     page: typeof resolvedParams.page === 'string' ? parseInt(resolvedParams.page) : 1,
   };
 
-  const customers = await prisma.customer.findMany({
+  const [customers, states, cities, routes, salesmen] = await Promise.all([
+    prisma.customer.findMany({
     where: {
       ...(filters.search ? { 
         OR: [
@@ -62,12 +63,12 @@ export default async function CustomersPage({
       visits: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 }
     },
     orderBy: { customerName: filters.sort === 'desc' ? 'desc' : 'asc' },
-  });
-
-  const states = await getStates();
-  const cities = await getCities(filters.stateId);
-  const routes = await getRoutes(filters.cityId);
-  const salesmen = await getSalesmen();
+    }),
+    getStates(),
+    getCities(filters.stateId),
+    getRoutes(filters.cityId),
+    getSalesmen(),
+  ]);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
