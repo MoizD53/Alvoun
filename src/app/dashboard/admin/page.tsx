@@ -50,6 +50,7 @@ export default async function AdminDashboard({
       <ExecutiveHeader
         userName={session.user.name || 'Niyazuddin Kazi'}
         userRole={session.user.role || 'OWNER'}
+        userPhoto={session.user.image || '/niyazuddin.png'}
         selectedDate={data.selectedDate}
         greeting={greeting}
       />
