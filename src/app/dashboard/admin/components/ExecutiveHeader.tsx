@@ -35,9 +35,9 @@ export default function ExecutiveHeader({
     ? (userName.includes('Niyaz') ? 'Niyazuddin' : userName)
     : 'Niyazuddin';
   
-  // Post/Designation: 'Founder' for Founder & CEO
+  // Post/Designation: 'Founder & CEO'
   const displayPost = (userRole === 'FOUNDER_CEO' || userRole === 'OWNER' || displayName === 'Niyazuddin')
-    ? 'Founder'
+    ? 'Founder & CEO'
     : getRoleDisplayTitle(userRole);
 
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function ExecutiveHeader({
         {/* Left: Greeting with User's Name */}
         <div className="min-w-0 flex items-center gap-3">
           <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-primary tracking-tight font-sans">
-            {greeting}, {displayName}
+            {greeting}, Mr. {displayName}
           </h1>
         </div>
 
@@ -164,7 +164,7 @@ export default function ExecutiveHeader({
                 <Sun className="h-5 w-5 text-amber-500 shrink-0 animate-[spin_16s_linear_infinite]" />
               )}
               <div className="flex flex-col leading-none">
-                <span className="text-sm font-black text-primary font-mono tracking-tight tabular-nums">
+                <span className="text-sm font-extrabold text-primary font-sans tracking-tight tabular-nums">
                   {weather ? `${weather.temp}°C` : '28°C'}
                 </span>
                 <span className="text-[10px] font-bold text-secondary truncate max-w-[80px]">
@@ -176,7 +176,7 @@ export default function ExecutiveHeader({
             <div className="h-7 w-px bg-border-default" />
 
             <div className="flex flex-col items-center justify-center leading-none">
-              <span className="text-sm sm:text-base font-black text-primary font-mono tracking-tight tabular-nums">
+              <span className="text-sm sm:text-base font-extrabold text-primary font-sans tracking-tight tabular-nums">
                 {timeStr || '10:00 AM'}
               </span>
             </div>
@@ -201,10 +201,10 @@ export default function ExecutiveHeader({
                 className="shrink-0 h-9 w-9 ring-2 ring-teal-500/40 group-hover:scale-105 transition-transform"
               />
               <div className="flex flex-col leading-tight min-w-0 pr-1">
-                <span className="text-xs sm:text-sm font-black text-primary truncate max-w-[120px]">
+                <span className="text-xs sm:text-sm font-black text-primary truncate max-w-[130px]">
                   {displayName}
                 </span>
-                <span className="text-[10px] sm:text-[11px] font-extrabold text-teal-800 dark:text-teal-400 truncate max-w-[120px]">
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-teal-800 dark:text-teal-400 truncate max-w-[150px]">
                   {displayPost}
                 </span>
               </div>

@@ -113,21 +113,21 @@ export default function AdminNav({ user }: { user: any }) {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-border-default/80 bg-surface-sidebar shrink-0">
-          <Link href="/dashboard/admin" className="flex items-center gap-3 group">
-            <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 border border-border-default shadow-xs flex items-center justify-center bg-white group-hover:scale-105 transition-transform duration-150">
+        <div className="h-18 flex items-center justify-between px-4 sm:px-5 border-b border-border-default/80 bg-surface-sidebar shrink-0">
+          <Link href="/dashboard/admin" className="flex items-center gap-3 group min-w-0">
+            <div className="relative h-11 w-11 rounded-full overflow-hidden shrink-0 border border-border-default shadow-xs flex items-center justify-center bg-white group-hover:scale-105 transition-transform duration-150">
               <Image 
                 src="/icons/icon.png" 
-                alt="ALVOUN" 
-                width={40} 
-                height={40} 
+                alt="Alvoun Water" 
+                width={48} 
+                height={48} 
                 className="w-full h-full object-cover scale-110 rounded-full" 
                 priority 
               />
             </div>
-            <div className="flex flex-col">
-              <span className="text-base font-extrabold tracking-tight text-primary leading-none font-sans">
-                ALVOUN
+            <div className="flex flex-col min-w-0">
+              <span className="text-lg font-black tracking-tight text-primary leading-tight font-sans truncate">
+                Alvoun Water
               </span>
             </div>
           </Link>
@@ -294,17 +294,17 @@ export default function AdminNav({ user }: { user: any }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2.5">
-            <div className="relative h-8 w-8 rounded-full overflow-hidden shrink-0 border border-border-default/80 shadow-xs flex items-center justify-center bg-white">
+            <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 border border-border-default/80 shadow-xs flex items-center justify-center bg-white">
               <Image 
                 src="/icons/icon.png" 
-                alt="ALVOUN" 
-                width={32} 
-                height={32} 
+                alt="Alvoun Water" 
+                width={36} 
+                height={36} 
                 className="w-full h-full object-cover scale-110 rounded-full" 
                 priority 
               />
             </div>
-            <span className="font-extrabold text-base tracking-tight text-primary">ALVOUN</span>
+            <span className="font-extrabold text-base tracking-tight text-primary">Alvoun Water</span>
           </div>
         </div>
         
