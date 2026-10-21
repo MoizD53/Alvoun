@@ -1,9 +1,17 @@
 import { Clock, Building2, Shield, DollarSign, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-export default function SettingsPage() {
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
+import { hasPermission } from '@/lib/rbac';
+
+export default async function SettingsPage() {
+  const session = await auth();
+  if (!session?.user || !hasPermission(session.user.role, 'canManageUsers')) {
+    redirect('/dashboard/admin');
+  }
   return (
     <div className="space-y-6 animate-fade-in-up pb-24">
       {/* Header */}

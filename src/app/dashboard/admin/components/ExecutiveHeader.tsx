@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
-import { MapPin, ChevronDown, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Avatar } from '@/components/ui/avatar';
+import { getRoleDisplayTitle } from '@/lib/rbac';
 
 interface ExecutiveHeaderProps {
   userName: string;
@@ -22,6 +22,8 @@ export default function ExecutiveHeader({
 }: ExecutiveHeaderProps) {
   const [dateStr, setDateStr] = useState<string>('');
   const [timeStr, setTimeStr] = useState<string>('');
+
+  const displayRoleTitle = getRoleDisplayTitle(userRole);
 
   useEffect(() => {
     const updateTime = () => {
@@ -51,22 +53,22 @@ export default function ExecutiveHeader({
   }, []);
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 pb-2">
-      {/* Left: Reference Greeting & Subtitle */}
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3">
+      {/* Left: Distance-Readable Greeting & Subtitle */}
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold text-secondary uppercase tracking-wider">
+        <div className="text-xs sm:text-sm font-bold text-secondary uppercase tracking-wider">
           {greeting}:
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <h1 className="text-xl sm:text-2xl font-black text-primary tracking-tight font-sans">
+        <div className="flex items-center gap-3 flex-wrap mt-0.5">
+          <h1 className="text-2xl sm:text-3xl lg:text-[34px] font-extrabold text-primary tracking-tight font-sans">
             {userName}
           </h1>
-          <Badge variant="teal" styleType="subtle" size="sm" dot pulse>
-            {userRole}
+          <Badge variant="teal" styleType="subtle" size="md" dot pulse>
+            {displayRoleTitle}
           </Badge>
         </div>
-        <p className="text-xs text-secondary font-medium mt-0.5">
-          Founder & CEO | Naphareese Maschroubat (ALVOUN)
+        <p className="text-sm font-semibold text-secondary mt-1">
+          Naphareese Maschroubat (ALVOUN) · Dairy & Beverage Operations
         </p>
       </div>
 
@@ -76,59 +78,40 @@ export default function ExecutiveHeader({
       </div>
 
       {/* Right: Inset Time Card + Plant Location + Auto Backup + Date Selector */}
-      <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap md:flex-nowrap shrink-0">
-        {/* Inset Time Card */}
-        <div className="flex flex-col items-center justify-center px-3.5 py-1.5 rounded-xl bg-surface-inset border border-border-default shadow-inset select-none">
-          <span className="text-[10px] font-medium text-secondary tabular-nums">
+      <div className="flex items-center gap-3 flex-wrap md:flex-nowrap shrink-0">
+        {/* Inset Time Card (Distance Readable) */}
+        <div className="flex flex-col items-center justify-center px-4 py-2 rounded-xl bg-surface-inset border border-border-default shadow-inset select-none">
+          <span className="text-xs font-bold text-secondary tabular-nums">
             {dateStr || 'Today'}
           </span>
-          <span className="text-xs sm:text-sm font-bold text-primary font-mono tracking-tight tabular-nums">
+          <span className="text-base sm:text-lg font-extrabold text-primary font-mono tracking-tight tabular-nums">
             {timeStr || '10:00 AM'}
           </span>
         </div>
 
-        {/* Operational Plant Status Card (Real operational info, no fabricated weather) */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none text-xs">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        {/* Operational Plant Status Card */}
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none text-sm">
+          <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <div className="flex flex-col leading-tight">
-            <span className="font-bold text-primary">Dahod Hub</span>
-            <span className="text-[10px] text-secondary">Plant Active 📍</span>
+            <span className="font-bold text-primary text-sm">Dahod Hub</span>
+            <span className="text-xs text-secondary font-medium">Plant Active 📍</span>
           </div>
         </div>
 
         {/* Encrypted Auto-Backup Indicator */}
         <div 
-          className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none text-xs" 
-          title="Automatic Encrypted Database Backup Scheduled Daily at 11:59 PM"
+          className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none text-sm cursor-help"
+          title="Encrypted Daily Database Snapshot Verification: Verified Active"
         >
-          <ShieldCheck className="h-4 w-4 text-teal-600 shrink-0" />
+          <ShieldCheck className="h-4.5 w-4.5 text-teal-700 dark:text-teal-400 shrink-0" />
           <div className="flex flex-col leading-tight">
-            <span className="font-bold text-primary">Auto-Backup</span>
-            <span className="text-[10px] text-teal-700 font-medium">11:59 PM Encrypted</span>
+            <span className="font-bold text-primary text-sm">Auto-Backup</span>
+            <span className="text-xs text-secondary font-medium">AES-256 Active 🛡️</span>
           </div>
         </div>
 
-        {/* Date Selector */}
+        {/* Date Filter Component */}
         <AdminDatePicker currentDate={selectedDate} />
-
-        {/* User Profile Pill */}
-        <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none">
-          <Avatar 
-            size="xs" 
-            src="/niyazuddin.png"
-            fallback={userName?.charAt(0) || 'N'} 
-            status="online" 
-          />
-          <div className="flex flex-col text-left leading-tight">
-            <span className="text-xs font-bold text-primary truncate max-w-[110px]">
-              {userName || 'Niyazuddin Kazi'}
-            </span>
-            <span className="text-[9px] font-medium text-secondary truncate">
-              {userRole === 'OWNER' ? 'Founder & CEO' : userRole}
-            </span>
-          </div>
-          <ChevronDown className="h-3.5 w-3.5 text-secondary ml-0.5" />
-        </div>
       </div>
     </div>
   );

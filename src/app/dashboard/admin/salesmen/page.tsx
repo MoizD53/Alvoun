@@ -5,7 +5,15 @@ import { ArrowLeft, Users, MapPin } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
+import { hasPermission } from '@/lib/rbac';
+
 export default async function SalesmenPage() {
+  const session = await auth();
+  if (!session?.user || !hasPermission(session.user.role, 'canManageUsers')) {
+    redirect('/dashboard/admin');
+  }
   const salesmen = await getSalesmenAccounts();
 
   return (

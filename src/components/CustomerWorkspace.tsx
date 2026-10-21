@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
+import CustomerPricingSection from './CustomerPricingSection';
 
 export default function CustomerWorkspace({ customer }: { customer: any }) {
   const [activeTab, setActiveTab] = useState('OVERVIEW');
@@ -20,6 +21,7 @@ export default function CustomerWorkspace({ customer }: { customer: any }) {
 
   const tabs = [
     { id: 'OVERVIEW', label: 'Overview' },
+    { id: 'PRICING', label: 'Product Rates' },
     { id: 'LEDGER', label: 'Ledger' },
     { id: 'SALES', label: 'Sales' },
     { id: 'PAYMENTS', label: 'Payments' },

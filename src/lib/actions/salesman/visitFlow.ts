@@ -61,15 +61,24 @@ export async function submitVisitFlow(data: any) {
     const validItems = items.filter(i => i.crates > 0);
 
     if (!isNoSale && validItems.length > 0) {
-      const products = await getProductsWithRates();
+      const [products, customRates] = await Promise.all([
+        getProductsWithRates(),
+        prisma.customerProductRate.findMany({ where: { customerId } })
+      ]);
+      const customRateMap = new Map(customRates.map(cr => [cr.productId, cr.rate]));
       
       for (const item of validItems) {
         const product = products.find(p => p.id === item.productId);
         if (!product) throw new Error(`Product ${item.productId} not found`);
 
-        // Find applicable standard rate based on quantity
+        // Standard rate based on quantity tier
         const applicableRate = product.rates.find(r => item.crates >= r.minQuantity) || product.rates[product.rates.length - 1];
-        const rateToUse = applicableRate ? applicableRate.rate : 0;
+        const standardRate = applicableRate ? applicableRate.rate : 0;
+        
+        // Customer-specific rate overrides standard rate if configured
+        const rateToUse = customRateMap.has(item.productId)
+          ? customRateMap.get(item.productId)!
+          : standardRate;
         
         const amount = item.crates * rateToUse;
         totalAmount += amount;
@@ -78,8 +87,8 @@ export async function submitVisitFlow(data: any) {
           productId: item.productId,
           crates: item.crates,
           looseBottles: 0,
-          standardRate: rateToUse,
-          actualRate: rateToUse, // the field sales flow auto-assigns the exact current standard rate
+          standardRate,
+          actualRate: rateToUse,
           amount
         });
       }

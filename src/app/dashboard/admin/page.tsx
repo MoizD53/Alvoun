@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
 import { getDashboardExecutiveData } from '@/lib/dashboard-data';
-import { isExecutiveRole } from '@/lib/rbac';
+import { isFinancialRole } from '@/lib/rbac';
 
 import ExecutiveHeader from './components/ExecutiveHeader';
 import ExecutiveKPIRow from './components/ExecutiveKPIRow';
@@ -21,7 +21,7 @@ export default async function AdminDashboard({
   const session = await auth();
 
   if (!session?.user) redirect('/login');
-  if (!isExecutiveRole(session.user.role)) {
+  if (!isFinancialRole(session.user.role)) {
     redirect('/dashboard');
   }
 

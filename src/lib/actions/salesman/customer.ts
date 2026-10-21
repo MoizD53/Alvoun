@@ -26,6 +26,7 @@ export async function getMyCustomers(routeId?: string, search?: string) {
       route: true,
       sales: { orderBy: { saleDate: 'desc' }, include: { items: { include: { product: true } } } },
       payments: { orderBy: { paymentDate: 'desc' } },
+      customerRates: true,
       visits: { where: { salesmanId }, orderBy: { createdAt: 'desc' } }
     },
     orderBy: { route: { name: 'asc' } }

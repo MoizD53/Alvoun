@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getExpenses } from '@/lib/actions/admin/expense';
 import ExpensesClient from './ExpensesClient';
+import { isFinancialRole } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,7 @@ export default async function ExpensesPage(props: {
   searchParams: Promise<{ category?: string; startDate?: string; endDate?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN')) {
+  if (!session?.user || !isFinancialRole(session.user.role)) {
     redirect('/dashboard');
   }
 

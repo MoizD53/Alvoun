@@ -4,12 +4,15 @@ import { getMyCustomers } from '@/lib/actions/salesman/customer';
 import { getProductsWithRates } from '@/lib/actions/salesman/sale';
 import SalesmanCustomerList from './customers/components/SalesmanCustomerList';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { MapPin, Clock, Moon, Navigation, ChevronRight, Activity, TrendingUp, IndianRupee } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default async function SalesmanDashboard() {
   const session = await auth();
+  if (!session?.user) redirect('/login');
+  if (session.user.role !== 'SALESMAN') redirect('/dashboard');
   
   let stats;
   try {

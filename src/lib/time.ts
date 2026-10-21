@@ -1,3 +1,16 @@
+function parseToValidDate(input?: Date | string | null): Date {
+  if (!input) return getCurrentKolkataTime();
+  if (input instanceof Date) {
+    return isNaN(input.getTime()) ? getCurrentKolkataTime() : input;
+  }
+  const str = String(input).trim();
+  if (!str || str === 'undefined' || str === 'null') {
+    return getCurrentKolkataTime();
+  }
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? getCurrentKolkataTime() : parsed;
+}
+
 export function getCurrentKolkataTime() {
   if (process.env.DEV_TIME_OVERRIDE) {
     const [hours, minutes] = process.env.DEV_TIME_OVERRIDE.split(':').map(Number);
@@ -9,7 +22,8 @@ export function getCurrentKolkataTime() {
   return new Date();
 }
 
-export function getKolkataTimeDetails(date: Date) {
+export function getKolkataTimeDetails(date?: Date | string | null) {
+  const d = parseToValidDate(date);
   // Use Intl.DateTimeFormat to reliably extract parts in Asia/Kolkata
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Kolkata',
@@ -22,7 +36,7 @@ export function getKolkataTimeDetails(date: Date) {
     day: 'numeric'
   });
   
-  const parts = formatter.formatToParts(date);
+  const parts = formatter.formatToParts(d);
   const get = (type: string) => parseInt(parts.find(p => p.type === type)?.value || '0', 10);
   
   return {
@@ -35,12 +49,12 @@ export function getKolkataTimeDetails(date: Date) {
   };
 }
 
-export function isWorkingHours(date: Date) {
+export function isWorkingHours(date?: Date | string | null) {
   const details = getKolkataTimeDetails(date);
   return details.hour >= 7 && details.hour < 19;
 }
 
-export function getKolkataDateOnly(date: Date) {
+export function getKolkataDateOnly(date?: Date | string | null) {
   const details = getKolkataTimeDetails(date);
   return new Date(Date.UTC(details.year, details.month - 1, details.day));
 }
@@ -52,23 +66,25 @@ export function getKolkataDateString(date: Date = getCurrentKolkataTime()): stri
   return `${details.year}-${mm}-${dd}`;
 }
 
-export function getKolkataStartOfDay(date?: Date | string) {
-  const d = date ? new Date(date) : getCurrentKolkataTime();
+export function getKolkataStartOfDay(date?: Date | string | null) {
+  const d = parseToValidDate(date);
   const details = getKolkataTimeDetails(d);
   const utcMillis = Date.UTC(details.year, details.month - 1, details.day, 0, 0, 0, 0);
   return new Date(utcMillis - (5.5 * 60 * 60 * 1000));
 }
 
-export function getKolkataEndOfDay(date?: Date | string) {
-  const d = date ? new Date(date) : getCurrentKolkataTime();
+export function getKolkataEndOfDay(date?: Date | string | null) {
+  const d = parseToValidDate(date);
   const details = getKolkataTimeDetails(d);
   const utcMillis = Date.UTC(details.year, details.month - 1, details.day, 23, 59, 59, 999);
   return new Date(utcMillis - (5.5 * 60 * 60 * 1000));
 }
 
 export function getKolkataMonthBoundaries(year: number, month: number) {
-  const utcStart = Date.UTC(year, month - 1, 1, 0, 0, 0, 0);
-  const utcEnd = Date.UTC(year, month, 0, 23, 59, 59, 999);
+  const safeYear = isNaN(year) ? getKolkataTimeDetails().year : year;
+  const safeMonth = isNaN(month) ? getKolkataTimeDetails().month : month;
+  const utcStart = Date.UTC(safeYear, safeMonth - 1, 1, 0, 0, 0, 0);
+  const utcEnd = Date.UTC(safeYear, safeMonth, 0, 23, 59, 59, 999);
   return {
     start: new Date(utcStart - (5.5 * 60 * 60 * 1000)),
     end: new Date(utcEnd - (5.5 * 60 * 60 * 1000))
@@ -77,12 +93,16 @@ export function getKolkataMonthBoundaries(year: number, month: number) {
 
 export function formatKolkataVisitTime(date?: Date | string | null): string {
   if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const timeStr = new Intl.DateTimeFormat('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  }).format(d);
-  return `Today, ${timeStr}`;
+  const d = parseToValidDate(date);
+  try {
+    const timeStr = new Intl.DateTimeFormat('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    }).format(d);
+    return `Today, ${timeStr}`;
+  } catch {
+    return '';
+  }
 }

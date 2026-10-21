@@ -2,7 +2,8 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDailyAttendance, getPayrollLedger, getStaffDirectory } from '@/lib/actions/admin/payroll';
 import PayrollClient from './PayrollClient';
-import { getCurrentKolkataTime } from '@/lib/time';
+import { getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
+import { isExecutiveRole } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,13 +11,13 @@ export default async function PayrollPage(props: {
   searchParams: Promise<{ date?: string; month?: string; year?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN')) {
+  if (!session?.user || !isExecutiveRole(session.user.role)) {
     redirect('/dashboard');
   }
 
   const searchParams = await props.searchParams;
   const now = getCurrentKolkataTime();
-  const dateStr = searchParams.date || now.toISOString().split('T')[0];
+  const dateStr = searchParams.date || getKolkataDateString(now);
   const month = searchParams.month ? parseInt(searchParams.month) : now.getMonth() + 1;
   const year = searchParams.year ? parseInt(searchParams.year) : now.getFullYear();
 

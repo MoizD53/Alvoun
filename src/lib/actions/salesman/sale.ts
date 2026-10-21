@@ -12,15 +12,42 @@ export async function getProductsWithRates() {
         orderBy: { minQuantity: 'desc' }
       }
     },
-    orderBy: { bottlesPerCrate: 'asc' } // just to keep 1L (12), 500ml (24), 250ml (48) in order
+    orderBy: { bottlesPerCrate: 'asc' } // 1L (12), 500ml (24), 250ml (48)
   });
   return products;
+}
+
+/**
+ * Fetch effective product rates for a specific customer.
+ * Applies customer-specific rate if configured, otherwise falls back to standard product rate.
+ */
+export async function getCustomerEffectiveRates(customerId: string) {
+  const [products, customRates] = await Promise.all([
+    getProductsWithRates(),
+    prisma.customerProductRate.findMany({ where: { customerId } })
+  ]);
+  const customRateMap = new Map(customRates.map(cr => [cr.productId, cr.rate]));
+
+  return products.map(p => {
+    const defaultStandardRate = p.rates[0]?.rate ?? 0;
+    const isCustomized = customRateMap.has(p.id);
+    const effectiveRate = isCustomized ? customRateMap.get(p.id)! : defaultStandardRate;
+    return {
+      productId: p.id,
+      productName: p.name,
+      bottlesPerCrate: p.bottlesPerCrate,
+      standardRate: defaultStandardRate,
+      effectiveRate,
+      isCustomized,
+      rates: p.rates
+    };
+  });
 }
 
 const SaleItemSchema = z.object({
   productId: z.string(),
   crates: z.number().min(0),
-  actualRate: z.number().min(0) // paise
+  actualRate: z.number().min(0).optional() // Client submitted price (server resolves authoritative rate)
 });
 
 const SaleSchema = z.object({
@@ -44,41 +71,53 @@ export async function createSale(data: any) {
   
   const { customerId, items, paymentAmount, paymentMethod } = parsed.data;
 
-  // Verify ownership
+  // Verify salesman authorization for this customer
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-  if (!customer || customer.salesmanId !== salesmanId) return { error: 'Unauthorized' };
+  if (!customer || customer.salesmanId !== salesmanId) return { error: 'Unauthorized: Customer not assigned to you' };
 
   // Filter out items with 0 crates
   const validItems = items.filter(i => i.crates > 0);
   if (validItems.length === 0) return { error: 'No items with quantity > 0' };
 
   try {
-    const products = await getProductsWithRates();
+    // 1. Fetch products and customer-specific rates server-side
+    const [products, customRates] = await Promise.all([
+      getProductsWithRates(),
+      prisma.customerProductRate.findMany({ where: { customerId } })
+    ]);
+    const customRateMap = new Map(customRates.map(cr => [cr.productId, cr.rate]));
+
     let totalAmount = 0;
     const saleItemsData: any[] = [];
 
+    // 2. Resolve authoritative rate per item server-side
     for (const item of validItems) {
       const product = products.find(p => p.id === item.productId);
       if (!product) throw new Error(`Product ${item.productId} not found`);
 
-      // Find applicable standard rate based on quantity
+      // Find standard rate based on quantity tier
       const applicableRate = product.rates.find(r => item.crates >= r.minQuantity) || product.rates[product.rates.length - 1];
       const standardRate = applicableRate ? applicableRate.rate : 0;
+
+      // Customer-specific rate overrides standard rate if configured
+      const effectiveRate = customRateMap.has(item.productId)
+        ? customRateMap.get(item.productId)!
+        : standardRate;
       
-      const amount = item.crates * item.actualRate;
-      totalAmount += amount;
+      const lineAmount = item.crates * effectiveRate;
+      totalAmount += lineAmount;
 
       saleItemsData.push({
         productId: item.productId,
         crates: item.crates,
-        looseBottles: 0, // as requested, ignore loose unless cleanly supported. Let's stick to crates.
+        looseBottles: 0,
         standardRate,
-        actualRate: item.actualRate,
-        amount
+        actualRate: effectiveRate, // Server-enforced rate persisted in SaleItem
+        amount: lineAmount
       });
     }
 
-    // Execute in transaction
+    // 3. Execute in atomic transaction
     let createdSaleId = '';
     await prisma.$transaction(async (tx) => {
       const sale = await tx.sale.create({
@@ -100,35 +139,20 @@ export async function createSale(data: any) {
             customerId,
             salesmanId,
             amount: paymentAmount,
-            paymentMethod
+            paymentMethod,
+            paymentDate: new Date()
           }
         });
       }
     });
 
-    const { logAndEmitActivity } = await import('@/lib/events');
-    const { salesman } = await requireActiveSalesmanSession();
-    
-    await logAndEmitActivity({
-      salesmanId,
-      salesmanName: salesman.name,
-      type: 'SALE',
-      description: `Created Order worth ₹${(totalAmount / 100).toFixed(2)} at ${customer.customerName}`,
-      metadata: { amount: totalAmount }
-    });
-
-    if (paymentAmount > 0) {
-      await logAndEmitActivity({
-        salesmanId,
-        salesmanName: salesman.name,
-        type: 'PAYMENT',
-        description: `Collected ₹${(paymentAmount / 100).toFixed(2)} at ${customer.customerName}`,
-        metadata: { amount: paymentAmount }
-      });
-    }
-
-    return { success: true };
+    return { 
+      success: true, 
+      saleId: createdSaleId,
+      totalAmount
+    };
   } catch (error: any) {
+    console.error('Error creating sale:', error);
     return { error: error.message || 'Failed to create sale' };
   }
 }

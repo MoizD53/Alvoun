@@ -148,6 +148,8 @@ model Customer {
   visits             Visit[]
   sales              Sale[]
   payments           Payment[]
+  customerRates      CustomerProductRate[]
+  auditLogs          AuditLog[]
 
   @@index([stateId])
   @@index([cityId])
@@ -168,6 +170,8 @@ model Product {
   rates             Rate[]
   saleItems         SaleItem[]
   productionBatches ProductionBatch[]
+  customerRates     CustomerProductRate[]
+  auditLogs         AuditLog[]
 }
 
 model Rate {
@@ -427,4 +431,44 @@ model PayrollRecord {
   @@unique([staffId, month, year])
   @@index([staffId])
   @@index([year, month])
+}
+
+
+model CustomerProductRate {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rate       Int      // Stored in Paise per crate
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@index([productId])
+}
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  actorId      String
+  actorName    String
+  actorRole    String
+  action       String    // 'CUSTOMER_RATE_UPDATED', 'CUSTOMER_RATE_RESET'
+  entityType   String    // 'CustomerProductRate'
+  entityId     String
+  customerId   String?
+  customer     Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  previousRate Int?      // in Paise
+  newRate      Int?      // in Paise
+  details      String?
+  createdAt    DateTime  @default(now())
+
+  @@index([customerId])
+  @@index([productId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
 }

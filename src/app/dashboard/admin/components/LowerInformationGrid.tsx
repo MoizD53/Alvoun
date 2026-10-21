@@ -352,9 +352,9 @@ export default function LowerInformationGrid({
                 </span>
               </div>
               <div className="p-2 rounded-xl bg-surface-inset border border-border-default shadow-inset">
-                <span className="text-[9px] font-semibold text-secondary uppercase block">Crates</span>
+                <span className="text-[9px] font-semibold text-secondary uppercase block">PKG</span>
                 <span className="font-mono text-sm font-bold text-teal-800 dark:text-teal-400">
-                  {formatNumber(dispatches.totalCrates)} <span className="text-[10px] font-normal text-secondary">Crt</span>
+                  {formatNumber(dispatches.totalCrates)} <span className="text-[10px] font-normal text-secondary">PKG</span>
                 </span>
               </div>
             </div>
@@ -373,7 +373,7 @@ export default function LowerInformationGrid({
                   >
                     <span className="font-semibold text-primary">{p.productName}</span>
                     <span className="font-mono font-bold text-secondary">
-                      {p.crates} crt / {p.volumeLitres}L
+                      {p.crates} PKG / {p.volumeLitres}L
                     </span>
                   </Link>
                 ))

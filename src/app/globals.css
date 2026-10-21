@@ -18,11 +18,11 @@
      ============================================================ */
 
   /* --- Page & Surface Backgrounds --- */
-  --background:       #F5EFE6;   /* Warm sand base canvas */
-  --surface-sidebar:  #F5EFE6;   /* Continuous warm sand sidebar */
-  --surface-raised:   #EDE4D8;   /* Raised tactile cream cards & panels */
-  --surface-inset:    #DDD3C3;   /* Debossed inset wells, inputs, headers */
-  --surface-overlay:  #EDE4D8;   /* Elevated modals, dropdowns */
+  --background:       #F3EBDD;   /* Warm sand base canvas */
+  --surface-sidebar:  #F3EBDD;   /* Continuous warm sand sidebar */
+  --surface-raised:   #F0E6D7;   /* Raised tactile cream cards & panels */
+  --surface-inset:    #E8DECF;   /* Debossed inset wells, inputs, headers */
+  --surface-overlay:  #F0E6D7;   /* Elevated modals, dropdowns */
 
   /* --- Primary Brand — Deep Petrol Teal (#1A5F63) --- */
   --teal-50:  #E8F3F3;
@@ -30,30 +30,30 @@
   --teal-200: #A5CFD1;
   --teal-300: #74B4B7;
   --teal-400: #3D9397;
-  --teal-500: #1A5F63;   /* Primary reference brand teal */
+  --teal-500: #17666A;   /* Primary reference brand teal */
   --teal-600: #165154;
   --teal-700: #124245;
   --teal-800: #0E3336;
   --teal-900: #081E20;
 
   /* --- Deep Warm Espresso & Taupe Typography --- */
-  --text-primary:   #2C2015;   /* Deep espresso charcoal — high contrast, warm */
+  --text-primary:   #35291F;   /* Deep espresso charcoal — high contrast, warm */
   --text-secondary: #6B5744;   /* Warm taupe — subtitles, labels */
   --text-muted:     #8E7B6A;   /* Warm stone — micro hints, timestamps */
   --text-disabled:  #B5A595;   /* Disabled states */
   --text-inverse:   #FFFFFF;
 
   /* --- Warm Subtle Borders --- */
-  --border-default: #D8CCBB;   /* Thin 1px warm border */
+  --border-default: #DCCDB9;   /* Thin 1px warm border */
   --border-strong:  #C5B49F;   /* Focused elements, active tabs */
   --border-subtle:  #E4DACB;   /* Inner table row dividers */
 
   /* --- Semantic Status Colors --- */
-  --success:        #2E7D32;
+  --success:        #18B981;
   --success-bg:     #E8F5E9;
-  --warning:        #D97706;
+  --warning:        #E9A23B;
   --warning-bg:     #FFF3E0;
-  --danger:         #C62828;
+  --danger:         #D96B60;
   --danger-bg:      #FFEBEE;
   --info:           #1A5F63;
   --info-bg:        #E0F2F1;
@@ -582,3 +582,18 @@ body {
   min-width: 44px;
 }
 
+
+.px-safe {
+  padding-left: max(1rem, env(safe-area-inset-left, 1rem));
+  padding-right: max(1rem, env(safe-area-inset-right, 1rem));
+}
+
+.min-h-screen-dynamic {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.h-screen-dynamic {
+  height: 100vh;
+  height: 100dvh;
+}

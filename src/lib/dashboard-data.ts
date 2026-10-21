@@ -839,7 +839,7 @@ export async function getInventoryAndDispatches(
 
 export async function getDashboardExecutiveData(dateStr?: string): Promise<DashboardExecutiveData> {
   const now = getCurrentKolkataTime();
-  const selectedDate = dateStr || getKolkataDateString(now);
+  const selectedDate = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : getKolkataDateString(now);
   const isToday = selectedDate === getKolkataDateString(now);
 
   const startOfDay = getKolkataStartOfDay(selectedDate);
