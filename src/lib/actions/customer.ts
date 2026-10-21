@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdminSession, requireAuthSession } from '@/lib/session';
+import { normalizeRole } from '@/lib/rbac';
 
 const CustomerSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
@@ -123,7 +124,7 @@ export async function createCustomer(data: any) {
 }
 
 export async function updateCustomer(id: string, data: any) {
-  await requireAdminSession();
+  const session = await requireAdminSession();
   const parsedData = {
     ...data,
     openingBalance: Number(data.openingBalance),
@@ -146,10 +147,44 @@ export async function updateCustomer(id: string, data: any) {
   }
 
   try {
-    await prisma.customer.update({
+    const currentCustomer = await prisma.customer.findUnique({
       where: { id },
-      data: result.data
+      select: { openingBalance: true, openingBalanceType: true }
     });
+
+    const isOpeningBalanceChanged = currentCustomer && (
+      currentCustomer.openingBalance !== result.data.openingBalance ||
+      currentCustomer.openingBalanceType !== result.data.openingBalanceType
+    );
+
+    const operations: any[] = [
+      prisma.customer.update({
+        where: { id },
+        data: result.data
+      })
+    ];
+
+    if (isOpeningBalanceChanged) {
+      operations.push(
+        prisma.auditLog.create({
+          data: {
+            actorId: session?.user?.id || 'system',
+            actorName: session?.user?.name || 'Executive User',
+            actorRole: session?.user?.role || 'FOUNDER_CEO',
+            action: 'OPENING_BALANCE_UPDATED',
+            entityType: 'Customer',
+            entityId: id,
+            customerId: id,
+            previousRate: currentCustomer.openingBalance,
+            newRate: result.data.openingBalance,
+            details: `Opening balance modified via profile update from ₹${(currentCustomer.openingBalance / 100).toFixed(2)} (${currentCustomer.openingBalanceType}) to ₹${(result.data.openingBalance / 100).toFixed(2)} (${result.data.openingBalanceType}).`
+          }
+        })
+      );
+    }
+
+    await prisma.$transaction(operations);
+
     try {
       revalidatePath('/dashboard/admin/customers');
       revalidatePath(`/dashboard/admin/customers/${id}`);
@@ -160,6 +195,93 @@ export async function updateCustomer(id: string, data: any) {
   } catch (error: any) {
     return { error: error.message || 'Failed to update customer' };
   }
+}
+
+/**
+ * Dedicated, auditable opening balance adjustment for Founder/CEO & authorized executives.
+ * Reconciles brought-forward debt from old paper registers or legacy accounting software.
+ * Guarantees zero alteration of historical sales or payment records.
+ */
+export async function adjustCustomerOpeningBalance({
+  customerId,
+  newBalanceRupees,
+  openingBalanceType = 'DEBIT',
+  reason,
+}: {
+  customerId: string;
+  newBalanceRupees: number;
+  openingBalanceType: 'DEBIT' | 'CREDIT';
+  reason: string;
+}) {
+  const session = await requireAuthSession();
+  const role = session.user.role;
+  const canonical = normalizeRole(role);
+
+  // Strictly allow only Executive Business Roles: FOUNDER_CEO, OWNER, ADMIN, DIRECTOR
+  const isAuthorized = canonical === 'FOUNDER_CEO' || canonical === 'DIRECTOR' || role === 'OWNER' || role === 'ADMIN';
+  if (!isAuthorized) {
+    return { error: 'Unauthorized. Only the Founder/CEO or Director can adjust customer opening balances.' };
+  }
+
+  if (typeof newBalanceRupees !== 'number' || isNaN(newBalanceRupees) || newBalanceRupees < 0) {
+    return { error: 'Opening balance must be ₹0 or a positive number.' };
+  }
+
+  if (!reason || reason.trim().length < 3) {
+    return { error: 'A valid reason (minimum 3 characters) is required for audit trail documentation.' };
+  }
+
+  const newBalancePaise = Math.round(newBalanceRupees * 100);
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId }
+  });
+
+  if (!customer) {
+    return { error: 'Customer record not found.' };
+  }
+
+  const previousBalancePaise = customer.openingBalance;
+  const previousType = customer.openingBalanceType;
+
+  // Transactionally update the Customer balance and create a permanent AuditLog entry
+  await prisma.$transaction([
+    prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        openingBalance: newBalancePaise,
+        openingBalanceType: openingBalanceType,
+      }
+    }),
+    prisma.auditLog.create({
+      data: {
+        actorId: session.user.id || 'system',
+        actorName: session.user.name || 'Founder & CEO',
+        actorRole: session.user.role || 'FOUNDER_CEO',
+        action: 'OPENING_BALANCE_UPDATED',
+        entityType: 'Customer',
+        entityId: customerId,
+        customerId: customerId,
+        previousRate: previousBalancePaise,
+        newRate: newBalancePaise,
+        details: `Opening balance adjusted from ₹${(previousBalancePaise / 100).toFixed(2)} (${previousType}) to ₹${(newBalancePaise / 100).toFixed(2)} (${openingBalanceType}). Reason: ${reason.trim()}`
+      }
+    })
+  ]);
+
+  try {
+    revalidatePath('/dashboard/admin/customers');
+    revalidatePath(`/dashboard/admin/customers/${customerId}`);
+    revalidatePath('/dashboard/admin/reports/outstanding');
+    revalidatePath('/dashboard/admin');
+  } catch {}
+
+  return {
+    success: true,
+    previousBalancePaise,
+    newBalancePaise,
+    message: `Opening balance successfully updated to ₹${(newBalancePaise / 100).toFixed(2)} (${openingBalanceType})`
+  };
 }
 
 export async function moveCustomer(customerId: string, areaId: string | null, routeId: string, cityId: string, stateId: string, salesmanId: string | null) {

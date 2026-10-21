@@ -19,6 +19,7 @@ export default function CustomerImporter() {
   
   const [mappings, setMappings] = useState<Record<string, string>>({
     customerName: '',
+    code: '',
     contact: '',
     address: '',
     state: '',
@@ -57,7 +58,7 @@ export default function CustomerImporter() {
         detectedHeaders.forEach(h => {
           const lower = h.toLowerCase().replace(/\s+/g, '');
           Object.keys(mappings).forEach(key => {
-            if (key.toLowerCase() === lower || (key === 'customerName' && lower === 'name')) {
+            if (key.toLowerCase() === lower || (key === 'customerName' && lower === 'name') || (key === 'code' && (lower === 'code' || lower === 'customercode' || lower === 'custcode'))) {
               newMappings[key] = h;
             }
           });

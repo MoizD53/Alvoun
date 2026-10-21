@@ -191,6 +191,9 @@ export default async function CustomersPage({
                             {isNegative ? 'TO RECEIVE' : 'IN ADVANCE'}
                           </div>
                         )}
+                        <div className="text-[10px] font-mono text-secondary mt-0.5" title="Opening balance brought forward">
+                          Opening: {formatMoney(c.openingBalance)} ({c.openingBalanceType === 'CREDIT' ? 'Cr' : 'Dr'})
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-secondary font-medium">
                         {lastVisit}
@@ -286,9 +289,12 @@ export default async function CustomersPage({
                       <div className="text-secondary">{c.salesman?.name || 'Unassigned'}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] text-muted font-bold uppercase tracking-wider">Dues</div>
+                      <div className="text-[10px] text-muted font-bold uppercase tracking-wider">Outstanding</div>
                       <div className={`font-mono font-bold text-sm mt-0.5 ${isNegative ? 'text-danger' : 'text-primary'}`}>
                         {formatMoney(Math.abs(outstanding))}
+                      </div>
+                      <div className="text-[9px] font-mono text-secondary mt-0.5">
+                        Opening: {formatMoney(c.openingBalance)}
                       </div>
                     </div>
                   </div>
