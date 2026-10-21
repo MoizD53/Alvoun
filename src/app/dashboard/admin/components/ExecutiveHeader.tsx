@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
 import { Sun, Moon, LogOut } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getRoleDisplayTitle } from '@/lib/rbac';
@@ -108,14 +107,11 @@ export default function ExecutiveHeader({
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
-      {/* Left: Greeting with User's Name and Role Badge */}
-      <div className="min-w-0 flex items-center gap-3 flex-wrap">
+      {/* Left: Greeting with User's Name */}
+      <div className="min-w-0 flex items-center gap-3">
         <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-primary tracking-tight font-sans">
           {greeting}{userName ? `, ${userName}` : ''}
         </h1>
-        <Badge variant="teal" styleType="subtle" size="md" dot pulse>
-          {displayRoleTitle}
-        </Badge>
       </div>
 
       {/* Center: Global Search Bar */}
