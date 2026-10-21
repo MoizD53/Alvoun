@@ -23,7 +23,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (parsedCredentials.success) {
           const { loginId, password } = parsedCredentials.data
-          const user = await prisma.profile.findUnique({ where: { email: loginId } })
+          const cleanId = loginId.trim()
+
+          const user = await prisma.profile.findFirst({
+            where: {
+              isActive: true,
+              OR: [
+                { email: cleanId },
+                { email: cleanId.toLowerCase() },
+                ...(cleanId.toLowerCase() === 'admin' ? [{ email: 'admin@alvoun.com' }, { email: 'owner@alvoun.com' }] : []),
+                ...(cleanId.toLowerCase() === 'admin@alvoun.com' ? [{ email: 'admin' }] : []),
+              ]
+            }
+          })
           if (!user || !user.password || !user.isActive) return null
           
           const passwordsMatch = await bcrypt.compare(password, user.password)
