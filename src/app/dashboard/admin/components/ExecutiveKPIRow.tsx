@@ -23,6 +23,16 @@ interface ExecutiveKPIRowProps {
   selectedDate?: string;
 }
 
+// 3D-Embossed Tactile Pill Button with Micro-Motion on Hover
+const embossedViewButtonClass = 
+  "group/btn text-xs font-black text-primary inline-flex items-center gap-1.5 px-3 py-1 rounded-full " +
+  "bg-surface-raised border border-border-default " +
+  "shadow-[2px_2px_5px_rgba(53,41,31,0.14),-2px_-2px_5px_rgba(255,255,255,0.95)] " +
+  "hover:shadow-[3px_3px_9px_rgba(53,41,31,0.22),-2.5px_-2.5px_7px_rgba(255,255,255,1)] " +
+  "hover:-translate-y-0.5 hover:text-teal-800 dark:hover:text-teal-300 hover:border-teal-700/40 " +
+  "active:translate-y-0.5 active:shadow-[inset_2px_2px_4px_rgba(53,41,31,0.18),inset_-1.5px_-1.5px_3px_rgba(255,255,255,0.85)] " +
+  "transition-all duration-200 ease-out cursor-pointer shrink-0 select-none";
+
 export default function ExecutiveKPIRow({ 
   trends, 
   dispatches,
@@ -80,11 +90,11 @@ export default function ExecutiveKPIRow({
           </div>
           <Link
             href="/dashboard/admin/reports/daily"
-            className="text-xs font-bold text-secondary hover:text-primary inline-flex items-center gap-1 bg-surface-inset border border-border-default shadow-inset px-2.5 py-1 rounded-lg transition-colors shrink-0"
+            className={embossedViewButtonClass}
             title="Open Daily Sales Register"
           >
-            <span>Register</span>
-            <ChevronRight className="h-3.5 w-3.5" />
+            <span>View</span>
+            <ChevronRight className="h-3.5 w-3.5 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
           </Link>
         </div>
 
@@ -125,11 +135,11 @@ export default function ExecutiveKPIRow({
           </div>
           <Link
             href="/dashboard/admin/reports/daily"
-            className="text-xs font-bold text-secondary hover:text-primary inline-flex items-center gap-1 bg-surface-inset border border-border-default shadow-inset px-2.5 py-1 rounded-lg transition-colors shrink-0"
+            className={embossedViewButtonClass}
             title="Open Collections & Daily Register"
           >
-            <span>Vouchers</span>
-            <ChevronRight className="h-3.5 w-3.5" />
+            <span>View</span>
+            <ChevronRight className="h-3.5 w-3.5 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
           </Link>
         </div>
 
@@ -168,11 +178,11 @@ export default function ExecutiveKPIRow({
           </div>
           <Link
             href="/dashboard/admin/reports/outstanding"
-            className="text-xs font-bold text-secondary hover:text-primary inline-flex items-center gap-1 bg-surface-inset border border-border-default shadow-inset px-2.5 py-1 rounded-lg transition-colors shrink-0"
+            className={embossedViewButtonClass}
             title="Open Outstanding Market Dues & Ledgers"
           >
-            <span>Ledgers</span>
-            <ChevronRight className="h-3.5 w-3.5" />
+            <span>View</span>
+            <ChevronRight className="h-3.5 w-3.5 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
           </Link>
         </div>
 
@@ -207,11 +217,11 @@ export default function ExecutiveKPIRow({
           </div>
           <Link
             href="/dashboard/admin/reports/products"
-            className="text-xs font-bold text-secondary hover:text-primary inline-flex items-center gap-1 bg-surface-inset border border-border-default shadow-inset px-2.5 py-1 rounded-lg transition-colors shrink-0"
+            className={embossedViewButtonClass}
             title="Open Products & Inventory"
           >
-            <span>Products</span>
-            <ChevronRight className="h-3.5 w-3.5" />
+            <span>View</span>
+            <ChevronRight className="h-3.5 w-3.5 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
           </Link>
         </div>
 
