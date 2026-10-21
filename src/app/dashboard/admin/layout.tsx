@@ -2,9 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import AdminNav from '@/components/layout/AdminNav';
 import AdminLiveListener from './components/AdminLiveListener';
-import { Search } from 'lucide-react';
-import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { isExecutiveRole, isFinancialRole } from '@/lib/rbac';
 
 export default async function AdminLayout({
   children,
@@ -12,7 +10,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  if (!session?.user || (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN')) {
+  if (!session?.user || (!isExecutiveRole(session.user.role) && !isFinancialRole(session.user.role))) {
     redirect('/dashboard');
   }
 

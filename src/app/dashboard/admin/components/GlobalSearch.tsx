@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Loader2, X, Users, MapPin, Truck, ChevronRight, CornerDownLeft } from 'lucide-react';
+import { Search, Loader2, X, Users, MapPin, Truck, ChevronRight, CornerDownLeft, ExternalLink } from 'lucide-react';
 import { searchGlobalRecords, type GlobalSearchResults } from '../actions/search';
 
 export default function GlobalSearch() {
@@ -15,6 +15,7 @@ export default function GlobalSearch() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const requestIdRef = useRef(0);
 
   // Flattened list of navigable items for keyboard navigation
   const flatItems = React.useMemo(() => {
@@ -78,7 +79,7 @@ export default function GlobalSearch() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced search
+  // Debounced search with request sequence locking to eliminate race conditions
   useEffect(() => {
     const clean = query.trim();
     if (clean.length < 1) {
@@ -87,31 +88,52 @@ export default function GlobalSearch() {
       return;
     }
 
+    const currentReqId = ++requestIdRef.current;
+
     const timer = setTimeout(() => {
       startTransition(async () => {
         try {
           const res = await searchGlobalRecords(clean);
-          setResults(res);
-          setActiveIndex(-1);
-          setIsOpen(true);
+          if (requestIdRef.current === currentReqId) {
+            setResults(res);
+            setActiveIndex(-1);
+            setIsOpen(true);
+          }
         } catch (err) {
-          console.error('Search error:', err);
-          setResults({ customers: [], routes: [], salesmen: [], totalMatches: 0 });
+          if (requestIdRef.current === currentReqId) {
+            console.error('Search error:', err);
+            // Fallback gracefully without locking out user
+            setResults({ customers: [], routes: [], salesmen: [], totalMatches: 0 });
+          }
         }
       });
-    }, 150);
+    }, 120);
 
     return () => clearTimeout(timer);
   }, [query]);
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen || flatItems.length === 0) {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOpen(false);
+      return;
+    }
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const clean = query.trim();
+      if (activeIndex >= 0 && activeIndex < flatItems.length) {
+        navigateTo(flatItems[activeIndex].url);
+      } else if (flatItems.length > 0) {
+        navigateTo(flatItems[0].url);
+      } else if (clean.length > 0) {
+        navigateTo(`/dashboard/admin/customers?search=${encodeURIComponent(clean)}`);
       }
       return;
     }
+
+    if (!isOpen || flatItems.length === 0) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -119,14 +141,6 @@ export default function GlobalSearch() {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex((prev) => (prev <= 0 ? flatItems.length - 1 : prev - 1));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (activeIndex >= 0 && activeIndex < flatItems.length) {
-        navigateTo(flatItems[activeIndex].url);
-      }
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      setIsOpen(false);
     }
   };
 
@@ -139,6 +153,7 @@ export default function GlobalSearch() {
   const clearSearch = () => {
     setQuery('');
     setResults(null);
+    setActiveIndex(-1);
     setIsOpen(false);
     inputRef.current?.focus();
   };
@@ -191,7 +206,7 @@ export default function GlobalSearch() {
 
       {/* Dropdown Results Overlay */}
       {isOpen && query.trim().length >= 1 && (
-        <div className="absolute top-full left-0 right-0 sm:min-w-[380px] mt-2 z-50 bg-surface-raised border border-border-default shadow-raised rounded-2xl overflow-hidden animate-fade-in-up max-h-[420px] flex flex-col">
+        <div className="absolute top-full left-0 right-0 sm:min-w-[400px] mt-2 z-50 bg-surface-raised border border-border-default shadow-raised rounded-2xl overflow-hidden animate-fade-in-up max-h-[460px] flex flex-col">
           {/* Header Info */}
           <div className="px-3.5 py-2 border-b border-border-default bg-surface-raised flex items-center justify-between text-[11px] text-secondary">
             <span className="font-semibold">
@@ -211,9 +226,17 @@ export default function GlobalSearch() {
               <div className="p-6 text-center text-secondary">
                 <Search className="h-8 w-8 text-muted mx-auto mb-2 opacity-50" />
                 <p className="text-xs font-bold text-primary">No records found</p>
-                <p className="text-[11px] text-muted mt-0.5">
+                <p className="text-[11px] text-muted mt-0.5 mb-3">
                   No customers, routes, or salesmen matched &ldquo;{query}&rdquo;
                 </p>
+                <button
+                  type="button"
+                  onClick={() => navigateTo(`/dashboard/admin/customers?search=${encodeURIComponent(query.trim())}`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-inset border border-border-default text-xs font-bold text-teal-700 dark:text-teal-400 hover:bg-surface-raised transition-colors cursor-pointer"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  <span>Search full customer database</span>
+                </button>
               </div>
             )}
 
@@ -348,6 +371,18 @@ export default function GlobalSearch() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Footer Direct Jump */}
+          <div className="p-2 border-t border-border-default bg-surface-raised flex items-center justify-between text-xs">
+            <button
+              type="button"
+              onClick={() => navigateTo(`/dashboard/admin/customers?search=${encodeURIComponent(query.trim())}`)}
+              className="w-full py-1.5 px-2 rounded-lg text-teal-700 dark:text-teal-400 hover:bg-surface-inset transition-colors flex items-center justify-center gap-1 font-bold text-[11px]"
+            >
+              <span>View all matching customers in directory</span>
+              <CornerDownLeft className="h-3 w-3" />
+            </button>
           </div>
         </div>
       )}

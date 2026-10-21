@@ -8,7 +8,6 @@ import {
   FileText, 
   MapPin, 
   CreditCard,
-  Sun,
   Sparkles,
   ChevronRight
 } from 'lucide-react';
@@ -19,19 +18,18 @@ export default function QuickActionsRail() {
 
   return (
     <div className="space-y-3.5 select-none">
-      {/* 1. PLANT WEATHER CARD (Matches Reference Top Right) */}
+      {/* 1. PLANT OPERATIONAL HUB CARD (Real operational data, no fabricated weather) */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-warning shrink-0">
-            <Sun className="h-5 w-5" />
+          <div className="h-9 w-9 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-800 dark:text-teal-400 shrink-0">
+            <MapPin className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base font-bold text-primary font-mono tracking-tight">28°C</span>
-              <span className="text-xs font-semibold text-secondary">Clear · Dahod</span>
+              <span className="text-sm font-bold text-primary tracking-tight">Dahod Hub</span>
             </div>
             <span className="text-[10px] text-muted font-medium block">
-              Bottling Plant Hub
+              Bottling Plant & Distribution
             </span>
           </div>
         </div>
@@ -41,7 +39,7 @@ export default function QuickActionsRail() {
         </span>
       </div>
 
-      {/* 2. BRAND SLOGAN CARD (Matches Reference Quote) */}
+      {/* 2. BRAND SLOGAN CARD */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 text-center">
         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-teal-700 dark:text-teal-400 mb-1 flex items-center justify-center gap-1">
           <Sparkles className="h-3 w-3" />
@@ -52,7 +50,7 @@ export default function QuickActionsRail() {
         </p>
       </div>
 
-      {/* 3. QUICK ACTIONS RAIL (Matches Reference Action Buttons) */}
+      {/* 3. QUICK ACTIONS RAIL */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5">
         <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border-subtle/80">
           <div className="h-6 w-6 rounded-md bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-800 dark:text-teal-400 shrink-0">
@@ -64,7 +62,7 @@ export default function QuickActionsRail() {
         </div>
 
         <div className="space-y-2">
-          {/* Action 1: Add Customer (Primary Solid Deep Teal CTA) */}
+          {/* Action 1: Add Customer */}
           <Link
             href="/dashboard/admin/customers/new"
             className="flex items-center gap-2.5 p-2.5 rounded-xl bg-[#1A5F63] hover:bg-[#144C4F] text-white shadow-raised transition-all duration-150 cursor-pointer group active:scale-[0.98]"
@@ -84,7 +82,7 @@ export default function QuickActionsRail() {
             <ChevronRight className="h-4 w-4 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
           </Link>
 
-          {/* Action 2: Record Payment (Opens Payment Collection Workflow) */}
+          {/* Action 2: Record Payment */}
           <button
             type="button"
             onClick={() => setIsPaymentModalOpen(true)}

@@ -1,38 +1,32 @@
-import fs from 'fs';
-import path from 'path';
+import { createEncryptedBackup, verifyAndRestoreBackup } from '../src/lib/backup';
 import { prisma } from '../src/lib/db';
 
-async function performBackup() {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupDir = path.resolve(process.cwd(), 'backups');
-
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
-  }
-
-  const backupFilePath = path.join(backupDir, `backup-${timestamp}.db`);
-
-  console.log(`[Backup] Initiating safe SQLite database snapshot to: ${backupFilePath}`);
-
-  try {
-    // VACUUM INTO creates an exact, transactionally-consistent copy of the active database
-    // Even while queries or transactions are active, SQLite ensures zero corruption
-    const sanitizedPath = backupFilePath.replace(/\\/g, '/');
-    await prisma.$queryRawUnsafe(`VACUUM INTO '${sanitizedPath}'`);
-
-    const stats = fs.statSync(backupFilePath);
-    console.log(`[Backup] ✓ Success! Backup created (${(stats.size / 1024).toFixed(1)} KB)`);
-    console.log(`[Backup] To restore:`);
-    console.log(`  1. Stop application: npm stop or terminate node process`);
-    console.log(`  2. Copy backup file to database destination:`);
-    console.log(`     copy "${backupFilePath}" "prisma\\dev.db"`);
-    console.log(`  3. Restart application: npm start`);
-  } catch (error: any) {
-    console.error(`[Backup] ✗ Failed to create online SQLite backup:`, error.message);
+async function run() {
+  console.log('[Backup Script] Starting Alvoun Encrypted Master Backup...');
+  const res = await createEncryptedBackup();
+  if (!res.success) {
+    console.error('[Backup Script] ✗ Backup failed:', res.error);
     process.exit(1);
-  } finally {
-    await prisma.$disconnect();
   }
+
+  console.log('[Backup Script] ✓ Backup created successfully:');
+  console.log(`  File: ${res.filePath}`);
+  console.log(`  Size: ${(res.fileSizeBytes / 1024).toFixed(1)} KB`);
+  console.log(`  SHA-256: ${res.checksumSha256}`);
+  console.log(`  Records snapshot:`, res.recordCounts);
+
+  console.log('[Backup Script] Testing restore verification...');
+  const verify = verifyAndRestoreBackup(res.filePath);
+  if (!verify.success) {
+    console.error('[Backup Script] ✗ Restore verification failed:', verify.error);
+    process.exit(1);
+  }
+
+  console.log('[Backup Script] ✓ Verification passed! Backup is valid, decrypted, and recoverable.');
+  await prisma.$disconnect();
 }
 
-performBackup();
+run().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

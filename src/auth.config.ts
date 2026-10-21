@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from 'next-auth'
+import { isExecutiveRole, isFinancialRole } from './lib/rbac'
 
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: '/login',
   },
@@ -29,18 +31,18 @@ export const authConfig = {
       if (isOnDashboard) {
         if (!isLoggedIn) return false // Redirect to login
         
-        const role = (auth.user as any).role
+        const role = (auth.user as any)?.role
         
         // Admin routes protection
         if (nextUrl.pathname.startsWith('/dashboard/admin')) {
-          if (role !== 'OWNER' && role !== 'ADMIN') {
+          if (!isFinancialRole(role) && !isExecutiveRole(role)) {
             return Response.redirect(new URL('/dashboard', nextUrl))
           }
         }
         
         // Salesman routes protection
         if (nextUrl.pathname.startsWith('/dashboard/salesman')) {
-          if (role !== 'SALESMAN') {
+          if (role !== 'SALESMAN' && role !== 'OWNER' && role !== 'ADMIN' && role !== 'FOUNDER') {
             return Response.redirect(new URL('/dashboard', nextUrl))
           }
         }

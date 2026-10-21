@@ -26,11 +26,15 @@ export async function getCustomers(filters: any) {
   await requireAuthSession();
   const where: any = {};
   if (filters.search) {
+    const cleanSearch = filters.search.trim();
     where.OR = [
-      { customerName: { contains: filters.search } },
-      { firmName: { contains: filters.search } },
-      { contact: { contains: filters.search } },
-      { code: { contains: filters.search } }
+      { customerName: { contains: cleanSearch } },
+      { firmName: { contains: cleanSearch } },
+      { contact: { contains: cleanSearch } },
+      { code: { contains: cleanSearch } },
+      { address: { contains: cleanSearch } },
+      { route: { name: { contains: cleanSearch } } },
+      { area: { name: { contains: cleanSearch } } },
     ];
   }
   if (filters.category && filters.category !== 'ALL') where.category = filters.category;
@@ -51,6 +55,7 @@ export async function getCustomers(filters: any) {
       state: true,
       city: true,
       route: true,
+      area: true,
       salesman: true,
     },
     orderBy: { createdAt: 'desc' }
@@ -61,6 +66,13 @@ export async function getCustomer(id: string) {
   await requireAuthSession();
   return await prisma.customer.findUnique({
     where: { id },
+    include: {
+      state: true,
+      city: true,
+      route: true,
+      area: true,
+      salesman: true,
+    }
   });
 }
 
@@ -102,6 +114,7 @@ export async function createCustomer(data: any) {
     try {
       revalidatePath('/dashboard/admin/customers');
       revalidatePath(`/dashboard/admin/routes/${result.data.routeId}`);
+      revalidatePath('/dashboard/admin');
     } catch {}
     return { success: true, id: customer.id };
   } catch (error: any) {
@@ -120,7 +133,6 @@ export async function updateCustomer(id: string, data: any) {
   const result = CustomerSchema.safeParse(parsedData);
   if (!result.success) return { error: result.error.issues[0].message };
 
-  // Check duplicate on edit
   const existing = await prisma.customer.findFirst({
     where: {
       customerName: result.data.customerName.trim(),
@@ -142,6 +154,7 @@ export async function updateCustomer(id: string, data: any) {
       revalidatePath('/dashboard/admin/customers');
       revalidatePath(`/dashboard/admin/customers/${id}`);
       revalidatePath(`/dashboard/admin/routes/${result.data.routeId}`);
+      revalidatePath('/dashboard/admin');
     } catch {}
     return { success: true };
   } catch (error: any) {
@@ -178,10 +191,9 @@ export async function deactivateCustomer(id: string, routeId: string) {
     });
     revalidatePath(`/dashboard/admin/routes/${routeId}`);
     revalidatePath('/dashboard/admin/customers');
+    revalidatePath('/dashboard/admin');
     return { success: true };
   } catch (error: any) {
     return { error: 'Failed to deactivate customer' };
   }
 }
-
-// Bulk import logic will go in a separate file or be called from client to here

@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
 import { getDashboardExecutiveData } from '@/lib/dashboard-data';
+import { isExecutiveRole } from '@/lib/rbac';
 
 import ExecutiveHeader from './components/ExecutiveHeader';
 import ExecutiveKPIRow from './components/ExecutiveKPIRow';
@@ -20,7 +21,7 @@ export default async function AdminDashboard({
   const session = await auth();
 
   if (!session?.user) redirect('/login');
-  if (session.user.role !== 'OWNER' && session.user.role !== 'ADMIN') {
+  if (!isExecutiveRole(session.user.role)) {
     redirect('/dashboard');
   }
 
@@ -47,8 +48,8 @@ export default async function AdminDashboard({
     <div className="space-y-4 sm:space-y-5 animate-fade-in-up">
       {/* 1. EXECUTIVE COCKPIT HEADER */}
       <ExecutiveHeader
-        userName={session.user.name || 'Admin'}
-        userRole={session.user.role || 'ADMIN'}
+        userName={session.user.name || 'Niyazuddin Kazi'}
+        userRole={session.user.role || 'OWNER'}
         selectedDate={data.selectedDate}
         greeting={greeting}
       />
@@ -107,7 +108,7 @@ export default async function AdminDashboard({
           />
         </div>
 
-        {/* RIGHT RAIL: WEATHER + BRAND INSPIRATION + QUICK ACTIONS (3 COLS ON XL) */}
+        {/* RIGHT RAIL: BRAND INSPIRATION + QUICK ACTIONS (3 COLS ON XL) */}
         <div className="xl:col-span-3 space-y-4 sm:space-y-5">
           <QuickActionsRail />
         </div>

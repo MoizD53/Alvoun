@@ -20,7 +20,7 @@ export default async function CustomersPage({
   const resolvedParams = await searchParams;
   
   const filters = {
-    search: typeof resolvedParams.search === 'string' ? resolvedParams.search : undefined,
+    search: typeof resolvedParams.search === 'string' ? resolvedParams.search.trim() : undefined,
     category: typeof resolvedParams.category === 'string' ? resolvedParams.category : undefined,
     stateId: typeof resolvedParams.stateId === 'string' ? resolvedParams.stateId : undefined,
     cityId: typeof resolvedParams.cityId === 'string' ? resolvedParams.cityId : undefined,
@@ -39,6 +39,9 @@ export default async function CustomersPage({
           { firmName: { contains: filters.search } },
           { contact: { contains: filters.search } },
           { code: { contains: filters.search } },
+          { address: { contains: filters.search } },
+          { route: { name: { contains: filters.search } } },
+          { area: { name: { contains: filters.search } } },
         ]
       } : {}),
       ...(filters.category && filters.category !== 'ALL' ? { category: filters.category as any } : {}),
@@ -52,6 +55,7 @@ export default async function CustomersPage({
       state: true,
       city: true,
       route: true,
+      area: true,
       salesman: true,
       sales: { select: { totalAmount: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 },
       payments: { select: { amount: true } },

@@ -4,14 +4,23 @@ import { prisma } from '@/lib/db';
 import { requireActiveSalesmanSession } from '@/lib/session';
 import { getKolkataDateOnly, getCurrentKolkataTime } from '@/lib/time';
 import { z } from 'zod';
+import { revalidatePath } from 'next/cache';
 
 const StandalonePaymentSchema = z.object({
   customerId: z.string().min(1, 'Customer is required'),
-  amount: z.number().int('Amount must be an integer in paise').positive('Amount must be greater than zero'),
-  method: z.string().min(1, 'Payment method is required'),
+  amount: z.number().int().min(0).optional(),
+  method: z.string().optional(),
+  cashAmount: z.number().int().min(0).optional(),
+  upiAmount: z.number().int().min(0).optional(),
 });
 
-export async function createStandalonePayment(data: { customerId: string, amount: number, method: string }) {
+export async function createStandalonePayment(data: {
+  customerId: string;
+  amount?: number;
+  method?: string;
+  cashAmount?: number;
+  upiAmount?: number;
+}) {
   const { salesman } = await requireActiveSalesmanSession();
   const salesmanId = salesman.id;
 
@@ -20,8 +29,25 @@ export async function createStandalonePayment(data: { customerId: string, amount
     throw new Error(parsed.error.issues[0].message);
   }
 
-  const { customerId, amount, method } = parsed.data;
+  const { customerId, amount = 0, method = 'Cash', cashAmount = 0, upiAmount = 0 } = parsed.data;
   const today = getKolkataDateOnly(getCurrentKolkataTime());
+
+  // Determine split payments
+  let finalCash = cashAmount;
+  let finalUpi = upiAmount;
+
+  if (finalCash === 0 && finalUpi === 0 && amount > 0) {
+    if (method === 'UPI') {
+      finalUpi = amount;
+    } else {
+      finalCash = amount;
+    }
+  }
+
+  const totalAmount = finalCash + finalUpi;
+  if (totalAmount <= 0) {
+    throw new Error('Please enter a collection amount greater than zero.');
+  }
 
   // Verify ownership
   const customer = await prisma.customer.findUnique({
@@ -31,14 +57,30 @@ export async function createStandalonePayment(data: { customerId: string, amount
     throw new Error('Unauthorized customer access');
   }
 
-  // Create payment
-  await prisma.payment.create({
-    data: {
-      customerId,
-      salesmanId,
-      amount,
-      paymentMethod: method,
-      paymentDate: today
+  // Execute in transaction
+  await prisma.$transaction(async (tx) => {
+    if (finalCash > 0) {
+      await tx.payment.create({
+        data: {
+          customerId,
+          salesmanId,
+          amount: finalCash,
+          paymentMethod: 'Cash',
+          paymentDate: today,
+        }
+      });
+    }
+
+    if (finalUpi > 0) {
+      await tx.payment.create({
+        data: {
+          customerId,
+          salesmanId,
+          amount: finalUpi,
+          paymentMethod: 'UPI',
+          paymentDate: today,
+        }
+      });
     }
   });
 
@@ -47,9 +89,14 @@ export async function createStandalonePayment(data: { customerId: string, amount
     salesmanId,
     salesmanName: salesman.name,
     type: 'PAYMENT',
-    description: `Collected ₹${(data.amount / 100).toFixed(2)} at ${customer.customerName}`,
-    metadata: { amount: data.amount }
-  });
+    description: `Collected ₹${(totalAmount / 100).toFixed(2)} (${finalCash > 0 ? `Cash ₹${(finalCash / 100).toFixed(2)}` : ''}${finalCash > 0 && finalUpi > 0 ? ' + ' : ''}${finalUpi > 0 ? `UPI ₹${(finalUpi / 100).toFixed(2)}` : ''}) at ${customer.customerName}`,
+    metadata: { amount: totalAmount, cash: finalCash, upi: finalUpi }
+  }).catch(() => {});
 
-  return { success: true };
+  revalidatePath(`/dashboard/salesman/customers/${customerId}`);
+  revalidatePath('/dashboard/admin/reports/daily');
+  revalidatePath('/dashboard/admin/reports/outstanding');
+  revalidatePath('/dashboard/admin');
+
+  return { success: true, totalAmount, cash: finalCash, upi: finalUpi };
 }

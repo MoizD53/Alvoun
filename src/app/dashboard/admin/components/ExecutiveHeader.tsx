@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
-import { Sun, ChevronDown, ShieldCheck } from 'lucide-react';
+import { MapPin, ChevronDown, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 
@@ -38,7 +38,6 @@ export default function ExecutiveHeader({
         timeZone: 'Asia/Kolkata',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         hour12: true,
       }).format(now);
 
@@ -47,7 +46,7 @@ export default function ExecutiveHeader({
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 1000);
+    const interval = setInterval(updateTime, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -76,9 +75,9 @@ export default function ExecutiveHeader({
         <GlobalSearch />
       </div>
 
-      {/* Right: Reference Inset Time Card + Weather + Date Selector */}
+      {/* Right: Inset Time Card + Plant Location + Auto Backup + Date Selector */}
       <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap md:flex-nowrap shrink-0">
-        {/* Reference Inset Time Card */}
+        {/* Inset Time Card */}
         <div className="flex flex-col items-center justify-center px-3.5 py-1.5 rounded-xl bg-surface-inset border border-border-default shadow-inset select-none">
           <span className="text-[10px] font-medium text-secondary tabular-nums">
             {dateStr || 'Today'}
@@ -88,12 +87,12 @@ export default function ExecutiveHeader({
           </span>
         </div>
 
-        {/* Reference Weather Card */}
+        {/* Operational Plant Status Card (Real operational info, no fabricated weather) */}
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none text-xs">
-          <Sun className="h-4 w-4 text-warning shrink-0" />
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
           <div className="flex flex-col leading-tight">
-            <span className="font-bold text-primary">28°C</span>
-            <span className="text-[10px] text-secondary">Clear · Dahod 📍</span>
+            <span className="font-bold text-primary">Dahod Hub</span>
+            <span className="text-[10px] text-secondary">Plant Active 📍</span>
           </div>
         </div>
 
@@ -112,7 +111,7 @@ export default function ExecutiveHeader({
         {/* Date Selector */}
         <AdminDatePicker currentDate={selectedDate} />
 
-        {/* Reference User Profile Pill */}
+        {/* User Profile Pill */}
         <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-surface-raised border border-border-default shadow-raised select-none">
           <Avatar 
             size="xs" 
