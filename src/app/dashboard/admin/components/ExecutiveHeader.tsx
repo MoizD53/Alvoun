@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
-import { Sun, Moon, LogOut } from 'lucide-react';
+import { Sun, Moon, LogOut, X, ShieldCheck, Mail, MapPin, User, Settings } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { getRoleDisplayTitle } from '@/lib/rbac';
 import { signOut } from 'next-auth/react';
+import Link from 'next/link';
 
 interface ExecutiveHeaderProps {
   userName?: string;
@@ -24,23 +25,22 @@ export default function ExecutiveHeader({
   selectedDate,
   greeting,
 }: ExecutiveHeaderProps) {
-  const [dateStr, setDateStr] = useState<string>('');
   const [timeStr, setTimeStr] = useState<string>('');
   const [isNight, setIsNight] = useState<boolean>(false);
   const [weather, setWeather] = useState<{ temp: number; condition: string } | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
 
-  const displayRoleTitle = getRoleDisplayTitle(userRole);
+  // Normalize 'Owner' / 'Admin' to 'Niyaz' for canonical Founder
+  const displayName = (userName && userName !== 'Owner' && userName !== 'Admin') ? userName : 'Niyaz';
+  
+  // Post/Designation: 'Founder' for Founder & CEO
+  const displayPost = (userRole === 'FOUNDER_CEO' || userRole === 'OWNER' || displayName === 'Niyaz')
+    ? 'Founder'
+    : getRoleDisplayTitle(userRole);
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const datePart = new Intl.DateTimeFormat('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-      }).format(now);
-      
       const timePart = new Intl.DateTimeFormat('en-IN', {
         timeZone: 'Asia/Kolkata',
         hour: '2-digit',
@@ -58,7 +58,6 @@ export default function ExecutiveHeader({
       );
 
       setIsNight(hourKolkata < 6 || hourKolkata >= 19);
-      setDateStr(datePart);
       setTimeStr(timePart);
     };
 
@@ -106,89 +105,205 @@ export default function ExecutiveHeader({
   }, []);
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
-      {/* Left: Greeting with User's Name */}
-      <div className="min-w-0 flex items-center gap-3">
-        <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-primary tracking-tight font-sans">
-          {greeting}{userName ? `, ${userName}` : ''}
-        </h1>
-      </div>
+    <>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
+        {/* Left: Greeting with User's Name */}
+        <div className="min-w-0 flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-primary tracking-tight font-sans">
+            {greeting}, {displayName}
+          </h1>
+        </div>
 
-      {/* Center: Global Search Bar */}
-      <div className="w-full lg:max-w-xs xl:max-w-sm">
-        <GlobalSearch />
-      </div>
+        {/* Center: Global Search Bar */}
+        <div className="w-full lg:max-w-xs xl:max-w-sm">
+          <GlobalSearch />
+        </div>
 
-      {/* Right: Weather & Live Time + Date Filter + 3D Profile Card */}
-      <div className="flex items-center gap-3 flex-wrap md:flex-nowrap shrink-0">
-        {/* Weather & Live Time Card */}
-        <div 
-          className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-surface-inset border border-border-default shadow-inset select-none"
-          title="Dahod Weather & IST Time"
-        >
-          <div className="flex items-center gap-2">
-            {isNight ? (
-              <Moon className="h-5 w-5 text-indigo-400 shrink-0" />
-            ) : (
-              <Sun className="h-5 w-5 text-amber-500 shrink-0 animate-[spin_16s_linear_infinite]" />
-            )}
-            <div className="flex flex-col leading-none">
-              <span className="text-sm font-black text-primary font-mono tracking-tight tabular-nums">
-                {weather ? `${weather.temp}°C` : '28°C'}
-              </span>
-              <span className="text-[10px] font-bold text-secondary truncate max-w-[80px]">
-                {weather?.condition || 'Dahod'}
+        {/* Right: Weather & Live Time + Date Filter + 3D Profile Card */}
+        <div className="flex items-center gap-3 flex-wrap md:flex-nowrap shrink-0">
+          {/* Weather & Live Time Card (Date removed as requested) */}
+          <div 
+            className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-surface-inset border border-border-default shadow-inset select-none"
+            title="Dahod Weather & IST Time"
+          >
+            <div className="flex items-center gap-2">
+              {isNight ? (
+                <Moon className="h-5 w-5 text-indigo-400 shrink-0" />
+              ) : (
+                <Sun className="h-5 w-5 text-amber-500 shrink-0 animate-[spin_16s_linear_infinite]" />
+              )}
+              <div className="flex flex-col leading-none">
+                <span className="text-sm font-black text-primary font-mono tracking-tight tabular-nums">
+                  {weather ? `${weather.temp}°C` : '28°C'}
+                </span>
+                <span className="text-[10px] font-bold text-secondary truncate max-w-[80px]">
+                  {weather?.condition || 'Dahod'}
+                </span>
+              </div>
+            </div>
+
+            <div className="h-7 w-px bg-border-default" />
+
+            <div className="flex flex-col items-center justify-center leading-none">
+              <span className="text-sm sm:text-base font-black text-primary font-mono tracking-tight tabular-nums">
+                {timeStr || '10:00 AM'}
               </span>
             </div>
           </div>
 
-          <div className="h-7 w-px bg-border-default" />
+          {/* Date Filter Picker */}
+          <AdminDatePicker currentDate={selectedDate} />
 
-          <div className="flex flex-col items-end leading-none">
-            <span className="text-[10px] font-bold text-secondary tabular-nums">
-              {dateStr || 'Today'}
-            </span>
-            <span className="text-sm sm:text-base font-black text-primary font-mono tracking-tight tabular-nums mt-0.5">
-              {timeStr || '10:00 AM'}
-            </span>
-          </div>
-        </div>
-
-        {/* Date Filter Picker */}
-        <AdminDatePicker currentDate={selectedDate} />
-
-        {/* 3D-Embossed Profile Card (Photo, Name, Post, Theme, Logout) */}
-        <div className="flex items-center gap-3 px-3 py-1.5 rounded-2xl bg-surface-raised border border-border-default shadow-raised select-none">
-          <Avatar 
-            size="sm" 
-            src={userPhoto || "/niyazuddin.png"}
-            fallback={userName?.charAt(0) || 'N'} 
-            status="online" 
-            className="shrink-0 h-9 w-9 ring-2 ring-teal-500/30"
-          />
-          <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-xs sm:text-sm font-black text-primary truncate max-w-[130px]">
-              {userName || 'Niyazuddin Kazi'}
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-extrabold text-teal-800 dark:text-teal-400 truncate max-w-[130px]">
-              {displayRoleTitle}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 pl-2 border-l border-border-default shrink-0">
-            <ThemeToggle />
-            <button 
+          {/* 3D-Embossed Profile Card (Clickable to open profile modal) */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-surface-raised border border-border-default shadow-raised select-none">
+            <button
               type="button"
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="inline-flex items-center justify-center rounded-xl w-8 h-8 border border-border-default bg-surface-inset shadow-xs hover:border-danger/40 text-secondary hover:text-danger transition-all cursor-pointer min-touch active:scale-95"
-              title="Sign out"
-              aria-label="Sign out"
+              onClick={() => setIsProfileOpen(true)}
+              className="flex items-center gap-2.5 hover:opacity-85 transition-opacity text-left cursor-pointer group"
+              title="Click to view full Founder profile"
             >
-              <LogOut className="h-4 w-4" />
+              <Avatar 
+                size="sm" 
+                src={userPhoto || "/niyazuddin.png"}
+                fallback="N" 
+                status="online" 
+                className="shrink-0 h-9 w-9 ring-2 ring-teal-500/40 group-hover:scale-105 transition-transform"
+              />
+              <div className="flex flex-col leading-tight min-w-0 pr-1">
+                <span className="text-xs sm:text-sm font-black text-primary truncate max-w-[120px]">
+                  {displayName}
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-extrabold text-teal-800 dark:text-teal-400 truncate max-w-[120px]">
+                  {displayPost}
+                </span>
+              </div>
             </button>
+
+            <div className="flex items-center gap-1 pl-2 border-l border-border-default/80 shrink-0">
+              <ThemeToggle />
+              <button 
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="inline-flex items-center justify-center rounded-xl w-8 h-8 border border-border-default bg-surface-inset shadow-xs hover:border-danger/40 text-secondary hover:text-danger transition-all cursor-pointer min-touch active:scale-95"
+                title="Sign out"
+                aria-label="Sign out"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Founder Profile Modal */}
+      {isProfileOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setIsProfileOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-sm sm:max-w-md bg-surface-base border border-border-default rounded-3xl shadow-2xl p-6 overflow-hidden animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setIsProfileOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-secondary hover:text-primary hover:bg-surface-inset transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Profile Header */}
+            <div className="flex flex-col items-center text-center pt-2">
+              <div className="relative mb-3">
+                <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-teal-500/40 shadow-lg bg-surface-raised">
+                  <img
+                    src="/niyazuddin.png"
+                    alt={displayName}
+                    className="w-full h-full object-cover object-top"
+                  />
+                </div>
+                <span className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-emerald-500 ring-2 ring-surface-base shadow-xs" title="Online" />
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black text-primary tracking-tight font-sans">
+                {displayName}
+              </h2>
+              <p className="text-sm font-bold text-teal-700 dark:text-teal-400 mt-0.5">
+                {displayPost} & CEO · Alvoun
+              </p>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 text-xs font-bold mt-2 border border-teal-200 dark:border-teal-800/50">
+                <ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" /> Highest Business Authority
+              </span>
+            </div>
+
+            {/* Profile Details List */}
+            <div className="mt-5 space-y-2.5">
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-inset border border-border-default/80 text-xs sm:text-sm">
+                <div className="flex items-center gap-2.5 text-secondary">
+                  <Mail className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  <span className="font-semibold">Email</span>
+                </div>
+                <span className="font-bold text-primary font-mono">owner@alvoun.com</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-inset border border-border-default/80 text-xs sm:text-sm">
+                <div className="flex items-center gap-2.5 text-secondary">
+                  <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  <span className="font-semibold">Operations Hub</span>
+                </div>
+                <span className="font-bold text-primary">Dahod, Gujarat</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-inset border border-border-default/80 text-xs sm:text-sm">
+                <div className="flex items-center gap-2.5 text-secondary">
+                  <User className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  <span className="font-semibold">Role Access</span>
+                </div>
+                <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">FOUNDER_CEO</span>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="mt-5 grid grid-cols-2 gap-2.5">
+              <Link
+                href="/dashboard/admin/settings"
+                onClick={() => setIsProfileOpen(false)}
+                className="flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-surface-raised hover:bg-surface-inset border border-border-default text-xs font-extrabold text-primary transition-all shadow-xs"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                Settings
+              </Link>
+              <Link
+                href="/dashboard/admin/salesmen-access"
+                onClick={() => setIsProfileOpen(false)}
+                className="flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-surface-raised hover:bg-surface-inset border border-border-default text-xs font-extrabold text-primary transition-all shadow-xs"
+              >
+                <User className="h-3.5 w-3.5" />
+                Manage Users
+              </Link>
+            </div>
+
+            {/* Logout Footer */}
+            <div className="mt-4 pt-4 border-t border-border-default/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <span className="text-xs font-semibold text-secondary">Theme</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-danger/10 text-danger hover:bg-danger/20 text-xs font-bold border border-danger/20 transition-all cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
