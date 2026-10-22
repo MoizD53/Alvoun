@@ -546,7 +546,7 @@ export default function PayrollClient({
             <span className="text-3xl font-extrabold tracking-tight text-emerald-600">{attendanceData.presentCount}</span>
             <span className="text-xs font-semibold text-emerald-600">Present</span>
             <span className="text-sm font-bold text-amber-600">{attendanceData.halfDayCount}H</span>
-            <span className="text-sm font-bold text-destructive">{attendanceData.absentCount}A</span>
+            <span className="text-sm font-bold text-red-600">{attendanceData.absentCount}A</span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">
             {attendanceData.pendingCount > 0 ? `${attendanceData.pendingCount} staff unmarked for ${currentDate}` : `All active staff marked`}
@@ -810,7 +810,7 @@ export default function PayrollClient({
                           {/* 3D Punch Buttons */}
                           <td className="py-3.5 px-4">
                             <div className="inline-flex bg-surface-inset shadow-inset p-1 rounded-xl border border-border/40 gap-1 mx-auto">
-                              {/* PRESENT */}
+                              {/* 1st: PRESENT */}
                               <button
                                 type="button"
                                 disabled={attendanceData.isFutureDate}
@@ -830,7 +830,27 @@ export default function PayrollClient({
                                 Present
                               </button>
 
-                              {/* HALF DAY */}
+                              {/* 2nd: ABSENT */}
+                              <button
+                                type="button"
+                                disabled={attendanceData.isFutureDate}
+                                onClick={() => {
+                                  setAttendanceRecords(prev => ({
+                                    ...prev,
+                                    [staff.id]: { status: 'ABSENT', notes: prev[staff.id]?.notes || '' }
+                                  }));
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                                  currentStatus === 'ABSENT'
+                                    ? 'bg-red-600 text-white shadow-raised'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                                Absent
+                              </button>
+
+                              {/* 3rd: HALF DAY */}
                               <button
                                 type="button"
                                 disabled={attendanceData.isFutureDate}
@@ -848,26 +868,6 @@ export default function PayrollClient({
                               >
                                 <Clock className="w-3.5 h-3.5" />
                                 Half Day
-                              </button>
-
-                              {/* ABSENT */}
-                              <button
-                                type="button"
-                                disabled={attendanceData.isFutureDate}
-                                onClick={() => {
-                                  setAttendanceRecords(prev => ({
-                                    ...prev,
-                                    [staff.id]: { status: 'ABSENT', notes: prev[staff.id]?.notes || '' }
-                                  }));
-                                }}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-                                  currentStatus === 'ABSENT'
-                                    ? 'bg-destructive text-white shadow-raised'
-                                    : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                              >
-                                <XCircle className="w-3.5 h-3.5" />
-                                Absent
                               </button>
                             </div>
                           </td>
