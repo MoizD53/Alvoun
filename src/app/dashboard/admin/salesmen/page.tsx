@@ -30,7 +30,7 @@ export default async function SalesmenPage() {
           </Link>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Sales Force</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">Manage field salesman profiles, app credentials, and territory assignments</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Manage field salesman profiles and app login credentials</p>
           </div>
         </div>
       </div>

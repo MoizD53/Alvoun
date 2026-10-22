@@ -55,7 +55,7 @@ export default function AdminNav({ user }: { user: any }) {
       ? [{ name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard }]
       : []),
     { name: 'Daily Sales', href: '/dashboard/admin/reports/daily', icon: IndianRupee },
-    { name: 'Customers & Ledgers', href: '/dashboard/admin/customers', icon: Users },
+    { name: 'Customers', href: '/dashboard/admin/customers', icon: Users },
     ...(isFounderCeo
       ? [
           { name: 'Salesmen', href: '/dashboard/admin/salesmen', icon: Users },
@@ -72,7 +72,7 @@ export default function AdminNav({ user }: { user: any }) {
     { name: 'Production Batches', href: '/dashboard/admin/production', icon: Factory },
     { name: 'Stock & Inventory', href: '/dashboard/admin/stock', icon: Boxes },
     { name: 'Company Expenses', href: '/dashboard/admin/expenses', icon: Receipt },
-    ...(isFounderCeo || isOperationsStaff
+    ...(isFounderCeo || isDirector || isOperationsStaff
       ? [{ name: 'Staff & Payroll', href: '/dashboard/admin/payroll', icon: Users2 }]
       : []),
   ];

@@ -87,7 +87,7 @@ export default async function CustomersPage({
               Customer Directory
             </h1>
             <p className="text-xs sm:text-sm text-secondary font-medium mt-0.5">
-              Manage accounts, route assignments, dues, and contact info.
+              Manage accounts, dues, and contact info.
             </p>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default async function CustomersPage({
               <tr>
                 <th className="px-6 py-3.5">Customer / Firm</th>
                 <th className="px-6 py-3.5">Category</th>
-                <th className="px-6 py-3.5">Route & Salesman</th>
+                <th className="px-6 py-3.5">Location</th>
                 <th className="px-6 py-3.5 text-right">Dues</th>
                 <th className="px-6 py-3.5">Last Visit</th>
                 <th className="px-6 py-3.5 text-center">Status</th>
@@ -179,8 +179,8 @@ export default async function CustomersPage({
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-primary">{c.route.name}</div>
-                        <div className="text-[11px] text-secondary mt-0.5">{c.salesman?.name || 'Unassigned'}</div>
+                        <div className="font-semibold text-primary">{c.city?.name || c.route?.name || "—"}</div>
+                        <div className="text-[11px] text-secondary mt-0.5">{c.route?.name || c.address}</div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className={`font-mono font-bold text-sm ${isNegative ? 'text-danger' : 'text-primary'}`}>
@@ -284,9 +284,9 @@ export default async function CustomersPage({
 
                   <div className="grid grid-cols-2 gap-y-2 text-xs mt-3 pt-3 border-t border-border-subtle">
                     <div>
-                      <div className="text-[10px] text-muted font-bold uppercase tracking-wider">Route & Salesman</div>
-                      <div className="font-semibold text-primary mt-0.5">{c.route.name}</div>
-                      <div className="text-secondary">{c.salesman?.name || 'Unassigned'}</div>
+                      <div className="text-[10px] text-muted font-bold uppercase tracking-wider">Location</div>
+                      <div className="font-semibold text-primary mt-0.5">{c.route?.name || c.city.name}</div>
+                      <div className="text-secondary">{c.address}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-[10px] text-muted font-bold uppercase tracking-wider">Outstanding</div>

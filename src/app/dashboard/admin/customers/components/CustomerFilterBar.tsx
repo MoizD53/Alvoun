@@ -102,23 +102,9 @@ export default function CustomerFilterBar({
             <option value="DISTRIBUTOR">Distributors</option>
           </select>
 
-          <select 
-            defaultValue={initialFilters.routeId || ''} 
-            onChange={(e) => updateParam('routeId', e.target.value)}
-            className="bg-surface-inset border border-border-default shadow-inset rounded-xl px-3 py-2 text-xs font-semibold text-primary focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 min-w-[130px] cursor-pointer"
-          >
-            <option value="">All Routes</option>
-            {routes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
+          
 
-          <select 
-            defaultValue={initialFilters.salesmanId || ''} 
-            onChange={(e) => updateParam('salesmanId', e.target.value)}
-            className="bg-surface-inset border border-border-default shadow-inset rounded-xl px-3 py-2 text-xs font-semibold text-primary focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 min-w-[130px] cursor-pointer"
-          >
-            <option value="">All Salesmen</option>
-            {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          
 
           <select 
             defaultValue={initialFilters.status || ''} 

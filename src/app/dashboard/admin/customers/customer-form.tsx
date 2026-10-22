@@ -148,7 +148,7 @@ export default function CustomerForm({
         </div>
       </div>
 
-      {/* Territory & Routing Section */}
+      {/* Location & City Section */}
       <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-border/40">
           <MapPin className="w-4 h-4 text-primary" />
@@ -189,35 +189,9 @@ export default function CustomerForm({
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-              Route <span className="text-destructive">*</span>
-            </label>
-            <select 
-              required
-              name="routeId"
-              defaultValue={initialData?.routeId || ''} 
-              disabled={!cityId}
-              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">Select Route</option>
-              {availableRoutes.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-          </div>
+          
 
-          <div>
-            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-              Assigned Salesman
-            </label>
-            <select
-              name="salesmanId"
-              defaultValue={initialData?.salesmanId || ''}
-              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
-            >
-              <option value="">Unassigned</option>
-              {salesmen.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
+          
         </div>
       </div>
 

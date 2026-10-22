@@ -222,7 +222,7 @@ export default async function OutstandingReportPage({
                       </Badge>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="font-semibold text-foreground">{c.route.name}</div>
+                      <div className="font-semibold text-foreground">{c.route?.name || c.city.name}</div>
                       <div className="text-xs text-muted-foreground">{c.salesman?.name || 'Unassigned'}</div>
                     </td>
                     <td className="px-5 py-4 text-right font-medium text-foreground">{formatMoney(c.totalSales)}</td>

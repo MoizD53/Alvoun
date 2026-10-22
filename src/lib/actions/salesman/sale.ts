@@ -71,9 +71,9 @@ export async function createSale(data: any) {
   
   const { customerId, items, paymentAmount, paymentMethod } = parsed.data;
 
-  // Verify salesman authorization for this customer
+  // Verify customer exists and is active
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-  if (!customer || customer.salesmanId !== salesmanId) return { error: 'Unauthorized: Customer not assigned to you' };
+  if (!customer) return { error: 'Customer not found' };
 
   // Filter out items with 0 crates
   const validItems = items.filter(i => i.crates > 0);

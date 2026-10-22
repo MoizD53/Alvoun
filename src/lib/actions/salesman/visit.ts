@@ -10,7 +10,7 @@ export async function startVisit(customerId: string) {
   
   // Verify ownership
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-  if (!customer || customer.salesmanId !== salesmanId) throw new Error('Unauthorized');
+  if (!customer) throw new Error('Customer not found');
 
   const visit = await prisma.visit.create({
     data: {

@@ -49,12 +49,12 @@ export async function createStandalonePayment(data: {
     throw new Error('Please enter a collection amount greater than zero.');
   }
 
-  // Verify ownership
+  // Verify customer exists
   const customer = await prisma.customer.findUnique({
     where: { id: customerId }
   });
-  if (!customer || customer.salesmanId !== salesmanId) {
-    throw new Error('Unauthorized customer access');
+  if (!customer) {
+    throw new Error('Customer not found');
   }
 
   // Execute in transaction

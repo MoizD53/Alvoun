@@ -33,6 +33,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 { email: cleanId.toLowerCase() },
                 ...(cleanId.toLowerCase() === 'admin' ? [{ email: 'admin@alvoun.com' }, { email: 'owner@alvoun.com' }] : []),
                 ...(cleanId.toLowerCase() === 'admin@alvoun.com' ? [{ email: 'admin' }] : []),
+                { email: `${cleanId.toLowerCase()}@salesman` },
+                { email: cleanId.toLowerCase().replace('@alvoun.local', '@salesman') },
               ]
             }
           })

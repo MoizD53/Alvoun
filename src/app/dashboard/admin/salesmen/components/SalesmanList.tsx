@@ -139,7 +139,7 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
               <tr>
                 <th scope="col" className="px-6 py-4">Salesman</th>
                 <th scope="col" className="px-6 py-4">Login ID</th>
-                <th scope="col" className="px-6 py-4">Route Assignment</th>
+                
                 <th scope="col" className="px-6 py-4">Status & Activity</th>
                 <th scope="col" className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -192,40 +192,7 @@ export default function SalesmanList({ initialSalesmen }: { initialSalesmen: any
                     </div>
                   </td>
 
-                  {/* Assigned Routes */}
-                  <td className="px-6 py-4">
-                    {(() => {
-                      const allRoutesMap = new Map();
-                      if (salesman.routes) {
-                        salesman.routes.forEach((r: any) => allRoutesMap.set(r.id, r.name));
-                      }
-                      if (salesman.assignments) {
-                        salesman.assignments.forEach((a: any) => {
-                          if (a.route) allRoutesMap.set(a.route.id, a.route.name);
-                        });
-                      }
-                      const uniqueRoutes = Array.from(allRoutesMap.entries());
-
-                      return uniqueRoutes.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5 max-w-xs">
-                          {uniqueRoutes.map(([id, name]) => (
-                            <Badge 
-                              key={id} 
-                              variant="neutral" 
-                              styleType="outline" 
-                              size="sm" 
-                              leftIcon={<MapPin className="w-3 h-3 text-primary shrink-0" />}
-                              className="gap-1 bg-surface-inset shadow-inset border-border/40 whitespace-nowrap"
-                            >
-                              {name}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground italic">No route assigned</span>
-                      );
-                    })()}
-                  </td>
+                  
 
                   {/* Status & Work Session */}
                   <td className="px-6 py-4">

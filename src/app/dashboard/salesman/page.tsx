@@ -55,10 +55,12 @@ export default async function SalesmanDashboard() {
   // Group by route/area
   const routesMap = new Map<string, { routeName: string; customers: typeof customers }>();
   customers.forEach(c => {
-    if (!routesMap.has(c.routeId)) {
-      routesMap.set(c.routeId, { routeName: c.route.name, customers: [] });
+    const key = c.routeId || 'general';
+    const name = c.route?.name || c.city?.name || 'General Coverage';
+    if (!routesMap.has(key)) {
+      routesMap.set(key, { routeName: name, customers: [] });
     }
-    routesMap.get(c.routeId)!.customers.push(c);
+    routesMap.get(key)!.customers.push(c);
   });
   const routes = Array.from(routesMap.values());
 
@@ -115,7 +117,7 @@ export default async function SalesmanDashboard() {
           <SalesmanCustomerList 
             initialCustomers={routes[0].customers as any}
             products={products as any}
-            routeId={routes[0].customers[0]?.routeId}
+            routeId={routes[0].customers[0]?.routeId || undefined}
             routeName={routes[0].routeName}
           />
         ) : (

@@ -15,7 +15,7 @@ const CustomerSchema = z.object({
   address: z.string().min(1, "Address is required"),
   stateId: z.string().min(1, "State is required"),
   cityId: z.string().min(1, "City is required"),
-  routeId: z.string().min(1, "Route is required"),
+  routeId: z.string().optional().nullable().transform(v => (v && v.trim() ? v.trim() : null)),
   areaId: z.string().optional().nullable().transform(v => (v && v.trim() ? v.trim() : null)),
   salesmanId: z.string().optional().nullable().transform(v => (v && v.trim() ? v.trim() : null)),
   openingBalance: z.number().min(0, "Balance must be >= 0"),

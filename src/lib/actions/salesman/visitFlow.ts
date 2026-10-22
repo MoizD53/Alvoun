@@ -53,7 +53,7 @@ export async function submitVisitFlow(data: any) {
 
   // Verify ownership
   const customer = await prisma.customer.findUnique({ where: { id: customerId } });
-  if (!customer || customer.salesmanId !== salesmanId) return { error: 'Unauthorized' };
+  if (!customer) return { error: 'Customer not found' };
 
   try {
     let totalAmount = 0;
@@ -237,7 +237,7 @@ export async function getCustomerWithOutstanding(customerId: string) {
       payments: { select: { amount: true } }
     }
   });
-  if (!customer || customer.salesmanId !== salesman.id) throw new Error('Unauthorized');
+  if (!customer) throw new Error('Customer not found');
   
   const outstanding = calculateOutstanding(customer);
   return { ...customer, outstanding };

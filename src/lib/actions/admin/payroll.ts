@@ -4,29 +4,44 @@ import { prisma } from '@/lib/db';
 import { requireAdminSession } from '@/lib/session';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime } from '@/lib/time';
+import { 
+  getKolkataStartOfDay, 
+  getKolkataEndOfDay, 
+  getCurrentKolkataTime, 
+  getKolkataDateString,
+  getKolkataMonthBoundaries
+} from '@/lib/time';
 
 const StaffSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  role: z.enum(['PRODUCTION_STAFF', 'ACCOUNTANT', 'DRIVER', 'LABOUR', 'SUPERVISOR', 'SALESMAN']),
+  role: z.enum(['PRODUCTION_STAFF', 'ACCOUNTANT', 'DRIVER', 'LABOUR', 'SUPERVISOR', 'SALESMAN']).default('PRODUCTION_STAFF'),
+  designation: z.string().min(1, 'Designation is required'),
   phone: z.string().optional().nullable(),
-  monthlySalaryPaise: z.number().int().positive('Salary must be positive'),
+  monthlySalaryRupees: z.number().positive('Salary must be greater than zero'),
+  joinDate: z.string().optional(),
 });
 
 export async function getStaffDirectory() {
   await requireAdminSession();
   return await prisma.staffMember.findMany({
     orderBy: { employeeCode: 'asc' },
+    include: {
+      salesman: {
+        select: { id: true, employeeCode: true, name: true }
+      }
+    }
   });
 }
 
 export async function createStaffMember(data: {
   name: string;
-  role: 'PRODUCTION_STAFF' | 'ACCOUNTANT' | 'DRIVER' | 'LABOUR' | 'SUPERVISOR' | 'SALESMAN';
+  role?: 'PRODUCTION_STAFF' | 'ACCOUNTANT' | 'DRIVER' | 'LABOUR' | 'SUPERVISOR' | 'SALESMAN';
+  designation: string;
   phone?: string;
-  monthlySalaryPaise: number;
+  monthlySalaryRupees: number;
+  joinDate?: string;
 }) {
-  await requireAdminSession();
+  const session = await requireAdminSession();
 
   const parsed = StaffSchema.safeParse(data);
   if (!parsed.success) {
@@ -35,18 +50,39 @@ export async function createStaffMember(data: {
 
   const count = await prisma.staffMember.count();
   const employeeCode = `EMP-${String(count + 1).padStart(3, '0')}`;
+  const monthlySalaryPaise = Math.round(parsed.data.monthlySalaryRupees * 100);
+  const joinDate = parsed.data.joinDate ? new Date(parsed.data.joinDate) : getCurrentKolkataTime();
 
   try {
     const staff = await prisma.staffMember.create({
       data: {
         employeeCode,
-        name: parsed.data.name,
-        role: parsed.data.role,
-        phone: parsed.data.phone || null,
-        monthlySalary: parsed.data.monthlySalaryPaise,
+        name: parsed.data.name.trim(),
+        role: parsed.data.role || 'PRODUCTION_STAFF',
+        designation: parsed.data.designation.trim(),
+        phone: parsed.data.phone?.trim() || null,
+        monthlySalary: monthlySalaryPaise,
+        joinDate,
         isActive: true,
       },
     });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: session.user.id || 'admin',
+        actorName: session.user.name || 'Admin',
+        actorRole: session.user.role || 'FOUNDER_CEO',
+        action: 'STAFF_MEMBER_CREATED',
+        entityType: 'StaffMember',
+        entityId: staff.id,
+        details: JSON.stringify({
+          employeeCode: staff.employeeCode,
+          name: staff.name,
+          designation: staff.designation,
+          monthlySalaryPaise,
+        }),
+      }
+    }).catch(() => {});
 
     try {
       revalidatePath('/dashboard/admin/payroll');
@@ -59,17 +95,151 @@ export async function createStaffMember(data: {
   }
 }
 
+export async function updateStaffMember(id: string, data: {
+  name: string;
+  role?: string;
+  designation: string;
+  phone?: string;
+  monthlySalaryRupees: number;
+  isActive?: boolean;
+}) {
+  const session = await requireAdminSession();
+
+  try {
+    const existing = await prisma.staffMember.findUnique({ where: { id } });
+    if (!existing) return { error: 'Staff member not found.' };
+
+    const newSalaryPaise = Math.round(data.monthlySalaryRupees * 100);
+
+    const updated = await prisma.staffMember.update({
+      where: { id },
+      data: {
+        name: data.name.trim(),
+        role: data.role || existing.role,
+        designation: data.designation.trim(),
+        phone: data.phone?.trim() || null,
+        monthlySalary: newSalaryPaise,
+        isActive: data.isActive !== undefined ? data.isActive : existing.isActive,
+      }
+    });
+
+    // If salary changed, record audit trail
+    if (existing.monthlySalary !== newSalaryPaise) {
+      await prisma.auditLog.create({
+        data: {
+          actorId: session.user.id || 'admin',
+          actorName: session.user.name || 'Admin',
+          actorRole: session.user.role || 'FOUNDER_CEO',
+          action: 'STAFF_SALARY_UPDATED',
+          entityType: 'StaffMember',
+          entityId: id,
+          previousRate: existing.monthlySalary,
+          newRate: newSalaryPaise,
+          details: JSON.stringify({
+            employeeCode: updated.employeeCode,
+            name: updated.name,
+            oldSalaryRupees: existing.monthlySalary / 100,
+            newSalaryRupees: newSalaryPaise / 100,
+            effectiveDate: getKolkataDateString(getCurrentKolkataTime()),
+          })
+        }
+      }).catch(() => {});
+    }
+
+    try {
+      revalidatePath('/dashboard/admin/payroll');
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return { success: true, staff: updated };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to update staff member' };
+  }
+}
+
+export async function toggleStaffStatus(id: string, nextActive: boolean) {
+  const session = await requireAdminSession();
+  try {
+    const staff = await prisma.staffMember.update({
+      where: { id },
+      data: { isActive: nextActive },
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        actorId: session.user.id || 'admin',
+        actorName: session.user.name || 'Admin',
+        actorRole: session.user.role || 'FOUNDER_CEO',
+        action: nextActive ? 'STAFF_ACTIVATED' : 'STAFF_DEACTIVATED',
+        entityType: 'StaffMember',
+        entityId: id,
+        details: JSON.stringify({
+          employeeCode: staff.employeeCode,
+          name: staff.name,
+          isActive: nextActive,
+        }),
+      }
+    }).catch(() => {});
+
+    try {
+      revalidatePath('/dashboard/admin/payroll');
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return { success: true, isActive: staff.isActive };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to toggle staff status' };
+  }
+}
+
+export async function deleteStaffMember(id: string) {
+  await requireAdminSession();
+  try {
+    const [attCount, payCount, salCount] = await Promise.all([
+      prisma.staffAttendance.count({ where: { staffId: id } }),
+      prisma.payrollRecord.count({ where: { staffId: id } }),
+      prisma.salaryPayment.count({ where: { staffId: id } }),
+    ]);
+
+    if (attCount > 0 || payCount > 0 || salCount > 0) {
+      return { 
+        error: `Cannot delete employee because ${attCount + payCount + salCount} financial/attendance records exist. Please deactivate this employee instead to preserve audit records.` 
+      };
+    }
+
+    await prisma.staffMember.delete({ where: { id } });
+
+    try {
+      revalidatePath('/dashboard/admin/payroll');
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to delete staff member' };
+  }
+}
+
 export async function getDailyAttendance(dateStr?: string) {
   await requireAdminSession();
 
-  const targetDateStr = dateStr || getCurrentKolkataTime().toISOString().split('T')[0];
+  const todayStr = getKolkataDateString(getCurrentKolkataTime());
+  const targetDateStr = dateStr || todayStr;
   const start = getKolkataStartOfDay(targetDateStr);
   const end = getKolkataEndOfDay(targetDateStr);
 
   const [allStaff, attendances] = await Promise.all([
-    prisma.staffMember.findMany({ where: { isActive: true }, orderBy: { employeeCode: 'asc' } }),
+    prisma.staffMember.findMany({ 
+      where: { isActive: true }, 
+      orderBy: { employeeCode: 'asc' } 
+    }),
     prisma.staffAttendance.findMany({
-      where: { date: { gte: start, lte: end } },
+      where: {
+        OR: [
+          { dateStr: targetDateStr },
+          { date: { gte: start, lte: end } }
+        ]
+      },
     }),
   ]);
 
@@ -80,12 +250,16 @@ export async function getDailyAttendance(dateStr?: string) {
 
   const staffWithAttendance = allStaff.map((s) => {
     const record = attendanceMap.get(s.id);
+    const dailyRatePaise = Math.floor(s.monthlySalary / 30);
     return {
       id: s.id,
       employeeCode: s.employeeCode,
       name: s.name,
+      designation: s.designation || s.role,
       role: s.role,
-      status: record?.status || 'PENDING',
+      monthlySalaryPaise: s.monthlySalary,
+      dailyRatePaise,
+      status: (record?.status || 'PENDING') as 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'PENDING',
       notes: record?.notes || '',
       attendanceId: record?.id || null,
     };
@@ -94,14 +268,18 @@ export async function getDailyAttendance(dateStr?: string) {
   const presentCount = attendances.filter((a) => a.status === 'PRESENT').length;
   const halfDayCount = attendances.filter((a) => a.status === 'HALF_DAY').length;
   const absentCount = attendances.filter((a) => a.status === 'ABSENT').length;
+  const pendingCount = allStaff.length - (presentCount + halfDayCount + absentCount);
 
   return {
     targetDateStr,
+    todayStr,
+    isFutureDate: targetDateStr > todayStr,
     staff: staffWithAttendance,
     totalStaff: allStaff.length,
     presentCount,
     halfDayCount,
     absentCount,
+    pendingCount: Math.max(0, pendingCount),
   };
 }
 
@@ -110,10 +288,24 @@ export async function saveDailyAttendance(records: {
   status: 'PRESENT' | 'ABSENT' | 'HALF_DAY';
   notes?: string;
 }[], dateStr?: string) {
-  await requireAdminSession();
+  const session = await requireAdminSession();
 
-  const targetDateStr = dateStr || getCurrentKolkataTime().toISOString().split('T')[0];
+  const todayStr = getKolkataDateString(getCurrentKolkataTime());
+  const targetDateStr = dateStr || todayStr;
+
+  // Server-side strict rejection of future dates in Asia/Kolkata
+  if (targetDateStr > todayStr) {
+    return { error: 'Attendance cannot be marked or edited for future dates.' };
+  }
+
   const dateToUse = new Date(`${targetDateStr}T12:00:00+05:30`);
+  const start = getKolkataStartOfDay(targetDateStr);
+  const end = getKolkataEndOfDay(targetDateStr);
+
+  // Month & Year for automatic payroll recalculation
+  const [yearStr, monthStr] = targetDateStr.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -121,23 +313,52 @@ export async function saveDailyAttendance(records: {
         const existing = await tx.staffAttendance.findFirst({
           where: {
             staffId: r.staffId,
-            date: {
-              gte: getKolkataStartOfDay(targetDateStr),
-              lte: getKolkataEndOfDay(targetDateStr),
-            },
+            OR: [
+              { dateStr: targetDateStr },
+              { date: { gte: start, lte: end } }
+            ]
           },
         });
 
         if (existing) {
+          if (existing.status !== r.status) {
+            // Status was edited/corrected — audit record
+            const staff = await tx.staffMember.findUnique({ where: { id: r.staffId } });
+            await tx.auditLog.create({
+              data: {
+                actorId: session.user.id || 'admin',
+                actorName: session.user.name || 'Admin',
+                actorRole: session.user.role || 'FOUNDER_CEO',
+                action: 'ATTENDANCE_CORRECTED',
+                entityType: 'StaffAttendance',
+                entityId: existing.id,
+                details: JSON.stringify({
+                  staffName: staff?.name,
+                  employeeCode: staff?.employeeCode,
+                  date: targetDateStr,
+                  previousStatus: existing.status,
+                  newStatus: r.status,
+                  notes: r.notes || null,
+                })
+              }
+            });
+          }
+
           await tx.staffAttendance.update({
             where: { id: existing.id },
-            data: { status: r.status, notes: r.notes || null },
+            data: { 
+              status: r.status, 
+              notes: r.notes || null,
+              dateStr: targetDateStr,
+              date: dateToUse,
+            },
           });
         } else {
           await tx.staffAttendance.create({
             data: {
               staffId: r.staffId,
               date: dateToUse,
+              dateStr: targetDateStr,
               status: r.status,
               notes: r.notes || null,
             },
@@ -145,6 +366,9 @@ export async function saveDailyAttendance(records: {
         }
       }
     });
+
+    // Recompute monthly payroll ledger automatically after attendance update
+    await recalculateMonthlyPayroll(month, year);
 
     try {
       revalidatePath('/dashboard/admin/payroll');
@@ -157,71 +381,169 @@ export async function saveDailyAttendance(records: {
   }
 }
 
-export async function getPayrollLedger(month: number, year: number) {
-  await requireAdminSession();
+/**
+ * Authoritative recalculation of monthly payroll ledger based on attendance & payments
+ */
+export async function recalculateMonthlyPayroll(month: number, year: number) {
+  const boundaries = getKolkataMonthBoundaries(year, month);
+  const start = boundaries.start;
+  const end = boundaries.end;
 
   const allStaff = await prisma.staffMember.findMany({
-    where: { isActive: true },
     orderBy: { employeeCode: 'asc' },
   });
 
+  for (const staff of allStaff) {
+    // 1. Fetch attendance within this month
+    const attendances = await prisma.staffAttendance.findMany({
+      where: {
+        staffId: staff.id,
+        date: { gte: start, lte: end }
+      }
+    });
+
+    const fullDayAbsences = attendances.filter(a => a.status === 'ABSENT').length;
+    const halfDayAbsences = attendances.filter(a => a.status === 'HALF_DAY').length;
+
+    // Daily rate denominator = 30
+    const dailyRate = Math.floor(staff.monthlySalary / 30);
+    const fullDayDeductions = fullDayAbsences * dailyRate;
+    const halfDayDeductions = halfDayAbsences * Math.floor(dailyRate / 2);
+    const totalDeductions = fullDayDeductions + halfDayDeductions;
+
+    const netPayable = Math.max(0, staff.monthlySalary - totalDeductions);
+
+    // 2. Fetch all valid salary payments for this month
+    const existingPayroll = await prisma.payrollRecord.findUnique({
+      where: { staffId_month_year: { staffId: staff.id, month, year } },
+      include: {
+        payments: {
+          where: { isReversed: false }
+        }
+      }
+    });
+
+    const paidAmount = existingPayroll 
+      ? existingPayroll.payments.reduce((sum, p) => sum + p.amount, 0)
+      : 0;
+
+    const remainingBalance = Math.max(0, netPayable - paidAmount);
+    const status = paidAmount >= netPayable && netPayable > 0 
+      ? 'PAID' 
+      : paidAmount > 0 
+        ? 'PARTIALLY_PAID' 
+        : 'UNPAID';
+
+    await prisma.payrollRecord.upsert({
+      where: { staffId_month_year: { staffId: staff.id, month, year } },
+      update: {
+        basicSalary: staff.monthlySalary,
+        fullDayAbsences,
+        halfDayAbsences,
+        fullDayDeductions,
+        halfDayDeductions,
+        deductions: totalDeductions,
+        netPayable,
+        paidAmount,
+        remainingBalance,
+        status,
+      },
+      create: {
+        staffId: staff.id,
+        month,
+        year,
+        basicSalary: staff.monthlySalary,
+        fullDayAbsences,
+        halfDayAbsences,
+        fullDayDeductions,
+        halfDayDeductions,
+        deductions: totalDeductions,
+        netPayable,
+        paidAmount,
+        remainingBalance,
+        status,
+      }
+    });
+  }
+}
+
+export async function getPayrollLedger(month: number, year: number) {
+  await requireAdminSession();
+
+  // Authoritative recalculation to guarantee up-to-date attendance & payments
+  await recalculateMonthlyPayroll(month, year);
+
   const records = await prisma.payrollRecord.findMany({
     where: { month, year },
-    include: { staff: true },
+    include: {
+      staff: true,
+      payments: {
+        where: { isReversed: false },
+        orderBy: { paymentDate: 'desc' }
+      }
+    },
+    orderBy: { staff: { employeeCode: 'asc' } }
   });
 
-  const recordMap = new Map<string, any>();
-  for (const r of records) {
-    recordMap.set(r.staffId, r);
-  }
-
-  const ledger = allStaff.map((staff) => {
-    const existing = recordMap.get(staff.id);
-    if (existing) {
-      return existing;
-    }
-    // Default draft
+  const ledger = records.map((r) => {
+    const dailyRate = Math.floor(r.basicSalary / 30);
     return {
-      id: `draft-${staff.id}`,
-      staffId: staff.id,
-      staff,
-      month,
-      year,
-      basicSalary: staff.monthlySalary,
-      allowances: 0,
-      deductions: 0,
-      advances: 0,
-      netPayable: staff.monthlySalary,
-      status: 'PENDING',
-      paymentDate: null,
-      paymentMethod: null,
-      notes: null,
+      id: r.id,
+      staffId: r.staffId,
+      staff: r.staff,
+      month: r.month,
+      year: r.year,
+      basicSalary: r.basicSalary,
+      dailyRate,
+      fullDayAbsences: r.fullDayAbsences,
+      halfDayAbsences: r.halfDayAbsences,
+      fullDayDeductions: r.fullDayDeductions,
+      halfDayDeductions: r.halfDayDeductions,
+      totalDeductions: r.deductions,
+      netPayable: r.netPayable,
+      paidAmount: r.paidAmount,
+      remainingBalance: r.remainingBalance,
+      status: r.status as 'UNPAID' | 'PARTIALLY_PAID' | 'PAID',
+      payments: r.payments,
+      paymentDate: r.paymentDate,
+      paymentMethod: r.paymentMethod,
+      notes: r.notes,
     };
   });
 
-  const totalPayrollPaise = ledger.reduce((sum, item) => sum + item.netPayable, 0);
+  const totalBaseSalaryPaise = ledger.reduce((sum, item) => sum + item.basicSalary, 0);
+  const totalDeductionsPaise = ledger.reduce((sum, item) => sum + item.totalDeductions, 0);
+  const totalNetPayablePaise = ledger.reduce((sum, item) => sum + item.netPayable, 0);
+  const totalPaidPaise = ledger.reduce((sum, item) => sum + item.paidAmount, 0);
+  const totalRemainingBalancePaise = ledger.reduce((sum, item) => sum + item.remainingBalance, 0);
+
   const paidCount = ledger.filter((l) => l.status === 'PAID').length;
-  const pendingCount = ledger.filter((l) => l.status === 'PENDING').length;
+  const partiallyPaidCount = ledger.filter((l) => l.status === 'PARTIALLY_PAID').length;
+  const unpaidCount = ledger.filter((l) => l.status === 'UNPAID').length;
 
   return {
     ledger,
     month,
     year,
-    totalPayrollPaise,
+    totalBaseSalaryPaise,
+    totalDeductionsPaise,
+    totalNetPayablePaise,
+    totalPaidPaise,
+    totalRemainingBalancePaise,
     paidCount,
-    pendingCount,
+    partiallyPaidCount,
+    unpaidCount,
   };
 }
 
-export async function recordPayrollPayment(data: {
+export async function recordSalaryPayment(data: {
   staffId: string;
   month: number;
   year: number;
-  basicSalaryPaise: number;
-  allowancesPaise?: number;
-  deductionsPaise?: number;
-  advancesPaise?: number;
-  paymentMethod: string;
+  amountRupees: number;
+  paymentMethod: 'CASH' | 'BANK_TRANSFER' | 'UPI';
+  paymentDateStr?: string;
+  referenceNo?: string;
   notes?: string;
 }) {
   const session = await requireAdminSession();
@@ -230,71 +552,187 @@ export async function recordPayrollPayment(data: {
     staffId,
     month,
     year,
-    basicSalaryPaise,
-    allowancesPaise = 0,
-    deductionsPaise = 0,
-    advancesPaise = 0,
+    amountRupees,
     paymentMethod,
+    paymentDateStr,
+    referenceNo,
     notes,
   } = data;
 
-  const netPayable = basicSalaryPaise + allowancesPaise - deductionsPaise - advancesPaise;
-  const now = getCurrentKolkataTime();
+  const amountPaise = Math.round(amountRupees * 100);
+
+  if (amountPaise <= 0) {
+    return { error: 'Payment amount must be greater than zero.' };
+  }
+
+  const paymentDate = paymentDateStr 
+    ? new Date(`${paymentDateStr}T12:00:00+05:30`) 
+    : getCurrentKolkataTime();
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const existing = await tx.payrollRecord.findUnique({
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Fetch current payroll record
+      const payroll = await tx.payrollRecord.findUnique({
         where: { staffId_month_year: { staffId, month, year } },
+        include: { staff: true }
       });
 
-      if (existing) {
-        await tx.payrollRecord.update({
-          where: { id: existing.id },
-          data: {
-            basicSalary: basicSalaryPaise,
-            allowances: allowancesPaise,
-            deductions: deductionsPaise,
-            advances: advancesPaise,
-            netPayable,
-            status: 'PAID',
-            paymentDate: now,
-            paymentMethod,
-            notes: notes || null,
-          },
-        });
-      } else {
-        await tx.payrollRecord.create({
-          data: {
-            staffId,
-            month,
-            year,
-            basicSalary: basicSalaryPaise,
-            allowances: allowancesPaise,
-            deductions: deductionsPaise,
-            advances: advancesPaise,
-            netPayable,
-            status: 'PAID',
-            paymentDate: now,
-            paymentMethod,
-            notes: notes || null,
-          },
-        });
+      if (!payroll) {
+        throw new Error('Payroll record for this month does not exist. Please generate attendance first.');
       }
 
-      // Also create an Expense entry under SALARY so cash flow automatically reconciles!
-      const staff = await tx.staffMember.findUnique({ where: { id: staffId } });
+      if (amountPaise > payroll.remainingBalance) {
+        throw new Error(`Payment amount (₹${amountRupees.toLocaleString('en-IN')}) exceeds outstanding balance (₹${(payroll.remainingBalance / 100).toLocaleString('en-IN')}).`);
+      }
+
+      // 2. Create immutable SalaryPayment record
+      const payment = await tx.salaryPayment.create({
+        data: {
+          payrollRecordId: payroll.id,
+          staffId,
+          amount: amountPaise,
+          paymentDate,
+          paymentMethod,
+          referenceNo: referenceNo?.trim() || null,
+          notes: notes?.trim() || null,
+          recordedBy: session.user.name || 'Admin',
+        }
+      });
+
+      // 3. Update PayrollRecord
+      const newPaidAmount = payroll.paidAmount + amountPaise;
+      const newRemainingBalance = Math.max(0, payroll.netPayable - newPaidAmount);
+      const newStatus = newRemainingBalance === 0 ? 'PAID' : 'PARTIALLY_PAID';
+
+      await tx.payrollRecord.update({
+        where: { id: payroll.id },
+        data: {
+          paidAmount: newPaidAmount,
+          remainingBalance: newRemainingBalance,
+          status: newStatus,
+          paymentDate,
+          paymentMethod,
+        }
+      });
+
+      // 4. Create synchronized Expense under category SALARY
       await tx.expense.create({
         data: {
           category: 'SALARY',
-          title: `Salary Disbursement: ${staff?.name || 'Staff'} (${month}/${year})`,
-          amount: netPayable,
-          expenseDate: now,
-          paymentMethod: paymentMethod === 'UPI' ? 'UPI' : paymentMethod === 'BANK_TRANSFER' ? 'BANK_TRANSFER' : 'CASH',
-          recipient: staff?.name,
-          referenceNo: `PAYROLL-${year}-${String(month).padStart(2, '0')}-${staff?.employeeCode}`,
-          notes: notes || `Disbursed monthly salary for ${month}/${year}`,
+          title: `Salary Disbursement: ${payroll.staff.name} (${month}/${year})`,
+          amount: amountPaise,
+          expenseDate: paymentDate,
+          paymentMethod,
+          recipient: payroll.staff.name,
+          referenceNo: referenceNo?.trim() || `SAL-${year}-${String(month).padStart(2, '0')}-${payroll.staff.employeeCode}`,
+          notes: notes?.trim() || `Disbursed monthly salary for ${month}/${year}`,
           recordedBy: session.user.name || 'Admin',
-        },
+        }
+      });
+
+      // 5. Audit Log
+      await tx.auditLog.create({
+        data: {
+          actorId: session.user.id || 'admin',
+          actorName: session.user.name || 'Admin',
+          actorRole: session.user.role || 'FOUNDER_CEO',
+          action: 'SALARY_PAYMENT_RECORDED',
+          entityType: 'SalaryPayment',
+          entityId: payment.id,
+          details: JSON.stringify({
+            staffName: payroll.staff.name,
+            employeeCode: payroll.staff.employeeCode,
+            month,
+            year,
+            amountPaise,
+            paymentMethod,
+            referenceNo: referenceNo || null,
+            remainingBalance: newRemainingBalance,
+          })
+        }
+      });
+
+      return { paymentId: payment.id, remainingBalance: newRemainingBalance };
+    });
+
+    try {
+      revalidatePath('/dashboard/admin/payroll');
+      revalidatePath('/dashboard/admin/expenses');
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return { success: true, ...result };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to record salary payment' };
+  }
+}
+
+export async function reverseSalaryPayment(paymentId: string, reason: string) {
+  const session = await requireAdminSession();
+
+  if (!reason || !reason.trim()) {
+    return { error: 'Reversal reason is required.' };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const payment = await tx.salaryPayment.findUnique({
+        where: { id: paymentId },
+        include: { payrollRecord: true, staff: true }
+      });
+
+      if (!payment) throw new Error('Payment record not found.');
+      if (payment.isReversed) throw new Error('Payment has already been reversed.');
+
+      const now = getCurrentKolkataTime();
+
+      // 1. Mark payment as reversed
+      await tx.salaryPayment.update({
+        where: { id: paymentId },
+        data: {
+          isReversed: true,
+          reversalReason: reason.trim(),
+          reversedAt: now,
+          reversedBy: session.user.name || 'Admin',
+        }
+      });
+
+      // 2. Adjust PayrollRecord
+      const payroll = payment.payrollRecord;
+      const newPaidAmount = Math.max(0, payroll.paidAmount - payment.amount);
+      const newRemainingBalance = Math.max(0, payroll.netPayable - newPaidAmount);
+      const newStatus = newPaidAmount >= payroll.netPayable && payroll.netPayable > 0
+        ? 'PAID'
+        : newPaidAmount > 0
+          ? 'PARTIALLY_PAID'
+          : 'UNPAID';
+
+      await tx.payrollRecord.update({
+        where: { id: payroll.id },
+        data: {
+          paidAmount: newPaidAmount,
+          remainingBalance: newRemainingBalance,
+          status: newStatus,
+        }
+      });
+
+      // 3. Audit Log
+      await tx.auditLog.create({
+        data: {
+          actorId: session.user.id || 'admin',
+          actorName: session.user.name || 'Admin',
+          actorRole: session.user.role || 'FOUNDER_CEO',
+          action: 'SALARY_PAYMENT_REVERSED',
+          entityType: 'SalaryPayment',
+          entityId: paymentId,
+          details: JSON.stringify({
+            staffName: payment.staff.name,
+            employeeCode: payment.staff.employeeCode,
+            reversedAmountPaise: payment.amount,
+            reason: reason.trim(),
+            reversedBy: session.user.name,
+          })
+        }
       });
     });
 
@@ -306,6 +744,63 @@ export async function recordPayrollPayment(data: {
 
     return { success: true };
   } catch (error: any) {
-    return { error: error.message || 'Failed to record payroll payment' };
+    return { error: error.message || 'Failed to reverse salary payment' };
   }
+}
+
+export async function getStaffProfileDetails(staffId: string, year?: number) {
+  await requireAdminSession();
+
+  const targetYear = year || getCurrentKolkataTime().getFullYear();
+
+  const [staff, attendances, payrolls, payments, auditLogs] = await Promise.all([
+    prisma.staffMember.findUnique({
+      where: { id: staffId },
+      include: {
+        salesman: {
+          select: { id: true, employeeCode: true, name: true, phone: true }
+        }
+      }
+    }),
+    prisma.staffAttendance.findMany({
+      where: { staffId },
+      orderBy: { date: 'desc' },
+      take: 60,
+    }),
+    prisma.payrollRecord.findMany({
+      where: { staffId, year: targetYear },
+      orderBy: { month: 'desc' },
+      include: {
+        payments: {
+          where: { isReversed: false },
+          orderBy: { paymentDate: 'desc' }
+        }
+      }
+    }),
+    prisma.salaryPayment.findMany({
+      where: { staffId },
+      orderBy: { paymentDate: 'desc' },
+      take: 20,
+    }),
+    prisma.auditLog.findMany({
+      where: { entityId: staffId },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    }),
+  ]);
+
+  if (!staff) return null;
+
+  const dailyRatePaise = Math.floor(staff.monthlySalary / 30);
+
+  return {
+    staff: {
+      ...staff,
+      dailyRatePaise,
+    },
+    attendances,
+    payrolls,
+    payments,
+    auditLogs,
+  };
 }

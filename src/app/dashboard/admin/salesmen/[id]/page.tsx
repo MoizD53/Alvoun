@@ -15,34 +15,12 @@ export default async function EditSalesmanPage({ params }: { params: Promise<{ i
     where: { id: resolvedParams.id },
     include: {
       profile: true,
-      routes: true,
-      assignments: {
-        include: {
-          route: true,
-          area: true,
-        },
-      },
     },
   });
 
   if (!salesman) {
     notFound();
   }
-
-  const routes = await prisma.route.findMany({
-    include: {
-      city: true,
-      areas: {
-        include: {
-          _count: {
-            select: { customers: true }
-          }
-        },
-        orderBy: { name: 'asc' }
-      }
-    },
-    orderBy: { name: 'asc' }
-  });
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -57,13 +35,13 @@ export default async function EditSalesmanPage({ params }: { params: Promise<{ i
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Manage Salesman</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Edit profile, login credentials, or territory assignments for <span className="font-semibold text-primary">{salesman.name}</span></p>
+          <p className="text-sm text-muted-foreground mt-0.5">Edit profile and app login credentials for <span className="font-semibold text-primary">{salesman.name}</span></p>
         </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <SalesmanForm initialData={salesman} routes={routes} />
+          <SalesmanForm initialData={salesman} />
         </div>
         <div className="lg:col-span-1 space-y-6">
           <CredentialManager 

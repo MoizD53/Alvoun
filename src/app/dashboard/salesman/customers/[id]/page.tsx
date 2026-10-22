@@ -70,7 +70,7 @@ export default async function CustomerDetailPage({
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-sunken shadow-inset-sm rounded-full text-xs font-bold text-text-secondary mt-3 border border-border-subtle">
               <Navigation className="h-3.5 w-3.5 text-brand-teal" />
-              {customer.route.name}
+              {customer.route?.name || customer.city.name}
             </div>
           </div>
         </div>

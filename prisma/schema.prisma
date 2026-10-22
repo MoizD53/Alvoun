@@ -44,6 +44,7 @@ model Salesman {
   locations    Location[]
   assignments  SalesmanAssignment[]
   activityLogs ActivityLog[]
+  staffMember  StaffMember?
 }
 
 model State {
@@ -130,8 +131,8 @@ model Customer {
   state              State       @relation(fields: [stateId], references: [id], onDelete: Restrict)
   cityId             String
   city               City        @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  routeId            String
-  route              Route       @relation(fields: [routeId], references: [id], onDelete: Restrict)
+  routeId            String?
+  route              Route?      @relation(fields: [routeId], references: [id], onDelete: SetNull)
   areaId             String?
   area               Area?       @relation(fields: [areaId], references: [id], onDelete: SetNull)
   salesmanId         String?
@@ -383,15 +384,19 @@ model StaffMember {
   employeeCode  String   @unique // e.g. EMP-001
   name          String
   role          String   // PRODUCTION_STAFF, ACCOUNTANT, DRIVER, LABOUR, SUPERVISOR, SALESMAN
+  designation   String?  // e.g. "Sales Representative", "Technical Manager", "Salesman", "Operator", "Associate", "Employee"
   phone         String?
   monthlySalary Int      // stored in Paise
   joinDate      DateTime @default(now())
   isActive      Boolean  @default(true)
+  salesmanId    String?  @unique
+  salesman      Salesman? @relation(fields: [salesmanId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   attendances   StaffAttendance[]
   payrolls      PayrollRecord[]
+  payments      SalaryPayment[]
 }
 
 model StaffAttendance {
@@ -399,38 +404,73 @@ model StaffAttendance {
   staffId   String
   staff     StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
   date      DateTime    @default(now())
+  dateStr   String?     // YYYY-MM-DD
   status    String      @default("PRESENT") // PRESENT, ABSENT, HALF_DAY
   checkIn   DateTime?
   checkOut  DateTime?
   notes     String?
   createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
 
   @@unique([staffId, date])
   @@index([staffId])
   @@index([date])
+  @@index([dateStr])
 }
 
 model PayrollRecord {
-  id            String      @id @default(cuid())
-  staffId       String
-  staff         StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  month         Int         // 1 - 12
-  year          Int         // e.g. 2026
-  basicSalary   Int         // in Paise
-  allowances    Int         @default(0) // in Paise
-  deductions    Int         @default(0) // in Paise
-  advances      Int         @default(0) // in Paise
-  netPayable    Int         // in Paise
-  status        String      @default("PENDING") // PENDING, PAID
-  paymentDate   DateTime?
-  paymentMethod String?     // CASH, BANK_TRANSFER, UPI, CHEQUE
-  notes         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                  String          @id @default(cuid())
+  staffId             String
+  staff               StaffMember     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  month               Int             // 1 - 12
+  year                Int             // e.g. 2026
+  basicSalary         Int             // in Paise
+  allowances          Int             @default(0) // in Paise
+  deductions          Int             @default(0) // in Paise
+  advances            Int             @default(0) // in Paise
+  fullDayAbsences     Int             @default(0)
+  halfDayAbsences     Int             @default(0)
+  fullDayDeductions   Int             @default(0) // in Paise
+  halfDayDeductions   Int             @default(0) // in Paise
+  netPayable          Int             // in Paise
+  paidAmount          Int             @default(0) // in Paise
+  remainingBalance    Int             @default(0) // in Paise
+  status              String          @default("UNPAID") // UNPAID, PARTIALLY_PAID, PAID
+  paymentDate         DateTime?
+  paymentMethod       String?         // CASH, BANK_TRANSFER, UPI, CHEQUE
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  payments            SalaryPayment[]
 
   @@unique([staffId, month, year])
   @@index([staffId])
   @@index([year, month])
+}
+
+model SalaryPayment {
+  id              String        @id @default(cuid())
+  payrollRecordId String
+  payrollRecord   PayrollRecord @relation(fields: [payrollRecordId], references: [id], onDelete: Cascade)
+  staffId         String
+  staff           StaffMember   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  amount          Int           // in Paise
+  paymentDate     DateTime      @default(now())
+  paymentMethod   String        // CASH, BANK_TRANSFER, UPI, CHEQUE
+  referenceNo     String?
+  notes           String?
+  recordedBy      String?
+  isReversed      Boolean       @default(false)
+  reversalReason  String?
+  reversedAt      DateTime?
+  reversedBy      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([payrollRecordId])
+  @@index([staffId])
+  @@index([paymentDate])
 }
 
 

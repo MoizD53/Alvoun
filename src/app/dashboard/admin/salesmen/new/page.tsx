@@ -1,26 +1,10 @@
-import { prisma } from '@/lib/db';
 import SalesmanForm from '../components/SalesmanForm';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function NewSalesmanPage() {
-  const routes = await prisma.route.findMany({
-    include: {
-      city: true,
-      areas: {
-        include: {
-          _count: {
-            select: { customers: true }
-          }
-        },
-        orderBy: { name: 'asc' }
-      }
-    },
-    orderBy: { name: 'asc' }
-  });
-
+export default function NewSalesmanPage() {
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
@@ -34,11 +18,11 @@ export default async function NewSalesmanPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Add Salesman</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Create a new salesman profile, login credentials, and assign territory</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Create a new field salesman profile and mobile app credentials</p>
         </div>
       </div>
       
-      <SalesmanForm routes={routes} />
+      <SalesmanForm />
     </div>
   );
 }

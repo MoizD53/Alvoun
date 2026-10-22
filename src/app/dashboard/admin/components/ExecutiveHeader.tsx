@@ -308,7 +308,7 @@ export default function ExecutiveHeader({
                 Settings
               </Link>
               <Link
-                href="/dashboard/admin/salesmen-access"
+                href="/dashboard/admin/salesmen"
                 onClick={() => setIsProfileOpen(false)}
                 className="flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-surface-raised hover:bg-surface-inset border border-border-default text-xs font-extrabold text-primary transition-all shadow-xs"
               >
