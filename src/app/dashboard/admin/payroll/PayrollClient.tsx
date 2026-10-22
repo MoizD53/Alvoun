@@ -69,6 +69,11 @@ interface AttendanceStaffItem {
   role: string;
   monthlySalaryPaise: number;
   dailyRatePaise: number;
+  salesman?: {
+    id: string;
+    employeeCode: string;
+    name: string;
+  } | null;
   status: 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'PENDING';
   notes: string;
   attendanceId?: string | null;
@@ -109,6 +114,13 @@ interface LedgerItem {
   notes?: string | null;
 }
 
+interface UnlinkedSalesman {
+  id: string;
+  employeeCode: string;
+  name: string;
+  phone?: string | null;
+}
+
 interface PayrollClientProps {
   staffList: StaffItem[];
   attendanceData: {
@@ -123,6 +135,7 @@ interface PayrollClientProps {
     pendingCount: number;
   };
   ledgerData: LedgerItem[];
+  unlinkedSalesmen?: UnlinkedSalesman[];
   currentDate: string;
   currentMonth: number;
   currentYear: number;
@@ -137,6 +150,7 @@ export default function PayrollClient({
   staffList,
   attendanceData,
   ledgerData,
+  unlinkedSalesmen = [],
   currentDate,
   currentMonth,
   currentYear,
@@ -175,6 +189,7 @@ export default function PayrollClient({
     role: 'PRODUCTION_STAFF',
     phone: '',
     monthlySalaryRupees: '',
+    salesmanId: '',
   });
 
   // Edit Staff Modal
@@ -290,10 +305,11 @@ export default function PayrollClient({
 
     const res = await createStaffMember({
       name: addStaffForm.name,
-      designation: addStaffForm.designation || 'Staff',
+      designation: addStaffForm.designation || (addStaffForm.salesmanId ? 'Salesman' : 'Staff'),
       role: addStaffForm.role as any,
       phone: addStaffForm.phone,
       monthlySalaryRupees: salaryRupees,
+      salesmanId: addStaffForm.salesmanId || undefined,
     });
 
     setActionLoading(false);
@@ -307,6 +323,7 @@ export default function PayrollClient({
         role: 'PRODUCTION_STAFF',
         phone: '',
         monthlySalaryRupees: '',
+        salesmanId: '',
       });
       router.refresh();
     }
@@ -741,12 +758,13 @@ export default function PayrollClient({
                     <th className="py-3.5 px-4">Salary Basis</th>
                     <th className="py-3.5 px-4 text-center">Attendance Status</th>
                     <th className="py-3.5 px-4">Notes / Remarks</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/20 text-xs">
                   {attendanceData.staff.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
                         No active employees found. Please add staff members from the directory.
                       </td>
                     </tr>
@@ -761,7 +779,14 @@ export default function PayrollClient({
                           {/* Employee Info */}
                           <td className="py-3.5 px-4">
                             <div className="font-bold text-foreground">{staff.name}</div>
-                            <div className="font-mono text-[11px] text-muted-foreground">{staff.employeeCode}</div>
+                            <div className="flex items-center gap-1.5 flex-wrap font-mono text-[11px] text-muted-foreground mt-0.5">
+                              <span>{staff.employeeCode}</span>
+                              {staff.salesman && (
+                                <Badge variant="neutral" styleType="outline" size="sm" className="text-[10px] py-0 px-1.5 border-teal-500/40 text-primary">
+                                  Salesman: {staff.salesman.employeeCode}
+                                </Badge>
+                              )}
+                            </div>
                           </td>
 
                           {/* Designation */}
@@ -863,6 +888,89 @@ export default function PayrollClient({
                               placeholder="Optional remarks"
                               className="w-full bg-surface-inset shadow-inset border border-border/40 rounded-lg px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/40"
                             />
+                          </td>
+
+                          {/* Per-Person Actions: Pay, View Details, Edit */}
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => {
+                                  const fullStaff = staffList.find(s => s.id === staff.id);
+                                  const item = ledgerData.find(l => l.staffId === staff.id) || {
+                                    id: `tmp-${staff.id}`,
+                                    staffId: staff.id,
+                                    staff: fullStaff || {
+                                      id: staff.id,
+                                      employeeCode: staff.employeeCode,
+                                      name: staff.name,
+                                      role: staff.role,
+                                      designation: staff.designation,
+                                      monthlySalary: staff.monthlySalaryPaise,
+                                      isActive: true,
+                                    },
+                                    month: currentMonth,
+                                    year: currentYear,
+                                    basicSalary: staff.monthlySalaryPaise,
+                                    dailyRate: staff.dailyRatePaise,
+                                    fullDayAbsences: 0,
+                                    halfDayAbsences: 0,
+                                    fullDayDeductions: 0,
+                                    halfDayDeductions: 0,
+                                    totalDeductions: 0,
+                                    netPayable: staff.monthlySalaryPaise,
+                                    paidAmount: 0,
+                                    remainingBalance: staff.monthlySalaryPaise,
+                                    status: 'UNPAID',
+                                  };
+                                  openPaySalaryModal(item as any);
+                                }}
+                                className="shadow-raised hover:shadow-raised-sm press-active text-xs font-bold"
+                                title={`Pay salary to ${staff.name}`}
+                              >
+                                <CreditCard className="w-3.5 h-3.5 mr-1" />
+                                Pay
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openProfileModal(staff.id)}
+                                className="text-xs font-semibold"
+                                title="View full employee profile, payroll & payment history"
+                              >
+                                <Eye className="w-3.5 h-3.5 mr-1" />
+                                View Details
+                              </Button>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const fullStaff = staffList.find(s => s.id === staff.id);
+                                  if (fullStaff) {
+                                    openEditModal(fullStaff);
+                                  } else {
+                                    openEditModal({
+                                      id: staff.id,
+                                      employeeCode: staff.employeeCode,
+                                      name: staff.name,
+                                      role: staff.role,
+                                      designation: staff.designation,
+                                      monthlySalary: staff.monthlySalaryPaise,
+                                      isActive: true,
+                                      salesman: staff.salesman,
+                                    });
+                                  }
+                                }}
+                                className="text-xs font-semibold"
+                                title="Edit employee designation, salary or contact"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 mr-1" />
+                                Edit
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1052,7 +1160,7 @@ export default function PayrollClient({
                                 className="shadow-raised hover:shadow-raised-sm press-active text-xs font-bold"
                               >
                                 <CreditCard className="w-3.5 h-3.5 mr-1" />
-                                Pay Salary
+                                Pay
                               </Button>
                             ) : (
                               <Button
@@ -1239,6 +1347,51 @@ export default function PayrollClient({
             )}
 
             <form onSubmit={handleAddStaffSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Link Field Salesman Account (Optional)
+                </label>
+                <select
+                  value={addStaffForm.salesmanId}
+                  onChange={(e) => {
+                    const sid = e.target.value;
+                    const match = unlinkedSalesmen?.find(s => s.id === sid);
+                    if (match) {
+                      setAddStaffForm({
+                        ...addStaffForm,
+                        salesmanId: sid,
+                        name: match.name,
+                        phone: match.phone || addStaffForm.phone,
+                        designation: 'Salesman',
+                        role: 'SALESMAN',
+                      });
+                    } else {
+                      setAddStaffForm({
+                        ...addStaffForm,
+                        salesmanId: '',
+                      });
+                    }
+                  }}
+                  className="w-full bg-surface-inset shadow-inset border border-border/40 rounded-xl px-3 py-2 text-foreground focus:outline-none cursor-pointer"
+                >
+                  <option value="">None (Standard Plant / Non-sales Staff)</option>
+                  {unlinkedSalesmen && unlinkedSalesmen.length > 0 ? (
+                    unlinkedSalesmen.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.employeeCode} — {s.name} {s.phone ? `(${s.phone})` : ''}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled value="__all_linked__">
+                      All field salesmen are currently linked to staff profiles
+                    </option>
+                  )}
+                </select>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Select an existing field salesman to automatically sync their staff payroll with their salesman credentials.
+                </p>
+              </div>
+
               <div>
                 <label className="block font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                   Full Name <span className="text-destructive">*</span>
@@ -1471,7 +1624,7 @@ export default function PayrollClient({
             <div className="flex items-center justify-between border-b border-border/40 pb-3">
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-primary" />
-                Disburse Salary — {selectedLedgerItem.staff.name}
+                Pay Salary — {selectedLedgerItem.staff.name}
               </h2>
               <button onClick={() => setPaySalaryOpen(false)} className="p-1 rounded-lg hover:bg-surface-inset text-muted-foreground">
                 <X className="w-5 h-5" />
@@ -1603,7 +1756,7 @@ export default function PayrollClient({
                   size="sm"
                   isLoading={actionLoading}
                 >
-                  Confirm & Disburse Payment
+                  Confirm & Pay Salary
                 </Button>
               </div>
             </form>

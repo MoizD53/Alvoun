@@ -19,6 +19,7 @@ const StaffSchema = z.object({
   phone: z.string().optional().nullable(),
   monthlySalaryRupees: z.number().positive('Salary must be greater than zero'),
   joinDate: z.string().optional(),
+  salesmanId: z.string().optional().nullable(),
 });
 
 export async function getStaffDirectory() {
@@ -27,10 +28,25 @@ export async function getStaffDirectory() {
     orderBy: { employeeCode: 'asc' },
     include: {
       salesman: {
-        select: { id: true, employeeCode: true, name: true }
+        select: { id: true, employeeCode: true, name: true, phone: true }
       }
     }
   });
+}
+
+export async function getUnlinkedSalesmen() {
+  await requireAdminSession();
+  const allSalesmen = await prisma.salesman.findMany({
+    where: { isActive: true },
+    select: { id: true, employeeCode: true, name: true, phone: true }
+  });
+
+  const staff = await prisma.staffMember.findMany({
+    select: { salesmanId: true }
+  });
+  const linkedSalesmanIds = new Set(staff.map(s => s.salesmanId).filter(Boolean));
+
+  return allSalesmen.filter(s => !linkedSalesmanIds.has(s.id));
 }
 
 export async function createStaffMember(data: {
@@ -40,6 +56,7 @@ export async function createStaffMember(data: {
   phone?: string;
   monthlySalaryRupees: number;
   joinDate?: string;
+  salesmanId?: string;
 }) {
   const session = await requireAdminSession();
 
@@ -58,12 +75,13 @@ export async function createStaffMember(data: {
       data: {
         employeeCode,
         name: parsed.data.name.trim(),
-        role: parsed.data.role || 'PRODUCTION_STAFF',
+        role: parsed.data.role || (parsed.data.salesmanId ? 'SALESMAN' : 'PRODUCTION_STAFF'),
         designation: parsed.data.designation.trim(),
         phone: parsed.data.phone?.trim() || null,
         monthlySalary: monthlySalaryPaise,
         joinDate,
         isActive: true,
+        salesmanId: parsed.data.salesmanId || null,
       },
     });
 
@@ -80,9 +98,14 @@ export async function createStaffMember(data: {
           name: staff.name,
           designation: staff.designation,
           monthlySalaryPaise,
+          salesmanId: staff.salesmanId,
         }),
       }
     }).catch(() => {});
+
+    // Initialize current month's payroll record
+    const now = getCurrentKolkataTime();
+    await recalculateMonthlyPayroll(now.getMonth() + 1, now.getFullYear());
 
     try {
       revalidatePath('/dashboard/admin/payroll');
@@ -123,7 +146,7 @@ export async function updateStaffMember(id: string, data: {
       }
     });
 
-    // If salary changed, record audit trail
+    // If salary changed, record audit trail and recalculate active payroll month
     if (existing.monthlySalary !== newSalaryPaise) {
       await prisma.auditLog.create({
         data: {
@@ -144,6 +167,9 @@ export async function updateStaffMember(id: string, data: {
           })
         }
       }).catch(() => {});
+
+      const now = getCurrentKolkataTime();
+      await recalculateMonthlyPayroll(now.getMonth() + 1, now.getFullYear());
     }
 
     try {
@@ -231,7 +257,12 @@ export async function getDailyAttendance(dateStr?: string) {
   const [allStaff, attendances] = await Promise.all([
     prisma.staffMember.findMany({ 
       where: { isActive: true }, 
-      orderBy: { employeeCode: 'asc' } 
+      orderBy: { employeeCode: 'asc' },
+      include: {
+        salesman: {
+          select: { id: true, employeeCode: true, name: true }
+        }
+      }
     }),
     prisma.staffAttendance.findMany({
       where: {
@@ -259,6 +290,7 @@ export async function getDailyAttendance(dateStr?: string) {
       role: s.role,
       monthlySalaryPaise: s.monthlySalary,
       dailyRatePaise,
+      salesman: s.salesman,
       status: (record?.status || 'PENDING') as 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'PENDING',
       notes: record?.notes || '',
       attendanceId: record?.id || null,
@@ -302,7 +334,6 @@ export async function saveDailyAttendance(records: {
   const start = getKolkataStartOfDay(targetDateStr);
   const end = getKolkataEndOfDay(targetDateStr);
 
-  // Month & Year for automatic payroll recalculation
   const [yearStr, monthStr] = targetDateStr.split('-');
   const year = parseInt(yearStr, 10);
   const month = parseInt(monthStr, 10);
@@ -322,7 +353,6 @@ export async function saveDailyAttendance(records: {
 
         if (existing) {
           if (existing.status !== r.status) {
-            // Status was edited/corrected — audit record
             const staff = await tx.staffMember.findUnique({ where: { id: r.staffId } });
             await tx.auditLog.create({
               data: {
@@ -367,7 +397,6 @@ export async function saveDailyAttendance(records: {
       }
     });
 
-    // Recompute monthly payroll ledger automatically after attendance update
     await recalculateMonthlyPayroll(month, year);
 
     try {
@@ -381,9 +410,6 @@ export async function saveDailyAttendance(records: {
   }
 }
 
-/**
- * Authoritative recalculation of monthly payroll ledger based on attendance & payments
- */
 export async function recalculateMonthlyPayroll(month: number, year: number) {
   const boundaries = getKolkataMonthBoundaries(year, month);
   const start = boundaries.start;
@@ -394,7 +420,6 @@ export async function recalculateMonthlyPayroll(month: number, year: number) {
   });
 
   for (const staff of allStaff) {
-    // 1. Fetch attendance within this month
     const attendances = await prisma.staffAttendance.findMany({
       where: {
         staffId: staff.id,
@@ -405,7 +430,6 @@ export async function recalculateMonthlyPayroll(month: number, year: number) {
     const fullDayAbsences = attendances.filter(a => a.status === 'ABSENT').length;
     const halfDayAbsences = attendances.filter(a => a.status === 'HALF_DAY').length;
 
-    // Daily rate denominator = 30
     const dailyRate = Math.floor(staff.monthlySalary / 30);
     const fullDayDeductions = fullDayAbsences * dailyRate;
     const halfDayDeductions = halfDayAbsences * Math.floor(dailyRate / 2);
@@ -413,7 +437,6 @@ export async function recalculateMonthlyPayroll(month: number, year: number) {
 
     const netPayable = Math.max(0, staff.monthlySalary - totalDeductions);
 
-    // 2. Fetch all valid salary payments for this month
     const existingPayroll = await prisma.payrollRecord.findUnique({
       where: { staffId_month_year: { staffId: staff.id, month, year } },
       include: {
@@ -470,13 +493,18 @@ export async function recalculateMonthlyPayroll(month: number, year: number) {
 export async function getPayrollLedger(month: number, year: number) {
   await requireAdminSession();
 
-  // Authoritative recalculation to guarantee up-to-date attendance & payments
   await recalculateMonthlyPayroll(month, year);
 
   const records = await prisma.payrollRecord.findMany({
     where: { month, year },
     include: {
-      staff: true,
+      staff: {
+        include: {
+          salesman: {
+            select: { id: true, employeeCode: true, name: true }
+          }
+        }
+      },
       payments: {
         where: { isReversed: false },
         orderBy: { paymentDate: 'desc' }
@@ -571,7 +599,6 @@ export async function recordSalaryPayment(data: {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Fetch current payroll record
       const payroll = await tx.payrollRecord.findUnique({
         where: { staffId_month_year: { staffId, month, year } },
         include: { staff: true }
@@ -585,7 +612,6 @@ export async function recordSalaryPayment(data: {
         throw new Error(`Payment amount (₹${amountRupees.toLocaleString('en-IN')}) exceeds outstanding balance (₹${(payroll.remainingBalance / 100).toLocaleString('en-IN')}).`);
       }
 
-      // 2. Create immutable SalaryPayment record
       const payment = await tx.salaryPayment.create({
         data: {
           payrollRecordId: payroll.id,
@@ -599,7 +625,6 @@ export async function recordSalaryPayment(data: {
         }
       });
 
-      // 3. Update PayrollRecord
       const newPaidAmount = payroll.paidAmount + amountPaise;
       const newRemainingBalance = Math.max(0, payroll.netPayable - newPaidAmount);
       const newStatus = newRemainingBalance === 0 ? 'PAID' : 'PARTIALLY_PAID';
@@ -615,22 +640,28 @@ export async function recordSalaryPayment(data: {
         }
       });
 
-      // 4. Create synchronized Expense under category SALARY
-      await tx.expense.create({
-        data: {
-          category: 'SALARY',
-          title: `Salary Disbursement: ${payroll.staff.name} (${month}/${year})`,
-          amount: amountPaise,
-          expenseDate: paymentDate,
-          paymentMethod,
-          recipient: payroll.staff.name,
-          referenceNo: referenceNo?.trim() || `SAL-${year}-${String(month).padStart(2, '0')}-${payroll.staff.employeeCode}`,
-          notes: notes?.trim() || `Disbursed monthly salary for ${month}/${year}`,
-          recordedBy: session.user.name || 'Admin',
-        }
+      // Synchronize to Company Expenses idempotently
+      const expenseRef = `SAL-${year}-${String(month).padStart(2, '0')}-${payroll.staff.employeeCode}-${payment.id}`;
+      const existingExpense = await tx.expense.findFirst({
+        where: { referenceNo: expenseRef }
       });
 
-      // 5. Audit Log
+      if (!existingExpense) {
+        await tx.expense.create({
+          data: {
+            category: 'SALARY',
+            title: `Salary Disbursement: ${payroll.staff.name} (${month}/${year})`,
+            amount: amountPaise,
+            expenseDate: paymentDate,
+            paymentMethod,
+            recipient: payroll.staff.name,
+            referenceNo: expenseRef,
+            notes: notes?.trim() || `Disbursed monthly salary for ${month}/${year}`,
+            recordedBy: session.user.name || 'Admin',
+          }
+        });
+      }
+
       await tx.auditLog.create({
         data: {
           actorId: session.user.id || 'admin',
@@ -686,7 +717,6 @@ export async function reverseSalaryPayment(paymentId: string, reason: string) {
 
       const now = getCurrentKolkataTime();
 
-      // 1. Mark payment as reversed
       await tx.salaryPayment.update({
         where: { id: paymentId },
         data: {
@@ -697,7 +727,6 @@ export async function reverseSalaryPayment(paymentId: string, reason: string) {
         }
       });
 
-      // 2. Adjust PayrollRecord
       const payroll = payment.payrollRecord;
       const newPaidAmount = Math.max(0, payroll.paidAmount - payment.amount);
       const newRemainingBalance = Math.max(0, payroll.netPayable - newPaidAmount);
@@ -716,7 +745,15 @@ export async function reverseSalaryPayment(paymentId: string, reason: string) {
         }
       });
 
-      // 3. Audit Log
+      // Update associated expense record
+      const expenseRef = `SAL-${payroll.year}-${String(payroll.month).padStart(2, '0')}-${payment.staff.employeeCode}-${payment.id}`;
+      await tx.expense.updateMany({
+        where: { referenceNo: expenseRef },
+        data: {
+          notes: `[REVERSED on ${now.toISOString().split('T')[0]} - Reason: ${reason.trim()}]`,
+        }
+      });
+
       await tx.auditLog.create({
         data: {
           actorId: session.user.id || 'admin',

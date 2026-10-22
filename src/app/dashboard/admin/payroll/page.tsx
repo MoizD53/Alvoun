@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { getDailyAttendance, getPayrollLedger, getStaffDirectory } from '@/lib/actions/admin/payroll';
+import { getDailyAttendance, getPayrollLedger, getStaffDirectory, getUnlinkedSalesmen } from '@/lib/actions/admin/payroll';
 import PayrollClient from './PayrollClient';
 import { getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
 import { isFinancialRole } from '@/lib/rbac';
@@ -21,10 +21,11 @@ export default async function PayrollPage(props: {
   const month = searchParams.month ? parseInt(searchParams.month) : now.getMonth() + 1;
   const year = searchParams.year ? parseInt(searchParams.year) : now.getFullYear();
 
-  const [staffList, attendanceData, ledgerData] = await Promise.all([
+  const [staffList, attendanceData, ledgerData, unlinkedSalesmen] = await Promise.all([
     getStaffDirectory(),
     getDailyAttendance(dateStr),
     getPayrollLedger(month, year),
+    getUnlinkedSalesmen(),
   ]);
 
   return (
@@ -33,6 +34,7 @@ export default async function PayrollPage(props: {
         staffList={staffList}
         attendanceData={attendanceData}
         ledgerData={ledgerData.ledger}
+        unlinkedSalesmen={unlinkedSalesmen}
         currentDate={dateStr}
         currentMonth={month}
         currentYear={year}
