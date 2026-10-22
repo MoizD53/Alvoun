@@ -28,7 +28,8 @@ import {
   ArrowRight,
   ShieldCheck,
   UserX,
-  FileText
+  FileText,
+  Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -180,6 +181,7 @@ export default function PayrollClient({
   const [staffSearch, setStaffSearch] = useState('');
   const [staffRoleFilter, setStaffRoleFilter] = useState('ALL');
   const [staffStatusFilter, setStaffStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ACTIVE');
+  const [staffSalesmanFilter, setStaffSalesmanFilter] = useState<'ALL' | 'SALESMAN' | 'INTERNAL'>('ALL');
 
   // Add Staff Modal
   const [addStaffOpen, setAddStaffOpen] = useState(false);
@@ -230,6 +232,16 @@ export default function PayrollClient({
   const [selectedPaymentForReversal, setSelectedPaymentForReversal] = useState<PaymentTransaction | null>(null);
   const [reversalReason, setReversalReason] = useState('');
 
+  // Distinct designations for filtering
+  const designations = useMemo(() => {
+    const set = new Set<string>();
+    staffList.forEach((s) => {
+      if (s.designation) set.add(s.designation);
+      else if (s.role) set.add(s.role);
+    });
+    return Array.from(set).sort();
+  }, [staffList]);
+
   // Filtered staff directory
   const filteredStaff = useMemo(() => {
     return staffList.filter((s) => {
@@ -241,10 +253,46 @@ export default function PayrollClient({
 
       const matchRole = staffRoleFilter === 'ALL' || s.designation === staffRoleFilter || s.role === staffRoleFilter;
       const matchStatus = staffStatusFilter === 'ALL' || (staffStatusFilter === 'ACTIVE' ? s.isActive : !s.isActive);
+      const matchSalesman = staffSalesmanFilter === 'ALL' 
+        ? true 
+        : staffSalesmanFilter === 'SALESMAN' 
+          ? Boolean(s.salesman) 
+          : !s.salesman;
 
-      return matchSearch && matchRole && matchStatus;
+      return matchSearch && matchRole && matchStatus && matchSalesman;
     });
-  }, [staffList, staffSearch, staffRoleFilter, staffStatusFilter]);
+  }, [staffList, staffSearch, staffRoleFilter, staffStatusFilter, staffSalesmanFilter]);
+
+  // Helper to open salary payment modal for any staff member
+  const openPayForStaff = (staff: StaffItem) => {
+    const item = ledgerData.find((l) => l.staffId === staff.id) || {
+      id: '',
+      staffId: staff.id,
+      month: currentMonth,
+      year: currentYear,
+      staff: {
+        id: staff.id,
+        name: staff.name,
+        employeeCode: staff.employeeCode,
+        designation: staff.designation,
+        role: staff.role,
+        monthlySalary: staff.monthlySalary,
+      },
+      basicSalary: staff.monthlySalary,
+      workingDays: 30,
+      presentDays: 30,
+      halfDays: 0,
+      absentDays: 0,
+      payableDays: 30,
+      grossEarnings: staff.monthlySalary,
+      deductions: 0,
+      netPayable: staff.monthlySalary,
+      paidAmount: 0,
+      remainingBalance: staff.monthlySalary,
+      status: 'UNPAID',
+    };
+    openPaySalaryModal(item as any);
+  };
 
   // Total active staff count
   const activeStaffCount = staffList.filter(s => s.isActive).length;
@@ -1191,10 +1239,10 @@ export default function PayrollClient({
       {activeTab === 'STAFF' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="p-4 rounded-2xl bg-surface-raised shadow-raised border border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex flex-1 items-center gap-3">
+          <div className="p-4 rounded-2xl bg-surface-raised shadow-raised border border-border/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-1 flex-wrap items-center gap-3">
               {/* Search */}
-              <div className="relative flex-1 max-w-sm">
+              <div className="relative flex-1 min-w-[220px] max-w-sm">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -1213,7 +1261,30 @@ export default function PayrollClient({
               >
                 <option value="ACTIVE">Active Staff</option>
                 <option value="INACTIVE">Deactivated Staff</option>
-                <option value="ALL">All Records</option>
+                <option value="ALL">All Status</option>
+              </select>
+
+              {/* Designation Filter */}
+              <select
+                value={staffRoleFilter}
+                onChange={(e) => setStaffRoleFilter(e.target.value)}
+                className="bg-surface-inset shadow-inset border border-border/40 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">All Roles / Designations</option>
+                {designations.map((des) => (
+                  <option key={des} value={des}>{des}</option>
+                ))}
+              </select>
+
+              {/* Salesman-Linked Filter */}
+              <select
+                value={staffSalesmanFilter}
+                onChange={(e) => setStaffSalesmanFilter(e.target.value as any)}
+                className="bg-surface-inset shadow-inset border border-border/40 rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none cursor-pointer"
+              >
+                <option value="ALL">All Personnel</option>
+                <option value="SALESMAN">Linked Salesmen Only</option>
+                <option value="INTERNAL">Internal Staff Only</option>
               </select>
             </div>
 
@@ -1285,15 +1356,26 @@ export default function PayrollClient({
                     </div>
 
                     {/* Bottom Actions */}
-                    <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-border/40 flex items-center justify-between gap-1.5 flex-wrap">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => openPayForStaff(staff)}
+                        className="text-xs font-bold shadow-raised hover:shadow-raised-sm press-active px-3"
+                      >
+                        <Banknote className="w-3.5 h-3.5 mr-1" />
+                        Pay
+                      </Button>
+
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => openProfileModal(staff.id)}
-                        className="text-xs font-semibold flex-1"
+                        className="text-xs font-semibold px-2.5"
+                        title="View employee profile & history"
                       >
                         <Eye className="w-3.5 h-3.5 mr-1" />
-                        Profile
+                        Details
                       </Button>
 
                       <Button
@@ -1310,10 +1392,20 @@ export default function PayrollClient({
                         variant={staff.isActive ? 'outline' : 'primary'}
                         size="sm"
                         onClick={() => handleToggleStaff(staff)}
-                        className={`text-xs font-semibold p-2 ${staff.isActive ? 'text-destructive hover:bg-destructive/10' : ''}`}
+                        className={`text-xs font-semibold p-2 ${staff.isActive ? 'text-amber-600 hover:bg-amber-500/10' : ''}`}
                         title={staff.isActive ? 'Deactivate staff member' : 'Activate staff member'}
                       >
                         {staff.isActive ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteStaff(staff)}
+                        className="text-xs font-semibold p-2 text-destructive hover:bg-destructive/10 border-destructive/30"
+                        title="Delete staff member"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   </div>

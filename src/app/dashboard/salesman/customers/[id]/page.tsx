@@ -1,6 +1,18 @@
 import { getCustomerDetail } from '@/lib/actions/salesman/customer';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Navigation, IndianRupee, Check, Eye, ShoppingBag } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  MapPin, 
+  Navigation, 
+  IndianRupee, 
+  Check, 
+  Eye, 
+  ShoppingBag, 
+  Receipt, 
+  Calendar, 
+  CreditCard, 
+  History 
+} from 'lucide-react';
 import PhoneManager from './PhoneManager';
 import { notFound } from 'next/navigation';
 import { formatMoney } from '@/lib/format';
@@ -19,6 +31,10 @@ export default async function CustomerDetailPage({
   }
 
   const outstandingMoney = formatMoney(Math.abs(customer.outstanding));
+  const customerCode = `CUST-${customer.id.slice(-4).toUpperCase()}`;
+
+  const recentSales = customer.sales?.slice(0, 5) || [];
+  const recentPayments = customer.payments?.slice(0, 5) || [];
 
   return (
     <div className="space-y-6 pb-28 animate-fade-in-up">
@@ -31,15 +47,18 @@ export default async function CustomerDetailPage({
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-xl font-black text-text-primary truncate flex-1 tracking-tight">
-          {customer.customerName}
-        </h1>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-black text-text-primary truncate tracking-tight">
+            {customer.customerName}
+          </h1>
+          <span className="text-[11px] font-mono font-bold text-text-muted">{customerCode}</span>
+        </div>
       </div>
 
       {/* Dues Balance Card */}
       <div className="bg-surface-raised rounded-3xl shadow-raised border border-border-subtle p-6 flex flex-col justify-center items-center text-center">
         <div className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-          Dues Balance
+          Current Dues Balance
         </div>
         <div className={`text-4xl font-black tracking-tight ${
           customer.outstanding > 0 
@@ -66,18 +85,18 @@ export default async function CustomerDetailPage({
               {customer.address}
             </div>
             <div className="text-sm font-medium text-text-muted">
-              {customer.city.name}, {customer.state.name}
+              {customer.city?.name}, {customer.state?.name}
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-sunken shadow-inset-sm rounded-full text-xs font-bold text-text-secondary mt-3 border border-border-subtle">
               <Navigation className="h-3.5 w-3.5 text-brand-teal" />
-              {customer.route?.name || customer.city.name}
+              {customer.route?.name || customer.city?.name}
             </div>
           </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {customer.isVisitedToday ? (
           <div className="p-5 bg-surface-raised shadow-raised border-2 border-emerald-500/30 rounded-3xl space-y-3.5">
             <div className="flex items-center justify-between">
@@ -124,13 +143,83 @@ export default async function CustomerDetailPage({
           </Link>
         )}
         
+        {/* Prominent Receipt / Collect Payment Action */}
         <Link 
           href={`/dashboard/salesman/customers/${customer.id}/payment`}
-          className="flex items-center justify-center gap-2 w-full min-h-[52px] py-4 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-brand-teal/30 text-brand-teal rounded-2xl font-black text-base active:scale-[0.98] transition-all"
+          className="flex items-center justify-center gap-2 w-full min-h-[52px] py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-base shadow-raised active:scale-[0.98] transition-all"
         >
-          <IndianRupee className="h-5 w-5" />
-          COLLECT PAYMENT
+          <Receipt className="h-5 w-5" />
+          RECEIPT / COLLECT PAYMENT
         </Link>
+      </div>
+
+      {/* Recent History: Sales & Collections */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-xs font-extrabold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
+            <History className="h-4 w-4 text-brand-teal" />
+            Recent Activity & History
+          </h3>
+        </div>
+
+        {/* Recent Payments Section */}
+        <div className="bg-surface-raised p-5 rounded-3xl shadow-raised border border-border-subtle space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
+            <span className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+              <CreditCard className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              Recent Collections ({recentPayments.length})
+            </span>
+          </div>
+          {recentPayments.length === 0 ? (
+            <p className="text-xs text-text-muted py-2 text-center">No payment collections recorded yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentPayments.map((p: any) => (
+                <div key={p.id} className="p-3 bg-surface-sunken rounded-xl shadow-inset border border-border-subtle flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-extrabold text-foreground">{formatMoney(p.amount)}</span>
+                    <span className="text-[11px] text-text-muted ml-2">via {p.paymentMethod}</span>
+                    {p.referenceNumber && (
+                      <div className="text-[10px] text-text-muted font-mono">{p.referenceNumber}</div>
+                    )}
+                  </div>
+                  <div className="text-right text-[11px] text-text-muted font-medium">
+                    {new Date(p.paymentDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Sales Section */}
+        <div className="bg-surface-raised p-5 rounded-3xl shadow-raised border border-border-subtle space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
+            <span className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+              <ShoppingBag className="h-3.5 w-3.5 text-brand-teal" />
+              Recent Sales Orders ({recentSales.length})
+            </span>
+          </div>
+          {recentSales.length === 0 ? (
+            <p className="text-xs text-text-muted py-2 text-center">No sales orders recorded yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {recentSales.map((s: any) => (
+                <div key={s.id} className="p-3 bg-surface-sunken rounded-xl shadow-inset border border-border-subtle flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-extrabold text-foreground">{formatMoney(s.totalAmount)}</span>
+                    <div className="text-[10px] text-text-muted mt-0.5">
+                      {s.items?.map((it: any) => `${it.crates}x ${it.product?.name || 'pkg'}`).join(', ')}
+                    </div>
+                  </div>
+                  <div className="text-right text-[11px] text-text-muted font-medium">
+                    {new Date(s.saleDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

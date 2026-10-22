@@ -10,7 +10,7 @@ import {
   ShoppingBag, ArrowLeft,
   CheckCircle2, AlertCircle, Building2,
   Calendar, Clock, User, ShieldCheck,
-  Scale, Receipt, History, X, Save
+  Scale, Receipt, History, X, Save, Package
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +53,46 @@ export default function CustomerWorkspace({
   const totalSales = customer.sales.reduce((sum: number, s: any) => sum + s.totalAmount, 0);
   const totalPayments = customer.payments.reduce((sum: number, p: any) => sum + p.amount, 0);
   
+  // Product-wise sales breakdown calculation
+  const categorizeProduct = (name: string): '1L' | '500ml' | '250ml' | 'OTHER' => {
+    const lower = (name || '').toLowerCase();
+    if (lower.includes('1') && (lower.includes('l') || lower.includes('litre') || lower.includes('liter'))) return '1L';
+    if (lower.includes('500')) return '500ml';
+    if (lower.includes('250')) return '250ml';
+    return 'OTHER';
+  };
+
+  let crates1L = 0;
+  let loose1L = 0;
+  let amount1L = 0;
+
+  let crates500ml = 0;
+  let loose500ml = 0;
+  let amount500ml = 0;
+
+  let crates250ml = 0;
+  let loose250ml = 0;
+  let amount250ml = 0;
+
+  for (const s of customer.sales) {
+    for (const item of s.items || []) {
+      const type = categorizeProduct(item.product?.name || '');
+      if (type === '1L') {
+        crates1L += item.crates || 0;
+        loose1L += item.looseBottles || 0;
+        amount1L += item.amount || 0;
+      } else if (type === '500ml') {
+        crates500ml += item.crates || 0;
+        loose500ml += item.looseBottles || 0;
+        amount500ml += item.amount || 0;
+      } else if (type === '250ml') {
+        crates250ml += item.crates || 0;
+        loose250ml += item.looseBottles || 0;
+        amount250ml += item.amount || 0;
+      }
+    }
+  }
+
   const lastVisit = customer.visits?.[0]?.createdAt ? new Date(customer.visits[0].createdAt).toLocaleDateString('en-IN') : 'Never';
   const lastPayment = customer.payments?.[0]?.paymentDate ? new Date(customer.payments[0].paymentDate).toLocaleDateString('en-IN') : 'None';
 
@@ -395,6 +435,75 @@ export default function CustomerWorkspace({
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Product-Wise Sales Overview */}
+              <div className="bg-surface-inset shadow-inset rounded-2xl p-5 sm:p-6 border border-border-default space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-black text-primary tracking-tight font-sans flex items-center gap-2">
+                    <Package className="h-5 w-5 text-teal-600" />
+                    Product-Wise Sales Summary
+                  </h3>
+                  <span className="text-xs font-bold text-secondary">
+                    Total: ₹{(totalSales / 100).toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* 1L */}
+                  <div className="p-4 rounded-xl bg-surface-raised border border-border-default shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-secondary uppercase tracking-wider">1 Litre</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold border border-teal-500/20">
+                        12 btls/pkg
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-xl font-black text-primary tracking-tight font-sans">
+                        {crates1L} <span className="text-xs font-bold text-secondary">PKGs</span>
+                      </div>
+                      <div className="text-xs font-bold text-teal-600 dark:text-teal-400 mt-0.5">
+                        ₹{(amount1L / 100).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 500ml */}
+                  <div className="p-4 rounded-xl bg-surface-raised border border-border-default shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-secondary uppercase tracking-wider">500 ml</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300 font-semibold border border-blue-500/20">
+                        24 btls/pkg
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-xl font-black text-primary tracking-tight font-sans">
+                        {crates500ml} <span className="text-xs font-bold text-secondary">PKGs</span>
+                      </div>
+                      <div className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                        ₹{(amount500ml / 100).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 250ml */}
+                  <div className="p-4 rounded-xl bg-surface-raised border border-border-default shadow-xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-secondary uppercase tracking-wider">250 ml</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 font-semibold border border-purple-500/20">
+                        48 btls/pkg
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <div className="text-xl font-black text-primary tracking-tight font-sans">
+                        {crates250ml} <span className="text-xs font-bold text-secondary">PKGs</span>
+                      </div>
+                      <div className="text-xs font-bold text-purple-600 dark:text-purple-400 mt-0.5">
+                        ₹{(amount250ml / 100).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Assignment & Routing Details */}

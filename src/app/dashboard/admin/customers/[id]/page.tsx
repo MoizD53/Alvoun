@@ -20,7 +20,7 @@ export default async function ViewCustomerPage({
       city: true,
       route: true,
       salesman: true,
-      sales: { include: { items: true }, orderBy: { saleDate: 'desc' } },
+      sales: { include: { items: { include: { product: true } } }, orderBy: { saleDate: 'desc' } },
       payments: { orderBy: { paymentDate: 'desc' } },
       visits: { orderBy: { createdAt: 'desc' } },
       auditLogs: { 

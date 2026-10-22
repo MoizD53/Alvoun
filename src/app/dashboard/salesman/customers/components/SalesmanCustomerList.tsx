@@ -20,7 +20,8 @@ import {
   IndianRupee,
   Check,
   Banknote,
-  QrCode
+  QrCode,
+  Receipt
 } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import { submitVisitFlow } from '@/lib/actions/salesman/visitFlow';
@@ -268,11 +269,11 @@ export default function SalesmanCustomerList({
                       </div>
 
                       {/* Actions */}
-                      <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-border-subtle/80">
+                      <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-border-subtle/80">
                         {customer.contact ? (
                           <a 
                             href={`tel:${customer.contact}`} 
-                            className="min-h-[44px] flex items-center justify-center gap-2 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-primary rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-primary rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
                           >
                             <Phone className="h-3.5 w-3.5 text-brand-teal" />
                             CALL
@@ -280,11 +281,19 @@ export default function SalesmanCustomerList({
                         ) : (
                           <Link 
                             href={`/dashboard/salesman/customers/${customer.id}`} 
-                            className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-muted rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
+                            className="min-h-[44px] flex items-center justify-center gap-1 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-muted rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
                           >
-                            + ADD PHONE
+                            + PHONE
                           </Link>
                         )}
+
+                        <Link 
+                          href={`/dashboard/salesman/customers/${customer.id}/payment`}
+                          className="min-h-[44px] flex items-center justify-center gap-1 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
+                        >
+                          <Receipt className="h-3.5 w-3.5" />
+                          RECEIPT
+                        </Link>
                         
                         <button 
                           type="button"
@@ -292,10 +301,10 @@ export default function SalesmanCustomerList({
                             e.stopPropagation();
                             setActiveCustomerForVisit(customer);
                           }}
-                          className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-raised-sm hover:shadow-raised active:scale-[0.98] transition-all"
+                          className="min-h-[44px] flex items-center justify-center gap-1 py-2.5 bg-brand-teal hover:bg-brand-teal-dark text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-raised-sm hover:shadow-raised active:scale-[0.98] transition-all"
                         >
                           <ShoppingBag className="h-3.5 w-3.5" />
-                          START VISIT
+                          VISIT
                         </button>
                       </div>
                     </div>
@@ -389,11 +398,11 @@ export default function SalesmanCustomerList({
                       </div>
 
                       {/* Actions */}
-                      <div className="grid grid-cols-2 gap-3 mt-4 pt-3.5 border-t border-border-subtle/80">
+                      <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-border-subtle/80">
                         {customer.contact ? (
                           <a 
                             href={`tel:${customer.contact}`} 
-                            className="min-h-[44px] flex items-center justify-center gap-2 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-primary rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
+                            className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-surface-raised shadow-raised-sm hover:shadow-raised active:shadow-inset border border-border-subtle text-text-primary rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
                           >
                             <Phone className="h-3.5 w-3.5 text-brand-teal" />
                             CALL
@@ -403,14 +412,22 @@ export default function SalesmanCustomerList({
                             No Phone
                           </div>
                         )}
+
+                        <Link 
+                          href={`/dashboard/salesman/customers/${customer.id}/payment`}
+                          className="min-h-[44px] flex items-center justify-center gap-1 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs uppercase tracking-wider active:scale-[0.98] transition-all"
+                        >
+                          <Receipt className="h-3.5 w-3.5" />
+                          RECEIPT
+                        </Link>
                         
                         <button 
                           type="button"
                           onClick={() => setActiveCustomerForView(customer)}
-                          className="min-h-[44px] flex items-center justify-center gap-1.5 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs uppercase tracking-wider shadow-raised-sm active:shadow-inset transition-all"
+                          className="min-h-[44px] flex items-center justify-center gap-1 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-xl font-bold text-xs uppercase tracking-wider shadow-raised-sm active:shadow-inset transition-all"
                         >
                           <Eye className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                          VIEW VISIT
+                          VIEW
                         </button>
                       </div>
                     </div>
