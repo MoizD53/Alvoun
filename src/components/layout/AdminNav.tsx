@@ -114,26 +114,28 @@ export default function AdminNav({ user }: { user: any }) {
         fixed inset-y-0 left-0 z-50 w-64 bg-surface-sidebar border-r border-border-default shadow-xs transform transition-transform duration-200 ease-in-out flex flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Brand Header */}
+        {/* Brand Header — Two Distinct, Separated, Large Logos */}
         <div className="h-20 flex items-center justify-between px-4 sm:px-5 border-b border-border-default/80 bg-surface-sidebar shrink-0">
-          <Link href="/dashboard/admin" className="flex items-center gap-2.5 group min-w-0 flex-1">
-            <div className="relative h-11 w-11 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-150">
+          <Link href="/dashboard/admin" className="flex items-center gap-3.5 group min-w-0 flex-1 select-none">
+            {/* Left Symbol: 'A' Inside Clean Circle */}
+            <div className="relative h-12 w-12 sm:h-13 sm:w-13 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-180 drop-shadow-xs">
               <Image 
                 src="/alvoun-emblem.png" 
                 alt="Alvoun Emblem" 
-                width={48} 
-                height={48} 
+                width={56} 
+                height={56} 
                 className="w-full h-full object-contain" 
                 priority 
               />
             </div>
-            <div className="flex-1 min-w-0">
+            {/* Right Wordmark: ALVOUN */}
+            <div className="flex-1 min-w-0 flex items-center pl-0.5">
               <Image
                 src="/alvoun-wordmark.png"
                 alt="Alvoun"
-                width={160}
-                height={48}
-                className="h-10 w-auto object-contain max-w-[155px]"
+                width={170}
+                height={52}
+                className="h-11 sm:h-12 w-auto object-contain max-w-[155px] group-hover:scale-[1.02] transition-transform duration-180"
                 priority
               />
             </div>
@@ -300,23 +302,25 @@ export default function AdminNav({ user }: { user: any }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="relative h-9 w-9 shrink-0 flex items-center justify-center">
+          <div className="flex items-center gap-3 select-none">
+            {/* Left Symbol: 'A' Inside Clean Circle */}
+            <div className="relative h-10 w-10 shrink-0 flex items-center justify-center drop-shadow-xs">
               <Image 
                 src="/alvoun-emblem.png" 
-                alt="Alvoun" 
-                width={36} 
-                height={36} 
+                alt="Alvoun Emblem" 
+                width={44} 
+                height={44} 
                 className="w-full h-full object-contain" 
                 priority 
               />
             </div>
+            {/* Right Wordmark: ALVOUN */}
             <Image
               src="/alvoun-wordmark.png"
               alt="Alvoun"
-              width={130}
-              height={38}
-              className="h-8 w-auto object-contain max-w-[130px]"
+              width={145}
+              height={44}
+              className="h-9 sm:h-10 w-auto object-contain max-w-[140px]"
               priority
             />
           </div>

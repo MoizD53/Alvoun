@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { MapPin, ChevronRight } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import type { AreaSaleItem } from '@/lib/dashboard-data';
-import AdminDatePicker from './AdminDatePicker';
 
 interface AreaWiseSalesCardProps {
   areaSales: AreaSaleItem[];

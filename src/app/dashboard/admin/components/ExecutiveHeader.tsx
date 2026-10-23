@@ -140,13 +140,13 @@ export default function ExecutiveHeader({
     <>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
         {/* Left: Naphareese Maschroubat Brand Logo */}
-        <div className="min-w-0 flex items-center shrink-0">
+        <div className="min-w-0 flex items-center shrink-0 py-1">
           <Image
             src="/naphareese-maschroubat.png"
             alt="Naphareese Maschroubat"
-            width={240}
-            height={68}
-            className="h-9 sm:h-11 md:h-12 w-auto object-contain drop-shadow-xs"
+            width={360}
+            height={88}
+            className="h-12 sm:h-14 md:h-16 lg:h-18 w-auto object-contain drop-shadow-sm select-none"
             priority
           />
         </div>

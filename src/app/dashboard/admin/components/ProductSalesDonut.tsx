@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Package, ChevronRight, Layers, Loader2, RotateCcw } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import type { ProductSalesData } from '@/lib/dashboard-data';
-import AdminDatePicker from './AdminDatePicker';
 
 // Standard 3-Product Color Assignment as strictly specified:
 // 1 Litre: Blue (#2583C5)

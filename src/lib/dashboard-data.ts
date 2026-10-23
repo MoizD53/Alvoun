@@ -906,12 +906,17 @@ export async function getProductionSummary(startOfDay: Date, endOfDay: Date): Pr
 // 9. STOCK SUMMARY (FINISHED PRODUCT CRATES IN INVENTORY)
 // ---------------------------------------------------------------------------
 
-export async function getStockSummary(): Promise<StockSummary> {
+export async function getStockSummary(asOfDate?: Date): Promise<StockSummary> {
+  const whereBatch = asOfDate ? { productionDate: { lte: asOfDate } } : {};
+  const whereSale = asOfDate ? { sale: { saleDate: { lte: asOfDate } } } : {};
+
   const [prodAggregate, soldAggregate] = await Promise.all([
     prisma.productionBatch.aggregate({
+      where: whereBatch,
       _sum: { cratesProduced: true, volumeLitres: true }
     }),
     prisma.saleItem.aggregate({
+      where: whereSale,
       _sum: { crates: true }
     })
   ]);
@@ -1056,7 +1061,7 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
     getInventoryAndDispatches(startOfDay, endOfDay),
     getExpensesSummary(startOfDay, endOfDay, targetDate),
     getProductionSummary(startOfDay, endOfDay),
-    getStockSummary(),
+    getStockSummary(endOfDay),
     getPayrollSummary(targetDate),
     Promise.all([
       prisma.customer.count(),

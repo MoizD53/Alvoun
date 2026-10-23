@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Users, ChevronRight } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import type { TopCustomerItem } from '@/lib/dashboard-data';
-import AdminDatePicker from './AdminDatePicker';
 
 interface TopCustomersCardProps {
   topCustomers: TopCustomerItem[];
