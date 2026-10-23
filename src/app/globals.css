@@ -674,3 +674,93 @@ tbody tr:hover {
 nav a {
   transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
+
+
+/* ============================================================
+   ALVOUN UNIVERSAL 3D HOVER LIFT & EXTRUSION SYSTEM
+   Consistent 180-250ms tactile elevation across all interactive elements
+   ============================================================ */
+
+.card-3d,
+.kpi-card-hover,
+.shadow-raised,
+.dashboard-card {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 220ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.card-3d:hover,
+.kpi-card-hover:hover,
+.shadow-raised:hover,
+.dashboard-card:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 10px 24px -4px rgba(53, 41, 31, 0.16),
+              0 4px 8px -2px rgba(53, 41, 31, 0.08),
+              -3px -3px 8px rgba(255, 255, 255, 0.85);
+}
+
+.dark .card-3d:hover,
+.dark .kpi-card-hover:hover,
+.dark .shadow-raised:hover,
+.dark .dashboard-card:hover {
+  transform: translateY(-2.5px);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.45),
+              0 4px 8px -2px rgba(0, 0, 0, 0.3),
+              -2px -2px 6px rgba(255, 255, 255, 0.04);
+}
+
+/* Interactive Buttons: 3D Lift & Pressed-Down on Active */
+button:not(:disabled):not([aria-disabled="true"]):not(.no-3d),
+.btn-3d,
+[role="button"]:not([aria-disabled="true"]) {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 180ms ease,
+              border-color 180ms ease,
+              color 180ms ease;
+}
+
+button:not(:disabled):not([aria-disabled="true"]):not(.no-3d):hover,
+.btn-3d:hover,
+[role="button"]:not([aria-disabled="true"]):hover {
+  transform: translateY(-1.5px);
+}
+
+button:not(:disabled):not([aria-disabled="true"]):not(.no-3d):active,
+.btn-3d:active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transform: translateY(0.5px) scale(0.985);
+  box-shadow: var(--shadow-inset);
+}
+
+/* Clickable Brand Logos & Marks */
+.brand-logo-interactive {
+  transition: transform 200ms ease, filter 200ms ease;
+}
+.brand-logo-interactive:hover {
+  transform: translateY(-1.5px) scale(1.02);
+  filter: drop-shadow(0 6px 14px rgba(26, 95, 99, 0.22));
+}
+
+/* Interactive Navigation Links */
+nav a,
+aside a {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 180ms ease,
+              color 180ms ease;
+}
+nav a:hover,
+aside a:hover {
+  transform: translateX(2px);
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}

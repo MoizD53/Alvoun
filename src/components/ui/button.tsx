@@ -26,13 +26,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "relative inline-flex items-center justify-center font-medium transition-all duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 press-active";
+      "relative inline-flex items-center justify-center font-medium transition-all duration-200 ease-out select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 press-active hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985]";
 
     const variantStyles = {
       primary:
-        "bg-teal-500 text-text-inverse hover:bg-teal-600 shadow-sm hover:shadow-md active:shadow-inner border border-teal-600/20",
+        "bg-teal-500 text-text-inverse hover:bg-teal-600 shadow-raised-sm hover:shadow-hover active:shadow-inset border border-teal-600/30",
       secondary:
-        "bg-surface-raised text-primary hover:text-primary border border-border-default hover:border-border-strong shadow-xs hover:shadow-sm active:shadow-inner",
+        "bg-surface-raised text-primary hover:text-primary border border-border-default hover:border-border-strong shadow-raised-sm hover:shadow-hover active:shadow-inset",
       outline:
         "bg-transparent text-primary hover:bg-surface-raised border border-border-default hover:border-border-strong active:shadow-inner",
       ghost:
@@ -40,7 +40,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       inset:
         "bg-surface-inset text-primary border border-border-default shadow-inset hover:border-border-strong",
       danger:
-        "bg-danger text-text-inverse hover:opacity-95 shadow-sm hover:shadow-md active:shadow-inner border border-danger/30",
+        "bg-danger text-text-inverse hover:opacity-95 shadow-raised-sm hover:shadow-hover active:shadow-inset border border-danger/30",
       "danger-outline":
         "bg-transparent text-danger border border-danger/30 hover:bg-danger/10 active:shadow-inner",
     };

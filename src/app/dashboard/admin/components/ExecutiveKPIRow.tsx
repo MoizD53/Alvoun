@@ -86,12 +86,46 @@ export default function ExecutiveKPIRow({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4">
-      {/* 1. SALES TODAY */}
+      {/* 1. PRODUCTION */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
           <div className="min-w-0">
             <span className="text-xs font-bold text-primary truncate block tracking-tight">
-              Sales ({periodLabel})
+              Production
+            </span>
+          </div>
+          <Link
+            href={`/dashboard/admin/production${selectedDate ? `?startDate=${encodeURIComponent(selectedDate)}&endDate=${encodeURIComponent(selectedDate)}` : ''}`}
+            className={embossedViewButtonClass}
+            title="Open Bottling Production Workspace"
+          >
+            <span>View</span>
+            <ChevronRight className="h-3 w-3 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
+          </Link>
+        </div>
+
+        <div className="my-2">
+          <div className="text-2xl sm:text-[26px] font-black text-primary tracking-tight font-sans tabular-nums leading-none">
+            {formatNumber(production?.todayCrates ?? 0)} <span className="text-base font-semibold text-secondary font-sans">PKGs</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-[11px]">
+          <span className="text-secondary truncate">
+            {production?.batchesCount ? `${production.batchesCount} Batches` : '0 Batches'}
+          </span>
+          <span className="text-muted font-mono font-bold tracking-tight">
+            {formatNumber(production?.todayLitres ?? 0)} L
+          </span>
+        </div>
+      </div>
+
+      {/* 2. SALES */}
+      <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-primary truncate block tracking-tight">
+              Sales
             </span>
           </div>
           <Link
@@ -124,12 +158,12 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 2. RECEIVABLES / COLLECTIONS */}
+      {/* 3. COLLECTIONS */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
           <div className="min-w-0">
             <span className="text-xs font-bold text-primary truncate block tracking-tight">
-              Collections ({periodLabel})
+              Collections
             </span>
           </div>
           <Link
@@ -162,12 +196,12 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 3. CASH FLOW */}
+      {/* 4. CASH FLOW */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
           <div className="min-w-0">
             <span className="text-xs font-bold text-primary truncate block tracking-tight">
-              Cash Flow ({periodLabel})
+              Cash Flow
             </span>
           </div>
           <Link
@@ -201,12 +235,12 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 4. EXPENSES */}
+      {/* 5. EXPENSES */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
           <div className="min-w-0">
             <span className="text-xs font-bold text-primary truncate block tracking-tight">
-              Expenses ({periodLabel})
+              Expenses
             </span>
           </div>
           <Link
@@ -231,40 +265,6 @@ export default function ExecutiveKPIRow({
           </span>
           <span className="text-muted font-mono font-bold tracking-tight">
             {expenses?.monthExpensesPaise ? `MTD: ${formatMoney(expenses.monthExpensesPaise)}` : 'MTD: ₹0'}
-          </span>
-        </div>
-      </div>
-
-      {/* 5. PRODUCTION */}
-      <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="min-w-0">
-            <span className="text-xs font-bold text-primary truncate block tracking-tight">
-              Production ({periodLabel})
-            </span>
-          </div>
-          <Link
-            href={`/dashboard/admin/production${selectedDate ? `?startDate=${encodeURIComponent(selectedDate)}&endDate=${encodeURIComponent(selectedDate)}` : ''}`}
-            className={embossedViewButtonClass}
-            title="Open Bottling Production Workspace"
-          >
-            <span>View</span>
-            <ChevronRight className="h-3 w-3 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
-          </Link>
-        </div>
-
-        <div className="my-2">
-          <div className="text-2xl sm:text-[26px] font-black text-primary tracking-tight font-sans tabular-nums leading-none">
-            {formatNumber(production?.todayCrates ?? 0)} <span className="text-base font-semibold text-secondary font-sans">PKGs</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-[11px]">
-          <span className="text-secondary truncate">
-            {production?.batchesCount ? `${production.batchesCount} Batches` : '0 Batches'}
-          </span>
-          <span className="text-muted font-mono font-bold tracking-tight">
-            {formatNumber(production?.todayLitres ?? 0)} L
           </span>
         </div>
       </div>

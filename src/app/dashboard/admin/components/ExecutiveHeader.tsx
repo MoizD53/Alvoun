@@ -138,7 +138,7 @@ export default function ExecutiveHeader({
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md pb-2.5 pt-1 border-b border-border-default/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4 select-none">
         {/* Left: Naphareese Maschroubat Brand Logo */}
         <div className="min-w-0 flex items-center shrink-0 py-1">
           <Image
