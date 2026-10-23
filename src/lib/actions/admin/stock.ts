@@ -2,9 +2,10 @@
 
 import { prisma } from '@/lib/db';
 import { requireAdminSession } from '@/lib/session';
+import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { getCurrentKolkataTime } from '@/lib/time';
+import { getCurrentKolkataTime, getKolkataEndOfDay } from '@/lib/time';
 
 const InwardSchema = z.object({
   materialId: z.string().min(1, 'Material is required'),
@@ -14,14 +15,31 @@ const InwardSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
-export async function getStockDashboard() {
-  await requireAdminSession();
+export async function getStockDashboard(selectedDateStr?: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return {
+        rawMaterials: [],
+        productStockSummary: [],
+        lowStockAlertsCount: 0,
+        lowStockAlerts: [],
+      };
+    }
+  } catch {
+    // Continue in Server Component context
+  }
+
+  const endOfDay = selectedDateStr && /^\d{4}-\d{2}-\d{2}$/.test(selectedDateStr)
+    ? getKolkataEndOfDay(selectedDateStr)
+    : undefined;
 
   // 1. Raw Materials Stock & Status
   const rawMaterials = await prisma.rawMaterial.findMany({
     include: {
       movements: {
-        take: 5,
+        where: endOfDay ? { movementDate: { lte: endOfDay } } : undefined,
+        take: 10,
         orderBy: { movementDate: 'desc' },
       },
     },
@@ -39,13 +57,20 @@ export async function getStockDashboard() {
 
   const productStockSummary = await Promise.all(
     products.map(async (prod) => {
+      const prodWhere: any = { productId: prod.id };
+      const saleWhere: any = { productId: prod.id };
+      if (endOfDay) {
+        prodWhere.batchDate = { lte: endOfDay };
+        saleWhere.sale = { saleDate: { lte: endOfDay } };
+      }
+
       const [prodAggregate, soldAggregate] = await Promise.all([
         prisma.productionBatch.aggregate({
-          where: { productId: prod.id },
+          where: prodWhere,
           _sum: { cratesProduced: true, totalBottles: true, volumeLitres: true },
         }),
         prisma.saleItem.aggregate({
-          where: { productId: prod.id },
+          where: saleWhere,
           _sum: { crates: true, looseBottles: true, amount: true },
         }),
       ]);

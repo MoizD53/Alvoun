@@ -147,129 +147,125 @@ export async function updateSalesmanAccount(id: string, data: any) {
     }
 
     // Check uniqueness if changing login ID
-    if (loginId !== salesman.profile.email) {
+    if (loginId && loginId !== salesman.profile.email) {
       const existingProfile = await prisma.profile.findUnique({
         where: { email: loginId },
       });
       if (existingProfile) return { error: 'Login ID already exists.' };
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.profile.update({
+    const existingAreaIds = salesman.assignments.map(a => a.areaId).sort();
+    const newAreaIds = Array.isArray(areaIds) ? [...areaIds].sort() : null;
+    const areasChanged = newAreaIds !== null && (
+      existingAreaIds.length !== newAreaIds.length || 
+      existingAreaIds.some((aid, i) => aid !== newAreaIds[i])
+    );
+    const existingRouteId = salesman.routes?.[0]?.id || null;
+    const routeChanged = routeId !== undefined && routeId !== existingRouteId;
+
+    // Collect operations for single batch pipeline execution
+    const operations: any[] = [];
+
+    // 1. Profile update
+    operations.push(
+      prisma.profile.update({
         where: { id: salesman.profileId },
         data: {
           name,
           phone,
-          email: loginId,
-          isActive,
+          ...(loginId ? { email: loginId } : {}),
+          ...(isActive !== undefined ? { isActive } : {}),
         },
-      });
+      })
+    );
 
-      await tx.salesman.update({
+    // 2. Salesman update
+    operations.push(
+      prisma.salesman.update({
         where: { id },
         data: {
           name,
           phone,
-          isActive,
+          ...(isActive !== undefined ? { isActive } : {}),
         },
-      });
+      })
+    );
 
-      if (!isActive) {
-        // Force close active work sessions
-        await tx.workSession.updateMany({
-          where: { 
-            salesmanId: id,
-            logoutAt: null 
-          },
-          data: {
-            logoutAt: new Date(),
-            status: 'FORCE_CLOSED'
-          }
-        });
+    // Close sessions if deactivating
+    if (isActive === false) {
+      operations.push(
+        prisma.workSession.updateMany({
+          where: { salesmanId: id, logoutAt: null },
+          data: { logoutAt: new Date(), status: 'FORCE_CLOSED' }
+        }),
+        prisma.visit.updateMany({
+          where: { salesmanId: id, status: 'STARTED' },
+          data: { status: 'COMPLETED', noSaleReason: 'Account disabled' }
+        })
+      );
+    }
 
-        // Close active visits
-        await tx.visit.updateMany({
-          where: {
-            salesmanId: id,
-            status: 'STARTED'
-          },
-          data: {
-            status: 'COMPLETED',
-            noSaleReason: 'Account disabled'
-          }
-        });
-      }
-
-      if (routeId !== undefined) {
-        // Unassign old route if changing
-        await tx.route.updateMany({
+    // 3. Route update if changed
+    if (routeChanged) {
+      operations.push(
+        prisma.route.updateMany({
           where: { salesmanId: id },
           data: { salesmanId: null },
-        });
-
-        if (routeId) {
-          await tx.route.update({
+        })
+      );
+      if (routeId) {
+        operations.push(
+          prisma.route.update({
             where: { id: routeId },
             data: { salesmanId: id },
-          });
-        }
+          })
+        );
       }
+    }
 
-      // Update territory area assignments if provided
-      if (areaIds !== undefined) {
-        await tx.salesmanAssignment.deleteMany({
+    // 4. Territory Areas update only if changed
+    if (areasChanged) {
+      operations.push(
+        prisma.salesmanAssignment.deleteMany({
           where: { salesmanId: id },
-        });
-
-        // Unlink previous customers
-        await tx.customer.updateMany({
+        }),
+        prisma.customer.updateMany({
           where: { salesmanId: id },
           data: { salesmanId: null },
+        })
+      );
+
+      if (areaIds && areaIds.length > 0) {
+        const selectedAreas = await prisma.area.findMany({
+          where: { id: { in: areaIds } },
         });
 
-        if (areaIds.length > 0) {
-          const selectedAreas = await tx.area.findMany({
-            where: { id: { in: areaIds } },
-          });
-
-          // Verify every selected Area belongs to that Route
-          const validRouteId = routeId !== undefined ? routeId : salesman.assignments?.[0]?.routeId || salesman.routes?.[0]?.id;
-          
-          if (validRouteId) {
-            const invalidAreas = selectedAreas.filter(a => a.routeId !== validRouteId);
-            if (invalidAreas.length > 0) {
-              throw new Error('Data integrity error: One or more selected areas do not belong to the selected route.');
-            }
+        const validRouteId = routeId !== undefined ? routeId : existingRouteId;
+        if (validRouteId) {
+          const invalidAreas = selectedAreas.filter(a => a.routeId !== validRouteId);
+          if (invalidAreas.length > 0) {
+            throw new Error('Data integrity error: One or more selected areas do not belong to the selected route.');
           }
+        }
 
-          await tx.salesmanAssignment.createMany({
+        operations.push(
+          prisma.salesmanAssignment.createMany({
             data: selectedAreas.map(a => ({
               salesmanId: id,
               routeId: a.routeId,
               areaId: a.id,
             })),
-          });
-
-          // Fetch customers strictly by Area ID and verify
-          const customersInAreas = await tx.customer.findMany({
-            where: { areaId: { in: areaIds } },
-            include: { area: true }
-          });
-
-          if (validRouteId) {
-            const invalidCustomers = customersInAreas.filter(c => c.area!.routeId !== validRouteId || (c.routeId && c.routeId !== validRouteId));
-            if (invalidCustomers.length > 0) {
-              throw new Error('Data integrity error: Customers found with inconsistent route associations.');
-            }
-          }
-
-          await tx.customer.updateMany({
+          }),
+          prisma.customer.updateMany({
             where: { areaId: { in: areaIds } },
             data: { salesmanId: id },
-          });
-        }
+          })
+        );
       }
-    });
+    }
+
+    // Execute all in one atomic batch roundtrip
+    await prisma.$transaction(operations);
 
     revalidatePath('/dashboard/admin/salesmen');
     revalidatePath(`/dashboard/admin/salesmen/${id}`);

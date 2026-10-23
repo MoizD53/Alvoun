@@ -8,12 +8,14 @@ import type { AreaSaleItem } from '@/lib/dashboard-data';
 
 interface AreaWiseSalesCardProps {
   areaSales: AreaSaleItem[];
+  totalAreas?: number;
   selectedDate?: string;
   isToday?: boolean;
 }
 
 export default function AreaWiseSalesCard({ 
   areaSales,
+  totalAreas,
   selectedDate,
   isToday = true,
 }: AreaWiseSalesCardProps) {
@@ -22,28 +24,28 @@ export default function AreaWiseSalesCard({
   return (
     <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 flex flex-col justify-between h-full select-none">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 gap-2">
+      <div className="flex items-center justify-between mb-3.5 gap-2 pb-2 border-b border-border-subtle">
         <div className="min-w-0">
-          <h3 className="text-xs sm:text-sm font-bold text-primary tracking-tight">
+          <h3 className="text-sm sm:text-base font-black text-primary tracking-tight">
             Area-Wise Sales
           </h3>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href={`/dashboard/admin/routes${selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : ''}`}
-            className="text-[11px] font-semibold text-secondary hover:text-primary transition-colors inline-flex items-center gap-0.5 shrink-0"
+            className="text-xs font-bold text-secondary hover:text-primary transition-colors inline-flex items-center gap-0.5 shrink-0"
             title="Open Routes & Sectors Master"
           >
             <span>Routes</span>
-            <ChevronRight className="h-3 w-3" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
 
       {/* Area List with Visual Contribution Bars */}
-      <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[260px] pr-1">
+      <div className="space-y-3.5 flex-1 overflow-y-auto max-h-[300px] pr-1">
         {areaSales.length === 0 ? (
-          <div className="text-center py-8 text-xs text-secondary">
+          <div className="text-center py-8 text-sm text-secondary">
             No area-level distribution recorded for this date.
           </div>
         ) : (
@@ -53,28 +55,28 @@ export default function AreaWiseSalesCard({
               <Link
                 key={area.areaId}
                 href="/dashboard/admin/routes"
-                className="block space-y-1 p-1 rounded-xl hover:bg-surface-inset/60 transition-colors group"
+                className="block space-y-1.5 p-1.5 rounded-xl hover:bg-surface-inset/60 transition-colors group"
               >
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 truncate pr-2">
-                    <span className="font-bold text-primary group-hover:text-teal-700 dark:group-hover:text-teal-400 truncate text-[11px] transition-colors">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-baseline gap-2 truncate pr-2 min-w-0">
+                    <span className="font-black text-primary group-hover:text-teal-700 dark:group-hover:text-teal-400 truncate text-sm sm:text-[15px] tracking-tight transition-colors">
                       {area.areaName}
                     </span>
-                    <span className="text-[10px] text-muted">
+                    <span className="text-xs sm:text-[13px] font-semibold text-secondary truncate">
                       ({area.routeName})
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className=" font-bold text-primary text-[11px]">
+                    <span className="font-black text-primary text-sm sm:text-[15px] tabular-nums">
                       {formatMoney(area.salesPaise)}
                     </span>
-                    <span className=" text-[9px] font-bold text-teal-800 dark:text-teal-400 bg-surface-inset px-1.5 py-0.2 rounded border border-border-default shadow-inset">
+                    <span className="text-xs font-black text-teal-800 dark:text-teal-300 bg-surface-inset px-2 py-0.5 rounded-lg border border-border-default shadow-inset tabular-nums">
                       {area.percentage}%
                     </span>
                   </div>
                 </div>
 
-                <div className="w-full bg-surface-inset border border-border-default shadow-inset rounded-full h-1.5 overflow-hidden">
+                <div className="w-full bg-surface-inset border border-border-default shadow-inset rounded-full h-2 overflow-hidden">
                   <div
                     className="bg-[#1A5F63] h-full rounded-full transition-all duration-300"
                     style={{ width: `${barWidth}%` }}
@@ -87,9 +89,11 @@ export default function AreaWiseSalesCard({
       </div>
 
       {/* Footer */}
-      <div className="pt-2.5 border-t border-border-subtle mt-2 flex items-center justify-between text-[11px] text-secondary">
+      <div className="pt-3 border-t border-border-subtle mt-2 flex items-center justify-between text-xs sm:text-[13px] text-secondary font-semibold">
         <span>Active Territories</span>
-        <span className=" font-bold text-primary">{areaSales.length} Active Sectors</span>
+        <span className="font-black text-primary">
+          {areaSales.length}{totalAreas ? ` / ${totalAreas}` : ''} Active Sectors
+        </span>
       </div>
     </div>
   );

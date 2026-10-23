@@ -99,6 +99,7 @@ export default async function AdminDashboard({
         topCustomers={data.topCustomers}
         trendPoints={data.trends.points}
         areaSales={data.areaSales}
+        totalAreas={data.meta.totalAreasCount}
         initialProductSales={data.productSales}
         selectedDate={data.selectedDate}
         isToday={data.isToday}

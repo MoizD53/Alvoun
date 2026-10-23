@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { recordRawMaterialInward, recordRawMaterialConsumption } from '@/lib/actions/admin/stock';
+import AdminDatePicker from '../components/AdminDatePicker';
 
 interface RawMaterialItem {
   id: string;
@@ -51,6 +52,7 @@ interface ProductStockItem {
 }
 
 interface StockClientProps {
+  selectedDate?: string;
   initialData: {
     rawMaterials: RawMaterialItem[];
     productStockSummary: ProductStockItem[];
@@ -59,7 +61,7 @@ interface StockClientProps {
   };
 }
 
-export default function StockClient({ initialData }: StockClientProps) {
+export default function StockClient({ initialData, selectedDate = '' }: StockClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'FINISHED' | 'RAW'>('FINISHED');
   const [modalOpen, setModalOpen] = useState(false);
@@ -209,7 +211,8 @@ export default function StockClient({ initialData }: StockClientProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <AdminDatePicker currentDate={selectedDate} basePath="/dashboard/admin/stock" />
           <Button
             variant="outline"
             onClick={handleExportXLSX}

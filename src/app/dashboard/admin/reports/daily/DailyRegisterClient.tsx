@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { 
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
+import AdminDatePicker from '../../components/AdminDatePicker';
 
 export default function DailyRegisterClient({ 
   days, 
@@ -37,6 +38,18 @@ export default function DailyRegisterClient({
   const [viewMode, setViewMode] = useState<'hierarchy' | 'flat'>('hierarchy');
 
   const currentDate = searchParams.get('date') || fromDate;
+
+  // Strict Product Column Ordering: 1st 1L -> 2nd 500ml -> 3rd 250ml
+  const sortedProducts = useMemo(() => {
+    const getProductOrder = (name: string) => {
+      const n = (name || '').toLowerCase();
+      if (n.includes('1l') || n.includes('1 l') || n.includes('1000') || n.includes('1 litre') || n.includes('1ltr') || n.includes('1 liter')) return 1;
+      if (n.includes('500')) return 2;
+      if (n.includes('250')) return 3;
+      return 4;
+    };
+    return [...products].sort((a, b) => getProductOrder(a.name) - getProductOrder(b.name));
+  }, [products]);
 
   const handleDateChange = (dateVal: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -58,7 +71,7 @@ export default function DailyRegisterClient({
     
     const headers = [
       'Date', 'Route', 'Area', 'Customer',
-      ...products.map(p => `${p.name} PKGs`),
+      ...sortedProducts.map(p => `${p.name} PKGs`),
       'Total PKGs', 'Sale Amount', 'Received', 'Due'
     ];
     csv += headers.join(',') + '\n';
@@ -72,7 +85,7 @@ export default function DailyRegisterClient({
               `"${route.routeName}"`,
               `"${area.areaName}"`,
               `"${c.customerName}"`,
-              ...products.map(p => c.productQuantities[p.id] || 0),
+              ...sortedProducts.map(p => c.productQuantities[p.id] || 0),
               c.totalCrates,
               c.saleAmount / 100,
               c.receivedAmount / 100,
@@ -88,7 +101,7 @@ export default function DailyRegisterClient({
         '"DAY TOTAL"',
         '""',
         '""',
-        ...products.map(p => day.dayTotals.productQuantities[p.id] || 0),
+        ...sortedProducts.map(p => day.dayTotals.productQuantities[p.id] || 0),
         day.dayTotals.totalCrates,
         day.dayTotals.saleAmount / 100,
         day.dayTotals.receivedAmount / 100,
@@ -120,34 +133,11 @@ export default function DailyRegisterClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          {/* Single Calendar Selector with Day Step Navigation */}
-          <div className="inline-flex items-center bg-surface-inset shadow-inset px-2.5 py-1.5 rounded-xl border border-border/40 gap-1.5">
-            <button
-              onClick={() => handleDayStep(-1)}
-              title="Previous Day"
-              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-raised transition-all"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-1.5 px-1">
-              <Calendar className="w-3.5 h-3.5 text-primary" />
-              <input 
-                type="date" 
-                value={currentDate}
-                onChange={(e) => handleDateChange(e.target.value)}
-                className="text-xs font-bold bg-transparent border-none focus:outline-none text-foreground cursor-pointer" 
-              />
-            </div>
-
-            <button
-              onClick={() => handleDayStep(1)}
-              title="Next Day"
-              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-raised transition-all"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          {/* Beige Admin Date Picker */}
+          <AdminDatePicker 
+            currentDate={currentDate} 
+            basePath="/dashboard/admin/reports/daily" 
+          />
 
           {/* View Mode Toggle: Hierarchical vs Flat Table */}
           <div className="inline-flex p-1 bg-surface-inset shadow-inset rounded-xl border border-border/40 gap-1 text-xs">
@@ -227,7 +217,7 @@ export default function DailyRegisterClient({
             <DayView 
               key={day.dateStr} 
               day={day} 
-              products={products} 
+              products={sortedProducts} 
               viewMode={viewMode}
             />
           ))}

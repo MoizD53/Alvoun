@@ -19,10 +19,8 @@ export default async function DailyReportsPage({
   const start = new Date(`${fromDate}T00:00:00+05:30`);
   const end = new Date(`${toDate}T23:59:59+05:30`);
 
-  const [products, sales, payments, visits] = await Promise.all([
-    prisma.product.findMany({
-      orderBy: { bottlesPerCrate: 'desc' } // 1L, 500ml, 250ml
-    }),
+  const [rawProducts, sales, payments, visits] = await Promise.all([
+    prisma.product.findMany(),
     prisma.sale.findMany({
       where: { saleDate: { gte: start, lte: end } },
       include: { 
@@ -40,6 +38,17 @@ export default async function DailyReportsPage({
       where: { createdAt: { gte: start, lte: end } }
     })
   ]);
+
+  // Order products strictly: 1st 1L, then 500ml, then 250ml
+  const getProductOrder = (name: string) => {
+    const n = (name || '').toLowerCase();
+    if (n.includes('1l') || n.includes('1 l') || n.includes('1000') || n.includes('1 litre') || n.includes('1ltr') || n.includes('1 liter')) return 1;
+    if (n.includes('500')) return 2;
+    if (n.includes('250')) return 3;
+    return 4;
+  };
+
+  const products = [...rawProducts].sort((a, b) => getProductOrder(a.name) - getProductOrder(b.name));
 
   const daysMap = new Map<string, any>();
 

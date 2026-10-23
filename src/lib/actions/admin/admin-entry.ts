@@ -212,10 +212,18 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
     // Previous Due: balance *prior* to this targetDate's transactions
     const previousDuePaise = currentOutstandingPaise - (todaySalesPaise - todayPaymentsPaise);
 
+    const sanitizeRemark = (r: string) => {
+      if (!r) return '';
+      const trimmed = r.trim();
+      const stripped = trimmed.replace(/^(Cash\s*•\s*|UPI\s*•\s*)?(Admin Entry(\s*[-•]\s*(Cash|UPI))?)/gi, '').trim();
+      if (/^[-•\s]*$/i.test(stripped) || /^Admin Entry/i.test(stripped)) return '';
+      return stripped;
+    };
+
     const savedRemarks = [
       ...(daySales?.remarks || []),
       ...(dayPayments?.remarks || []),
-    ].filter(Boolean).join(' • ');
+    ].map(sanitizeRemark).filter(Boolean).join(' • ');
 
     return {
       id: c.id,
@@ -495,7 +503,7 @@ export async function saveAdminEntryBatch(payload: {
               salesmanId,
               amount: cashPaise,
               paymentMethod: 'CASH',
-              referenceNumber: row.remarks?.trim() ? `Cash • ${row.remarks.trim()}` : 'Admin Entry - Cash',
+              referenceNumber: row.remarks?.trim() || null,
               paymentDate: targetDateTime,
             },
           });
@@ -509,7 +517,7 @@ export async function saveAdminEntryBatch(payload: {
               salesmanId,
               amount: upiPaise,
               paymentMethod: 'UPI',
-              referenceNumber: row.remarks?.trim() ? `UPI • ${row.remarks.trim()}` : 'Admin Entry - UPI',
+              referenceNumber: row.remarks?.trim() || null,
               paymentDate: targetDateTime,
             },
           });

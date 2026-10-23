@@ -17,6 +17,7 @@ interface MainDashboardGridProps {
   topCustomers: TopCustomerItem[];
   trendPoints: TrendPoint[];
   areaSales: AreaSaleItem[];
+  totalAreas?: number;
   initialProductSales: ProductSalesData;
   selectedDate: string;
   isToday?: boolean;
@@ -26,6 +27,7 @@ export default function MainDashboardGrid({
   topCustomers,
   trendPoints,
   areaSales,
+  totalAreas,
   initialProductSales,
   selectedDate,
   isToday = true,
@@ -76,7 +78,8 @@ export default function MainDashboardGrid({
         </div>
         <div className="flex flex-col min-h-[340px]">
           <AreaWiseSalesCard 
-            areaSales={areaSales} 
+            areaSales={areaSales}
+            totalAreas={totalAreas}
             selectedDate={selectedDate}
             isToday={isToday}
           />

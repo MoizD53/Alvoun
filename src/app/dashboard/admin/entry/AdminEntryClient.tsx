@@ -389,7 +389,7 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
     setErrorBanner(null);
   }, [initialData.targetDate, initialData.customers]);
 
-  // Unique route list for filter
+  // Unique route list for filter & dropdowns
   const routeOptions = useMemo(() => {
     const set = new Set<string>();
     customersList.forEach((c) => {
@@ -397,6 +397,40 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
     });
     return Array.from(set).sort();
   }, [customersList]);
+
+  // Unique area list grouped by route
+  const routeAreaMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    customersList.forEach((c) => {
+      const r = c.routeName || 'Other';
+      if (!map[r]) map[r] = new Set();
+      if (c.areaName && c.areaName !== 'Unassigned') {
+        map[r].add(c.areaName);
+      }
+    });
+    const result: Record<string, string[]> = {};
+    for (const k in map) {
+      result[k] = Array.from(map[k]).sort();
+    }
+    return result;
+  }, [customersList]);
+
+  // All unique areas across territory
+  const allAreaOptions = useMemo(() => {
+    const set = new Set<string>();
+    customersList.forEach((c) => {
+      if (c.areaName && c.areaName !== 'Unassigned') {
+        set.add(c.areaName);
+      }
+    });
+    return Array.from(set).sort();
+  }, [customersList]);
+
+  // Custom route/area toggles for New & Edit Customer modals
+  const [isCustomRoute, setIsCustomRoute] = useState(false);
+  const [isCustomArea, setIsCustomArea] = useState(false);
+  const [isEditCustomRoute, setIsEditCustomRoute] = useState(false);
+  const [isEditCustomArea, setIsEditCustomArea] = useState(false);
 
   // Handle cell changes
   const handleCellChange = useCallback((customerId: string, field: keyof RowState, value: any) => {
@@ -1865,40 +1899,93 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
                 </div>
               </div>
 
-              {/* Row 3: Route & Area (Both Compulsory) */}
+              {/* Row 3: Route & Area (Direct Dropdown Menus) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-primary mb-1">
                     Route <span className="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    list="routes-datalist"
-                    placeholder="Select or type Route..."
-                    value={newCustomerForm.routeName}
-                    onChange={(e) => setNewCustomerForm({ ...newCustomerForm, routeName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-primary font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none"
-                  />
-                  <datalist id="routes-datalist">
+                  <select
+                    required={!isCustomRoute}
+                    value={isCustomRoute ? '__CUSTOM__' : newCustomerForm.routeName}
+                    onChange={(e) => {
+                      if (e.target.value === '__CUSTOM__') {
+                        setIsCustomRoute(true);
+                        setNewCustomerForm({ ...newCustomerForm, routeName: '' });
+                      } else {
+                        setIsCustomRoute(false);
+                        const r = e.target.value;
+                        const areasInRoute = routeAreaMap[r] || [];
+                        setNewCustomerForm({
+                          ...newCustomerForm,
+                          routeName: r,
+                          areaName: areasInRoute.length === 1 ? areasInRoute[0] : newCustomerForm.areaName,
+                        });
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-primary font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none cursor-pointer text-xs"
+                  >
+                    <option value="">-- Select Route --</option>
                     {routeOptions.map((r) => (
-                      <option key={r} value={r} />
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
                     ))}
-                  </datalist>
+                    <option value="__CUSTOM__">+ Add New Route...</option>
+                  </select>
+                  {isCustomRoute && (
+                    <input
+                      type="text"
+                      required
+                      placeholder="Type custom Route name..."
+                      value={newCustomerForm.routeName}
+                      onChange={(e) => setNewCustomerForm({ ...newCustomerForm, routeName: e.target.value })}
+                      className="w-full mt-1.5 px-3 py-1.5 rounded-xl bg-surface-inset border border-teal-500 text-primary text-xs font-semibold outline-none"
+                      autoFocus
+                    />
+                  )}
                 </div>
 
                 <div>
                   <label className="block font-bold text-primary mb-1">
                     Area / Locality <span className="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Station Road, Market"
-                    value={newCustomerForm.areaName}
-                    onChange={(e) => setNewCustomerForm({ ...newCustomerForm, areaName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-primary font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none"
-                  />
+                  <select
+                    required={!isCustomArea}
+                    value={isCustomArea ? '__CUSTOM__' : newCustomerForm.areaName}
+                    onChange={(e) => {
+                      if (e.target.value === '__CUSTOM__') {
+                        setIsCustomArea(true);
+                        setNewCustomerForm({ ...newCustomerForm, areaName: '' });
+                      } else {
+                        setIsCustomArea(false);
+                        setNewCustomerForm({ ...newCustomerForm, areaName: e.target.value });
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-primary font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none cursor-pointer text-xs"
+                  >
+                    <option value="">-- Select Area --</option>
+                    {((newCustomerForm.routeName && routeAreaMap[newCustomerForm.routeName]?.length)
+                      ? routeAreaMap[newCustomerForm.routeName]
+                      : allAreaOptions
+                    ).map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                    <option value="__CUSTOM__">+ Add New Area...</option>
+                  </select>
+                  {isCustomArea && (
+                    <input
+                      type="text"
+                      required
+                      placeholder="Type custom Area name..."
+                      value={newCustomerForm.areaName}
+                      onChange={(e) => setNewCustomerForm({ ...newCustomerForm, areaName: e.target.value })}
+                      className="w-full mt-1.5 px-3 py-1.5 rounded-xl bg-surface-inset border border-teal-500 text-primary text-xs font-semibold outline-none"
+                      autoFocus
+                    />
+                  )}
                 </div>
               </div>
 
