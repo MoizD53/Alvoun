@@ -885,3 +885,320 @@ export async function quickCreateAdminEntryCustomer(payload: {
     return { error: err.message || 'Failed to create customer' };
   }
 }
+
+/**
+ * Quick Update Customer directly from Admin Entry sheet.
+ * Updates customer profile details (Name, Firm, Code, Contact, Route, Area, Address)
+ * and optionally updates custom product rates (1L, 500ml, 250ml).
+ */
+export async function quickUpdateAdminEntryCustomer(payload: {
+  customerId: string;
+  customerName: string;
+  firmName?: string | null;
+  code?: string | null;
+  contact?: string | null;
+  address?: string | null;
+  routeName?: string | null;
+  areaName?: string | null;
+  rate1LRupees?: number | null;
+  rate500mlRupees?: number | null;
+  rate250mlRupees?: number | null;
+}) {
+  await requireAdminSession();
+
+  const customerId = payload.customerId;
+  if (!customerId) return { error: 'Customer ID is required' };
+
+  const name = payload.customerName?.trim();
+  if (!name) return { error: 'Customer Name is required' };
+
+  try {
+    const existingCustomer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      include: {
+        route: true,
+        area: true,
+        customerRates: true,
+      },
+    });
+
+    if (!existingCustomer) {
+      return { error: 'Customer not found' };
+    }
+
+    const city = await prisma.city.findFirst();
+
+    // 1. Resolve Route if changed
+    let routeId = existingCustomer.routeId;
+    let routeName = existingCustomer.route?.name || '';
+    if (payload.routeName && payload.routeName.trim()) {
+      routeName = payload.routeName.trim();
+      let route = await prisma.route.findFirst({
+        where: { name: routeName },
+      });
+      if (!route && city) {
+        route = await prisma.route.create({
+          data: {
+            name: routeName,
+            cityId: city.id,
+            isActive: true,
+          },
+        });
+      }
+      if (route) routeId = route.id;
+    }
+
+    // 2. Resolve Area if changed
+    let areaId = existingCustomer.areaId;
+    let areaName = existingCustomer.area?.name || '';
+    if (payload.areaName && payload.areaName.trim() && routeId) {
+      areaName = payload.areaName.trim();
+      let area = await prisma.area.findFirst({
+        where: {
+          name: areaName,
+          routeId: routeId,
+        },
+      });
+      if (!area) {
+        area = await prisma.area.create({
+          data: {
+            name: areaName,
+            routeId: routeId,
+          },
+        });
+      }
+      if (area) areaId = area.id;
+    }
+
+    // 3. Update Customer profile
+    const updatedCustomer = await prisma.customer.update({
+      where: { id: customerId },
+      data: {
+        customerName: name,
+        firmName: payload.firmName?.trim() || null,
+        code: payload.code?.trim() || null,
+        contact: payload.contact?.trim() || existingCustomer.contact,
+        address: payload.address?.trim() || existingCustomer.address,
+        routeId: routeId || undefined,
+        areaId: areaId || undefined,
+      },
+      include: {
+        route: true,
+        area: true,
+      },
+    });
+
+    // 4. Products for custom rate handling
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      include: { rates: true },
+    });
+    const prod1L = products.find(p => p.name.toLowerCase().includes('1l') || p.name.toLowerCase().includes('1 litre'));
+    const prod500ml = products.find(p => p.name.toLowerCase().includes('500ml') || p.name.toLowerCase().includes('500 ml'));
+    const prod250ml = products.find(p => p.name.toLowerCase().includes('250ml') || p.name.toLowerCase().includes('250 ml'));
+
+    // Handle Rate 1L
+    let rate1LPaise = prod1L?.rates[0]?.rate ?? 9000;
+    let hasCustom1L = false;
+    if (prod1L) {
+      if (payload.rate1LRupees !== undefined && payload.rate1LRupees !== null && payload.rate1LRupees > 0) {
+        const customPaise = Math.round(payload.rate1LRupees * 100);
+        await prisma.customerProductRate.upsert({
+          where: { customerId_productId: { customerId, productId: prod1L.id } },
+          create: { customerId, productId: prod1L.id, rate: customPaise },
+          update: { rate: customPaise },
+        });
+        rate1LPaise = customPaise;
+        hasCustom1L = true;
+      } else {
+        const cr = await prisma.customerProductRate.findUnique({
+          where: { customerId_productId: { customerId, productId: prod1L.id } },
+        });
+        if (cr) {
+          rate1LPaise = cr.rate;
+          hasCustom1L = true;
+        }
+      }
+    }
+
+    // Handle Rate 500ml
+    let rate500mlPaise = prod500ml?.rates[0]?.rate ?? 11000;
+    let hasCustom500ml = false;
+    if (prod500ml) {
+      if (payload.rate500mlRupees !== undefined && payload.rate500mlRupees !== null && payload.rate500mlRupees > 0) {
+        const customPaise = Math.round(payload.rate500mlRupees * 100);
+        await prisma.customerProductRate.upsert({
+          where: { customerId_productId: { customerId, productId: prod500ml.id } },
+          create: { customerId, productId: prod500ml.id, rate: customPaise },
+          update: { rate: customPaise },
+        });
+        rate500mlPaise = customPaise;
+        hasCustom500ml = true;
+      } else {
+        const cr = await prisma.customerProductRate.findUnique({
+          where: { customerId_productId: { customerId, productId: prod500ml.id } },
+        });
+        if (cr) {
+          rate500mlPaise = cr.rate;
+          hasCustom500ml = true;
+        }
+      }
+    }
+
+    // Handle Rate 250ml
+    let rate250mlPaise = prod250ml?.rates[0]?.rate ?? 8000;
+    let hasCustom250ml = false;
+    if (prod250ml) {
+      if (payload.rate250mlRupees !== undefined && payload.rate250mlRupees !== null && payload.rate250mlRupees > 0) {
+        const customPaise = Math.round(payload.rate250mlRupees * 100);
+        await prisma.customerProductRate.upsert({
+          where: { customerId_productId: { customerId, productId: prod250ml.id } },
+          create: { customerId, productId: prod250ml.id, rate: customPaise },
+          update: { rate: customPaise },
+        });
+        rate250mlPaise = customPaise;
+        hasCustom250ml = true;
+      } else {
+        const cr = await prisma.customerProductRate.findUnique({
+          where: { customerId_productId: { customerId, productId: prod250ml.id } },
+        });
+        if (cr) {
+          rate250mlPaise = cr.rate;
+          hasCustom250ml = true;
+        }
+      }
+    }
+
+    try {
+      revalidatePath('/dashboard/admin/entry');
+      revalidatePath('/dashboard/admin/customers');
+      revalidatePath(`/dashboard/admin/customers/${customerId}`);
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return {
+      success: true,
+      updatedData: {
+        id: updatedCustomer.id,
+        customerName: updatedCustomer.customerName,
+        firmName: updatedCustomer.firmName,
+        code: updatedCustomer.code,
+        contact: updatedCustomer.contact,
+        address: updatedCustomer.address,
+        routeName: updatedCustomer.route?.name || routeName,
+        areaName: updatedCustomer.area?.name || areaName,
+        rate1LPaise,
+        rate500mlPaise,
+        rate250mlPaise,
+        hasCustom1L,
+        hasCustom500ml,
+        hasCustom250ml,
+      },
+    };
+  } catch (err: any) {
+    console.error('Error updating customer:', err);
+    return { error: err.message || 'Failed to update customer' };
+  }
+}
+
+/**
+ * Delete / Archive Customer from Admin Entry sheet.
+ * If customer has past accounting history, sets status to INACTIVE.
+ * If fresh customer with no history, cleanly removes from database.
+ */
+export async function deleteAdminEntryCustomer(customerId: string) {
+  await requireAdminSession();
+  if (!customerId) return { error: 'Customer ID is required' };
+
+  try {
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      include: {
+        sales: { select: { id: true }, take: 1 },
+        payments: { select: { id: true }, take: 1 },
+        visits: { select: { id: true }, take: 1 },
+      },
+    });
+
+    if (!customer) {
+      return { error: 'Customer record not found' };
+    }
+
+    const hasHistory =
+      customer.sales.length > 0 ||
+      customer.payments.length > 0 ||
+      customer.visits.length > 0;
+
+    if (hasHistory) {
+      // Soft-delete to preserve accounting integrity
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: { status: 'INACTIVE' },
+      });
+    } else {
+      // Hard delete if no transactions
+      await prisma.customerProductRate.deleteMany({
+        where: { customerId },
+      });
+      await prisma.customer.delete({
+        where: { id: customerId },
+      });
+    }
+
+    try {
+      revalidatePath('/dashboard/admin/entry');
+      revalidatePath('/dashboard/admin/customers');
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error deleting customer:', err);
+    return { error: err.message || 'Failed to delete customer' };
+  }
+}
+
+/**
+ * Delete / Reset all saved sales and payments for a customer on this specific day.
+ */
+export async function deleteAdminEntryRowTransactions(payload: {
+  customerId: string;
+  targetDate: string;
+  saleIds?: string[];
+  paymentIds?: string[];
+}) {
+  await requireAdminSession();
+  try {
+    const saleIds = payload.saleIds || [];
+    const paymentIds = payload.paymentIds || [];
+
+    await prisma.$transaction(async (tx) => {
+      if (saleIds.length > 0) {
+        await tx.saleItem.deleteMany({
+          where: { saleId: { in: saleIds } },
+        });
+        await tx.sale.deleteMany({
+          where: { id: { in: saleIds } },
+        });
+      }
+      if (paymentIds.length > 0) {
+        await tx.payment.deleteMany({
+          where: { id: { in: paymentIds } },
+        });
+      }
+    });
+
+    try {
+      revalidatePath('/dashboard/admin/entry');
+      revalidatePath('/dashboard/admin/customers');
+      revalidatePath(`/dashboard/admin/customers/${payload.customerId}`);
+      revalidatePath('/dashboard/admin/reports/daily');
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error deleting customer row transactions:', err);
+    return { error: err.message || 'Failed to delete row transactions' };
+  }
+}

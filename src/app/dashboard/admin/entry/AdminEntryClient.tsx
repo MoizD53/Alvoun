@@ -22,13 +22,23 @@ import {
   UserPlus,
   Phone,
   Building2,
-  Plus
+  Plus,
+  Pencil,
+  Trash2,
+  Eraser,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatMoney, formatNumber } from '@/lib/format';
 import AdminDatePicker from '../components/AdminDatePicker';
-import { saveAdminEntryBatch, quickCreateAdminEntryCustomer } from '@/lib/actions/admin/admin-entry';
+import { 
+  saveAdminEntryBatch, 
+  quickCreateAdminEntryCustomer,
+  quickUpdateAdminEntryCustomer,
+  deleteAdminEntryCustomer,
+  deleteAdminEntryRowTransactions
+} from '@/lib/actions/admin/admin-entry';
 
 interface CustomerRowData {
   id: string;
@@ -116,6 +126,177 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
     address: '',
     openingDueRupees: '',
   });
+
+  // Edit Customer Modal State
+  const [editCustomerModalOpen, setEditCustomerModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<CustomerRowData | null>(null);
+  const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
+  const [editCustomerForm, setEditCustomerForm] = useState({
+    customerName: '',
+    firmName: '',
+    code: '',
+    contact: '',
+    routeName: '',
+    areaName: '',
+    address: '',
+    rate1LRupees: '',
+    rate500mlRupees: '',
+    rate250mlRupees: '',
+  });
+
+  const handleOpenEditModal = (c: CustomerRowData) => {
+    setEditingCustomer(c);
+    setEditCustomerForm({
+      customerName: c.customerName,
+      firmName: c.firmName || '',
+      code: c.code || '',
+      contact: c.contact === 'N/A' ? '' : c.contact,
+      routeName: c.routeName,
+      areaName: c.areaName,
+      address: c.address || '',
+      rate1LRupees: String(c.rate1LPaise / 100),
+      rate500mlRupees: String(c.rate500mlPaise / 100),
+      rate250mlRupees: String(c.rate250mlPaise / 100),
+    });
+    setEditCustomerModalOpen(true);
+  };
+
+  const handleSaveEditedCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+    if (!editCustomerForm.customerName.trim()) {
+      alert('Customer Name is required');
+      return;
+    }
+    setIsUpdatingCustomer(true);
+    try {
+      const res = await quickUpdateAdminEntryCustomer({
+        customerId: editingCustomer.id,
+        customerName: editCustomerForm.customerName,
+        firmName: editCustomerForm.firmName,
+        code: editCustomerForm.code,
+        contact: editCustomerForm.contact,
+        routeName: editCustomerForm.routeName,
+        areaName: editCustomerForm.areaName,
+        address: editCustomerForm.address,
+        rate1LRupees: editCustomerForm.rate1LRupees ? Number(editCustomerForm.rate1LRupees) : null,
+        rate500mlRupees: editCustomerForm.rate500mlRupees ? Number(editCustomerForm.rate500mlRupees) : null,
+        rate250mlRupees: editCustomerForm.rate250mlRupees ? Number(editCustomerForm.rate250mlRupees) : null,
+      });
+
+      if (res.error) {
+        alert(res.error);
+        return;
+      }
+
+      if (res.updatedData) {
+        setCustomersList((prev) =>
+          prev.map((item) => (item.id === editingCustomer.id ? { ...item, ...res.updatedData } : item))
+        );
+        setSuccessBanner(`Customer "${editCustomerForm.customerName}" updated successfully.`);
+        setEditCustomerModalOpen(false);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update customer');
+    } finally {
+      setIsUpdatingCustomer(false);
+    }
+  };
+
+  // Delete / Clear Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deletingCustomer, setDeletingCustomer] = useState<CustomerRowData | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleOpenDeleteModal = (c: CustomerRowData) => {
+    setDeletingCustomer(c);
+    setDeleteModalOpen(true);
+  };
+
+  // Action 1: Clear row entry (and reverse today's transactions in DB if present)
+  const handleClearRowEntry = async () => {
+    if (!deletingCustomer) return;
+    setIsDeleting(true);
+    try {
+      const c = deletingCustomer;
+      const hasSavedRecords = (c.existingSaleIds && c.existingSaleIds.length > 0) || (c.existingPaymentIds && c.existingPaymentIds.length > 0);
+      
+      if (hasSavedRecords) {
+        const res = await deleteAdminEntryRowTransactions({
+          customerId: c.id,
+          targetDate: selectedDate,
+          saleIds: c.existingSaleIds,
+          paymentIds: c.existingPaymentIds,
+        });
+        if (res.error) {
+          alert(res.error);
+          return;
+        }
+      }
+
+      // Reset client row state
+      setRowsState((prev) => ({
+        ...prev,
+        [c.id]: {
+          pkg1L: 0,
+          pkg500ml: 0,
+          pkg250ml: 0,
+          cashAmount: '',
+          upiAmount: '',
+          remarks: '',
+          isModified: false,
+        },
+      }));
+
+      // Update customersList to clear saved transaction IDs
+      setCustomersList((prev) =>
+        prev.map((item) =>
+          item.id === c.id
+            ? {
+                ...item,
+                savedPkg1L: 0,
+                savedPkg500ml: 0,
+                savedPkg250ml: 0,
+                savedCashRupees: 0,
+                savedUpiRupees: 0,
+                savedReceivedRupees: 0,
+                savedRemarks: '',
+                existingSaleIds: [],
+                existingPaymentIds: [],
+              }
+            : item
+        )
+      );
+
+      setSuccessBanner(`Today's entry for "${c.customerName}" cleared.`);
+      setDeleteModalOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to clear entry');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Action 2: Delete / Deactivate Customer entirely
+  const handleDeleteCustomer = async () => {
+    if (!deletingCustomer) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteAdminEntryCustomer(deletingCustomer.id);
+      if (res.error) {
+        alert(res.error);
+        return;
+      }
+
+      setCustomersList((prev) => prev.filter((item) => item.id !== deletingCustomer.id));
+      setSuccessBanner(`Customer "${deletingCustomer.customerName}" removed from register.`);
+      setDeleteModalOpen(false);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete customer');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Bottle Active / Inactive states (When Inactive, entry is completely blocked for that bottle size)
   const [bottleActive, setBottleActive] = useState<{
@@ -925,7 +1106,7 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
       {/* 4. Action Bar, Filter Controls, Bottle Line Toggles & Save All Button */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-0">
-          {/* Quick Search with Zero-Mouse Enter jump */}
+          {/* Quick Search with Zero-Mouse Enter jump and One-Click Clear Button */}
           <div className="relative min-w-[200px] max-w-sm flex-1">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-secondary" />
             <input
@@ -935,6 +1116,11 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setSearchTerm('');
+                  return;
+                }
                 if (e.key === 'Enter' || e.key === 'ArrowDown') {
                   e.preventDefault();
                   const firstCol = getFirstActiveCol();
@@ -947,8 +1133,22 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
                   }
                 }
               }}
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-surface-inset border border-border-default text-xs font-semibold text-primary placeholder:text-muted focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none"
+              className="w-full pl-8 pr-8 py-1.5 rounded-xl bg-surface-inset border border-border-default text-xs font-semibold text-primary placeholder:text-muted focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  searchInputRef.current?.focus();
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-surface-raised text-secondary hover:text-primary transition-colors cursor-pointer"
+                title="Clear search"
+                aria-label="Clear search"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Route Filter Dropdown */}
@@ -1199,8 +1399,11 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
                 <th className="py-2.5 px-3 min-w-[120px] text-right border-r border-border-default/50 font-black">
                   Remaining Due (₹)
                 </th>
-                <th className="py-2.5 px-3 min-w-[140px]">
+                <th className="py-2.5 px-3 min-w-[140px] border-r border-border-default/50">
                   Remarks
+                </th>
+                <th className="py-2.5 px-3 min-w-[100px] text-center sticky right-0 z-20 bg-surface-sidebar shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)]">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -1209,7 +1412,7 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
             <tbody className="divide-y divide-border-default/50 font-sans">
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="py-12 text-center text-secondary text-sm">
+                  <td colSpan={14} className="py-12 text-center text-secondary text-sm">
                     <div className="space-y-3">
                       <p>No customer found matching &quot;{searchTerm}&quot;.</p>
                       {searchTerm.trim() && (
@@ -1475,7 +1678,7 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
                       </td>
 
                       {/* Remarks */}
-                      <td className="py-1.5 px-2">
+                      <td className="py-1.5 px-2 border-r border-border-default/40">
                         <input
                           type="text"
                           data-row={idx}
@@ -1486,6 +1689,30 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
                           placeholder="Remarks..."
                           className="w-full py-1 px-2 rounded-lg bg-surface-inset border border-border-default text-xs text-primary focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none"
                         />
+                      </td>
+
+                      {/* Actions: Edit & Delete */}
+                      <td className="py-1.5 px-2 text-center sticky right-0 z-10 bg-surface-raised shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] border-l border-border-default/40">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(c)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-inset hover:bg-teal-500/10 border border-border-default hover:border-teal-500/30 text-teal-800 dark:text-teal-300 font-bold text-[10px] transition-all cursor-pointer shadow-xs active:scale-95"
+                            title={`Edit customer ${c.customerName}`}
+                          >
+                            <Pencil className="h-3 w-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDeleteModal(c)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-inset hover:bg-rose-500/10 border border-border-default hover:border-rose-500/30 text-rose-700 dark:text-rose-400 font-bold text-[10px] transition-all cursor-pointer shadow-xs active:scale-95"
+                            title={`Delete or clear entry for ${c.customerName}`}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span>Del</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1532,8 +1759,11 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
                 <td className="py-3 px-3 text-right tabular-nums border-r border-border-default text-amber-900 dark:text-amber-200">
                   {formatMoney(filteredTotals.remainingDuePaise)}
                 </td>
-                <td className="py-3 px-3 text-secondary text-[11px]">
+                <td className="py-3 px-3 text-secondary text-[11px] border-r border-border-default">
                   {modifiedCount > 0 ? `${modifiedCount} unsaved rows` : 'All saved'}
+                </td>
+                <td className="py-3 px-3 text-center sticky right-0 z-20 bg-surface-sidebar shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] border-l border-border-default text-muted">
+                  —
                 </td>
               </tr>
             </tfoot>
@@ -1736,6 +1966,277 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Edit Customer Modal */}
+      {editCustomerModalOpen && editingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface-raised border border-border-default shadow-2xl rounded-2xl w-full max-w-lg p-6 space-y-4 animate-scale-in max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-border-default">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-teal-500/10 text-teal-800 dark:text-teal-300">
+                  <Pencil className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-primary">Edit Customer Details</h3>
+                  <p className="text-xs text-secondary">Update customer master profile and custom bottle rates</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditCustomerModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-surface-inset text-secondary hover:text-primary transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditedCustomer} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-secondary">Customer Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editCustomerForm.customerName}
+                    onChange={(e) => setEditCustomerForm(prev => ({ ...prev, customerName: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-xs font-bold text-primary outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary">Firm / Shop Name</label>
+                  <input
+                    type="text"
+                    value={editCustomerForm.firmName}
+                    onChange={(e) => setEditCustomerForm(prev => ({ ...prev, firmName: e.target.value }))}
+                    placeholder="e.g. Fresh Point Corner"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-xs text-primary outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary">Customer Code / ID</label>
+                  <input
+                    type="text"
+                    value={editCustomerForm.code}
+                    onChange={(e) => setEditCustomerForm(prev => ({ ...prev, code: e.target.value }))}
+                    placeholder="e.g. CUST-0021"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-xs font-mono font-bold text-primary outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary">Contact Mobile</label>
+                  <input
+                    type="tel"
+                    value={editCustomerForm.contact}
+                    onChange={(e) => setEditCustomerForm(prev => ({ ...prev, contact: e.target.value }))}
+                    placeholder="e.g. 98250 12345"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-xs text-primary outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary">Route Name</label>
+                  <input
+                    type="text"
+                    value={editCustomerForm.routeName}
+                    onChange={(e) => setEditCustomerForm(prev => ({ ...prev, routeName: e.target.value }))}
+                    list="edit-routes-list"
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-xs font-semibold text-primary outline-none focus:border-teal-500"
+                  />
+                  <datalist id="edit-routes-list">
+                    {routeOptions.map((r) => (
+                      <option key={r} value={r} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-secondary">Area / Sector Name</label>
+                  <input
+                    type="text"
+                    value={editCustomerForm.areaName}
+                    onChange={(e) => setEditCustomerForm(prev => ({ ...prev, areaName: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-xs font-semibold text-primary outline-none focus:border-teal-500"
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-secondary">Address (Optional)</label>
+                  <input
+                    type="text"
+                    value={editCustomerForm.address}
+                    onChange={(e) => setEditCustomerForm(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Shop address..."
+                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-xs text-primary outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              {/* Custom Rates Section */}
+              <div className="p-3 rounded-xl bg-surface-inset border border-border-default space-y-2">
+                <span className="text-xs font-bold text-primary block">Custom Product Rates (₹ per PKG)</span>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-blue-700 dark:text-blue-300 block mb-1">1 Litre (₹)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={editCustomerForm.rate1LRupees}
+                      onChange={(e) => setEditCustomerForm(prev => ({ ...prev, rate1LRupees: e.target.value }))}
+                      className="w-full text-center px-2 py-1.5 rounded-lg bg-surface-raised border border-border-default text-xs font-bold text-primary outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-teal-700 dark:text-teal-300 block mb-1">500 ml (₹)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={editCustomerForm.rate500mlRupees}
+                      onChange={(e) => setEditCustomerForm(prev => ({ ...prev, rate500mlRupees: e.target.value }))}
+                      className="w-full text-center px-2 py-1.5 rounded-lg bg-surface-raised border border-border-default text-xs font-bold text-primary outline-none focus:border-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-amber-700 dark:text-amber-300 block mb-1">250 ml (₹)</label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={editCustomerForm.rate250mlRupees}
+                      onChange={(e) => setEditCustomerForm(prev => ({ ...prev, rate250mlRupees: e.target.value }))}
+                      className="w-full text-center px-2 py-1.5 rounded-lg bg-surface-raised border border-border-default text-xs font-bold text-primary outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <Link
+                  href={`/dashboard/admin/customers/${editingCustomer.id}`}
+                  target="_blank"
+                  className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline inline-flex items-center gap-1"
+                >
+                  <span>Open Full Ledger</span>
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditCustomerModalOpen(false)}
+                    disabled={isUpdatingCustomer}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="sm"
+                    isLoading={isUpdatingCustomer}
+                    className="font-bold shadow-raised"
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Delete / Clear Entry Modal */}
+      {deleteModalOpen && deletingCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface-raised border border-border-default shadow-2xl rounded-2xl w-full max-w-md p-6 space-y-4 animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-border-default">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-rose-500/10 text-rose-700 dark:text-rose-400">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-primary">Customer Actions</h3>
+                  <p className="text-xs text-secondary truncate max-w-[260px]">{deletingCustomer.customerName}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-surface-inset text-secondary hover:text-primary transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-secondary leading-relaxed">
+              Choose an action for <strong className="text-primary">{deletingCustomer.customerName}</strong>:
+            </p>
+
+            <div className="space-y-2.5">
+              {/* Option A: Clear Today's Entry */}
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleClearRowEntry}
+                className="w-full text-left p-3.5 rounded-xl bg-surface-inset hover:bg-amber-500/10 border border-border-default hover:border-amber-500/30 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 group-hover:scale-105 transition-transform">
+                    <Eraser className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-primary block">
+                      Clear / Reset Today&apos;s Entry
+                    </span>
+                    <span className="text-[10px] text-secondary block mt-0.5">
+                      Clears entered PKGs, Cash, and UPI for today. If already saved in the database, removes today&apos;s records and restores previous due.
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Option B: Delete Customer Record */}
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteCustomer}
+                className="w-full text-left p-3.5 rounded-xl bg-surface-inset hover:bg-rose-500/10 border border-border-default hover:border-rose-500/30 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-400 group-hover:scale-105 transition-transform">
+                    <Trash2 className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-rose-700 dark:text-rose-400 block">
+                      Delete / Deactivate Customer
+                    </span>
+                    <span className="text-[10px] text-secondary block mt-0.5">
+                      Removes this customer from the active register sheet. If accounting records exist, they are preserved safely as inactive.
+                    </span>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-border-default">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </div>
       )}
