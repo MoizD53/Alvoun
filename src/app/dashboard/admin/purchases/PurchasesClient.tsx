@@ -30,6 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import AdminDatePicker from '../components/AdminDatePicker';
 import { formatMoney, formatNumber } from '@/lib/format';
 import { 
   createPurchase, 
@@ -156,6 +157,7 @@ interface PurchasesClientProps {
   currentStatus: string;
   startDate: string;
   endDate: string;
+  selectedDate?: string;
 }
 
 export default function PurchasesClient({
@@ -164,6 +166,7 @@ export default function PurchasesClient({
   currentStatus,
   startDate,
   endDate,
+  selectedDate = '',
 }: PurchasesClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'register' | 'raw_materials' | 'suppliers' | 'payments'>('register');
@@ -199,10 +202,63 @@ export default function PurchasesClient({
         rateRupees: '120',
       },
     ],
+    payments: [
+      {
+        amountRupees: '',
+        paymentMethod: 'CASH' as 'CASH' | 'BANK_TRANSFER' | 'UPI' | 'CHEQUE',
+      }
+    ],
     paidAmountRupees: '0',
     paymentMethod: 'CASH' as 'CASH' | 'BANK_TRANSFER' | 'UPI' | 'CHEQUE',
     remarks: '',
   });
+
+  const handleAddPaymentLine = () => {
+    setPurchaseForm((prev) => ({
+      ...prev,
+      payments: [
+        ...prev.payments,
+        {
+          amountRupees: '',
+          paymentMethod: 'UPI' as const,
+        }
+      ]
+    }));
+  };
+
+  const handleRemovePaymentLine = (idx: number) => {
+    if (purchaseForm.payments.length <= 1) return;
+    setPurchaseForm((prev) => ({
+      ...prev,
+      payments: prev.payments.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handlePaymentLineChange = (idx: number, field: string, val: string) => {
+    setPurchaseForm((prev) => {
+      const payments = [...prev.payments];
+      payments[idx] = { ...payments[idx], [field]: val };
+      return { ...prev, payments };
+    });
+  };
+
+  // Calculate purchase modal total live
+  const calculatedModalTotalPaise = useMemo(() => {
+    return purchaseForm.items.reduce((sum, item) => {
+      const qty = parseFloat(item.quantity) || 0;
+      const rate = parseFloat(item.rateRupees) || 0;
+      return sum + Math.round(qty * rate * 100);
+    }, 0);
+  }, [purchaseForm.items]);
+
+  const calculatedModalTotalPaidRupees = useMemo(() => {
+    return purchaseForm.payments.reduce((sum, p) => sum + (parseFloat(p.amountRupees) || 0), 0);
+  }, [purchaseForm.payments]);
+
+  const calculatedRemainingDueRupees = useMemo(() => {
+    const totalRupees = calculatedModalTotalPaise / 100;
+    return Math.max(0, totalRupees - calculatedModalTotalPaidRupees);
+  }, [calculatedModalTotalPaise, calculatedModalTotalPaidRupees]);
 
   // Supplier Form State
   const [supplierForm, setSupplierForm] = useState({
@@ -227,15 +283,6 @@ export default function PurchasesClient({
     referenceNo: '',
     remarks: '',
   });
-
-  // Calculate purchase modal total live
-  const calculatedModalTotalPaise = useMemo(() => {
-    return purchaseForm.items.reduce((sum, item) => {
-      const qty = parseFloat(item.quantity) || 0;
-      const rate = parseFloat(item.rateRupees) || 0;
-      return sum + Math.round(qty * rate * 100);
-    }, 0);
-  }, [purchaseForm.items]);
 
   // Filtered purchases
   const filteredPurchases = useMemo(() => {
@@ -357,14 +404,25 @@ export default function PurchasesClient({
 
     setIsSubmitting(true);
     try {
-      const paidPaise = Math.round((parseFloat(purchaseForm.paidAmountRupees) || 0) * 100);
+      const validPayments = purchaseForm.payments
+        .map(p => ({
+          amountPaise: Math.round((parseFloat(p.amountRupees) || 0) * 100),
+          paymentMethod: p.paymentMethod,
+        }))
+        .filter(p => p.amountPaise > 0);
+
+      const totalPaidPaise = validPayments.length > 0 
+        ? validPayments.reduce((sum, p) => sum + p.amountPaise, 0)
+        : Math.round((parseFloat(purchaseForm.paidAmountRupees) || 0) * 100);
+
       const res = await createPurchase({
         supplierId: purchaseForm.supplierId,
         purchaseDate: purchaseForm.purchaseDate,
         supplierInvoiceNo: purchaseForm.supplierInvoiceNo || null,
         items: parsedItems,
-        paidAmountPaise: paidPaise,
-        paymentMethod: purchaseForm.paymentMethod,
+        paidAmountPaise: totalPaidPaise,
+        paymentMethod: validPayments.length > 1 ? 'SPLIT' : validPayments[0]?.paymentMethod || purchaseForm.paymentMethod,
+        payments: validPayments,
         remarks: purchaseForm.remarks || null,
       });
 
@@ -521,7 +579,8 @@ export default function PurchasesClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <AdminDatePicker currentDate={selectedDate} basePath="/dashboard/admin/purchases" />
           <Button
             variant="outline"
             onClick={handleExportXLSX}
@@ -537,10 +596,10 @@ export default function PurchasesClient({
               setSuccessMsg('');
               setPurchaseModalOpen(true);
             }}
-            className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-raised gap-2"
+            className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-raised gap-2 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            + Record Purchase
+            Record Purchase
           </Button>
         </div>
       </div>
@@ -1170,7 +1229,7 @@ export default function PurchasesClient({
                     className="text-xs font-bold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    + Add Item
+                    Add Item
                   </button>
                 </div>
 
@@ -1285,47 +1344,109 @@ export default function PurchasesClient({
                 </div>
               </div>
 
-              {/* Payment Details Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Total Value Live Display */}
-                <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-800 dark:text-teal-300 block">Total Bill Amount</span>
-                  <div className="text-lg font-black text-teal-900 dark:text-teal-100 mt-0.5">
-                    {formatMoney(calculatedModalTotalPaise)}
+              {/* Payment Section (Multiple Payment Modes: e.g. Cash + Online/UPI) */}
+              <div className="p-4 rounded-2xl bg-surface-raised border border-border-default/60 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-border-default/40">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-bold text-primary uppercase tracking-wider">Payment Details</span>
+                    <span className="text-[11px] font-semibold text-secondary">
+                      (Single or multiple modes: e.g. Cash + UPI)
+                    </span>
                   </div>
-                </div>
-
-                {/* Amount Paid Now */}
-                <div>
-                  <label className="block font-bold text-secondary mb-1">
-                    Amount Paid Upfront (₹)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    min="0"
-                    placeholder="0.00"
-                    value={purchaseForm.paidAmountRupees}
-                    onChange={(e) => setPurchaseForm({ ...purchaseForm, paidAmountRupees: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-primary font-bold focus:border-teal-500 outline-none"
-                  />
-                </div>
-
-                {/* Payment Method */}
-                <div>
-                  <label className="block font-bold text-secondary mb-1">
-                    Payment Mode
-                  </label>
-                  <select
-                    value={purchaseForm.paymentMethod}
-                    onChange={(e) => setPurchaseForm({ ...purchaseForm, paymentMethod: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl bg-surface-inset border border-border-default text-primary font-semibold focus:border-teal-500 outline-none"
+                  <button
+                    type="button"
+                    onClick={handleAddPaymentLine}
+                    className="text-xs font-bold text-teal-700 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <option value="CASH">Cash</option>
-                    <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
-                    <option value="UPI">UPI (QR / GooglePay)</option>
-                    <option value="CHEQUE">Cheque</option>
-                  </select>
+                    <Plus className="h-3.5 w-3.5" /> Add Payment Mode
+                  </button>
+                </div>
+
+                <div className="space-y-2.5">
+                  {purchaseForm.payments.map((pmt, pIdx) => (
+                    <div key={pIdx} className="p-2.5 rounded-xl bg-surface-inset border border-border-default/40 grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
+                      <div className="sm:col-span-5">
+                        <label className="block text-[10px] font-bold text-secondary mb-1">
+                          Amount Paid (₹)
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            placeholder="0.00"
+                            value={pmt.amountRupees}
+                            onChange={(e) => handlePaymentLineChange(pIdx, 'amountRupees', e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-lg bg-surface-raised border border-border-default text-primary font-bold text-right focus:border-teal-500 outline-none pr-16"
+                          />
+                          {calculatedRemainingDueRupees > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentLineAmt = parseFloat(pmt.amountRupees) || 0;
+                                const remaining = calculatedRemainingDueRupees + currentLineAmt;
+                                handlePaymentLineChange(pIdx, 'amountRupees', remaining.toFixed(2));
+                              }}
+                              className="absolute right-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 dark:text-teal-300 hover:bg-teal-500/20"
+                              title="Fill remaining due amount"
+                            >
+                              Fill Due
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-6">
+                        <label className="block text-[10px] font-bold text-secondary mb-1">
+                          Payment Mode
+                        </label>
+                        <select
+                          value={pmt.paymentMethod}
+                          onChange={(e) => handlePaymentLineChange(pIdx, 'paymentMethod', e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-lg bg-surface-raised border border-border-default text-primary font-semibold focus:border-teal-500 outline-none cursor-pointer"
+                        >
+                          <option value="CASH">Cash</option>
+                          <option value="UPI">Online / UPI (GooglePay / PhonePe / QR)</option>
+                          <option value="BANK_TRANSFER">Bank Transfer (NEFT / RTGS)</option>
+                          <option value="CHEQUE">Cheque</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:col-span-1 flex justify-end">
+                        {purchaseForm.payments.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePaymentLine(pIdx)}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                            title="Remove payment mode"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Live Reconciliation Summary */}
+                <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-bold">
+                  <div className="p-2.5 rounded-xl bg-surface-inset flex items-center justify-between">
+                    <span className="text-secondary">Total Bill:</span>
+                    <span className="text-primary font-black">{formatMoney(calculatedModalTotalPaise)}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-emerald-800 dark:text-emerald-300">
+                    <span>Paid Upfront:</span>
+                    <span className="font-black">₹{calculatedModalTotalPaidRupees.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className={`p-2.5 rounded-xl flex items-center justify-between ${
+                    calculatedRemainingDueRupees > 0 
+                      ? 'bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300' 
+                      : 'bg-teal-500/10 border border-teal-500/20 text-teal-800 dark:text-teal-300'
+                  }`}>
+                    <span>Remaining Due:</span>
+                    <span className="font-black">₹{calculatedRemainingDueRupees.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  </div>
                 </div>
               </div>
 

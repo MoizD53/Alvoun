@@ -16,13 +16,20 @@ const PurchaseItemSchema = z.object({
   totalAmountPaise: z.number().int().min(0, 'Total must be non-negative'),
 });
 
+const PaymentEntrySchema = z.object({
+  amountPaise: z.number().int().min(0),
+  paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'UPI', 'CHEQUE']).default('CASH'),
+  referenceNo: z.string().optional().nullable(),
+});
+
 const CreatePurchaseSchema = z.object({
   supplierId: z.string().min(1, 'Supplier is required'),
   purchaseDate: z.string().optional(),
   supplierInvoiceNo: z.string().optional().nullable(),
   items: z.array(PurchaseItemSchema).min(1, 'At least one purchase item is required'),
   paidAmountPaise: z.number().int().min(0).default(0),
-  paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'UPI', 'CHEQUE']).default('CASH'),
+  paymentMethod: z.string().default('CASH'),
+  payments: z.array(PaymentEntrySchema).optional(),
   remarks: z.string().optional().nullable(),
 });
 
@@ -245,7 +252,7 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
     return { error: parsed.error.issues[0].message };
   }
 
-  const { supplierId, purchaseDate, supplierInvoiceNo, items, paidAmountPaise, paymentMethod, remarks } = parsed.data;
+  const { supplierId, purchaseDate, supplierInvoiceNo, items, paidAmountPaise, paymentMethod, payments, remarks } = parsed.data;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -255,11 +262,17 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
       // Calculate total amount in paise
       const totalAmountPaise = items.reduce((sum, item) => sum + item.totalAmountPaise, 0);
 
+      // Support multi-payment / split payment
+      const validPayments = (payments || []).filter(p => p.amountPaise > 0);
+      const totalPaidPaise = validPayments.length > 0
+        ? validPayments.reduce((sum, p) => sum + p.amountPaise, 0)
+        : paidAmountPaise;
+
       // Determine payment status
       let paymentStatus = 'PENDING';
-      if (paidAmountPaise >= totalAmountPaise && totalAmountPaise > 0) {
+      if (totalPaidPaise >= totalAmountPaise && totalAmountPaise > 0) {
         paymentStatus = 'PAID';
-      } else if (paidAmountPaise > 0) {
+      } else if (totalPaidPaise > 0) {
         paymentStatus = 'PARTIAL';
       }
 
@@ -271,6 +284,11 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
 
       const targetDate = purchaseDate ? new Date(purchaseDate) : now;
 
+      // Method string
+      const effectivePaymentMethod = validPayments.length > 1
+        ? validPayments.map(p => p.paymentMethod).join(' + ')
+        : validPayments[0]?.paymentMethod || paymentMethod || 'CASH';
+
       // 1. Create Purchase Record
       const purchase = await tx.purchase.create({
         data: {
@@ -279,16 +297,18 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
           supplierInvoiceNo: supplierInvoiceNo?.trim() || null,
           purchaseDate: targetDate,
           totalAmount: totalAmountPaise,
-          paidAmount: paidAmountPaise,
+          paidAmount: totalPaidPaise,
           paymentStatus,
-          paymentMethod,
+          paymentMethod: effectivePaymentMethod,
           remarks: remarks?.trim() || null,
           recordedBy: session.user.name || session.user.email,
         },
       });
 
       // 2. Create Purchase Items & Directly Update Raw Material & Finished Stock (INWARD)
+      let lineIndex = 0;
       for (const item of items) {
+        lineIndex++;
         let matchedMaterialId = item.materialId;
 
         // A. Check if this purchase is for Finished Product (1L, 500ml, 250ml)
@@ -306,16 +326,18 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
           const litresPerBottle = matchedProduct.name.includes('1') ? 1.0 : matchedProduct.name.includes('500') ? 0.5 : 0.25;
           const volumeLitres = Math.round(totalBottles * litresPerBottle);
 
+          // Guarantee ALWAYS UNIQUE batchNumber across multiple lines of the same product
+          const uniqueBatchSuffix = `L${lineIndex}-${Date.now().toString().slice(-4)}`;
           await tx.productionBatch.create({
             data: {
-              batchNumber: `PUR-${purchaseNumber}-${item.materialName.replace(/\s+/g, '').slice(0, 4)}`,
+              batchNumber: `PUR-${purchaseNumber}-${uniqueBatchSuffix}`,
               productId: matchedProduct.id,
               cratesProduced: crates,
               looseBottles: 0,
               totalBottles,
               volumeLitres,
               productionDate: targetDate,
-              notes: `Inward Purchase from ${supplier.name} (#${purchaseNumber})`,
+              notes: `Inward Purchase from ${supplier.name} (#${purchaseNumber} - ${item.materialName})`,
             },
           });
         }
@@ -380,15 +402,30 @@ export async function createPurchase(data: z.infer<typeof CreatePurchaseSchema>)
         }
       }
 
-      // 3. Record Initial Payment if paidAmountPaise > 0
-      if (paidAmountPaise > 0) {
+      // 3. Record Supplier Payments (supports multiple splits e.g. Cash + UPI)
+      if (validPayments.length > 0) {
+        for (const p of validPayments) {
+          await tx.supplierPayment.create({
+            data: {
+              supplierId,
+              purchaseId: purchase.id,
+              amount: p.amountPaise,
+              paymentDate: targetDate,
+              paymentMethod: p.paymentMethod,
+              referenceNo: p.referenceNo || supplierInvoiceNo || purchaseNumber,
+              remarks: `Payment for PO #${purchaseNumber} (${p.paymentMethod})`,
+              recordedBy: session.user.name || session.user.email,
+            },
+          });
+        }
+      } else if (totalPaidPaise > 0) {
         await tx.supplierPayment.create({
           data: {
             supplierId,
             purchaseId: purchase.id,
-            amount: paidAmountPaise,
+            amount: totalPaidPaise,
             paymentDate: targetDate,
-            paymentMethod,
+            paymentMethod: effectivePaymentMethod,
             referenceNo: supplierInvoiceNo || purchaseNumber,
             remarks: `Initial payment on ${purchaseNumber}`,
             recordedBy: session.user.name || session.user.email,

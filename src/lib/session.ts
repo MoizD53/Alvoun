@@ -19,6 +19,8 @@ export async function requireActiveSalesmanSession() {
   const timeDetails = getKolkataTimeDetails(now);
   const workDate = getKolkataDateOnly(now);
 
+  // Temporarily disabled 7 AM to 7 PM restriction for 24/7 salesman access
+  /*
   if (timeDetails.hour < 7) {
     throw new Error('NOT_STARTED');
   }
@@ -41,6 +43,7 @@ export async function requireActiveSalesmanSession() {
     });
     throw new Error('SESSION_ENDED');
   }
+  */
 
   // Ensure active work session for today
   let workSession = await prisma.workSession.findUnique({

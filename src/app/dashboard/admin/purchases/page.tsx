@@ -42,13 +42,15 @@ export default async function PurchasesPage(props: {
     rawMaterialPurchases: [],
   };
 
+  const selectedDate = (resolvedParams as any)?.date || resolvedParams.startDate || '';
+
   let data: any = defaultData;
   try {
     data = await getPurchases({
       supplierId: resolvedParams.supplierId,
       paymentStatus: resolvedParams.paymentStatus,
-      startDate: resolvedParams.startDate,
-      endDate: resolvedParams.endDate,
+      startDate: selectedDate || undefined,
+      endDate: resolvedParams.endDate || selectedDate || undefined,
     });
   } catch (err) {
     console.error('[PurchasesPage data fetch error]:', err);
@@ -67,8 +69,9 @@ export default async function PurchasesPage(props: {
         initialData={data || defaultData}
         currentSupplier={resolvedParams.supplierId || 'ALL'}
         currentStatus={resolvedParams.paymentStatus || 'ALL'}
-        startDate={resolvedParams.startDate || ''}
-        endDate={resolvedParams.endDate || ''}
+        startDate={selectedDate}
+        endDate={resolvedParams.endDate || selectedDate}
+        selectedDate={selectedDate}
       />
     </div>
   );

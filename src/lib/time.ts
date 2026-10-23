@@ -50,8 +50,8 @@ export function getKolkataTimeDetails(date?: Date | string | null) {
 }
 
 export function isWorkingHours(date?: Date | string | null) {
-  const details = getKolkataTimeDetails(date);
-  return details.hour >= 7 && details.hour < 19;
+  // Temporarily allow 24/7 access for salesmen
+  return true;
 }
 
 export function getKolkataDateOnly(date?: Date | string | null) {
