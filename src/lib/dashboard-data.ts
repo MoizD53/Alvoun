@@ -484,11 +484,12 @@ export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: n
 
   salesToday.forEach(s => {
     const c = s.customer;
+    if (!c) return;
     const existing = customerMap.get(c.id) || {
       customer: c,
       todaySalesPaise: 0
     };
-    existing.todaySalesPaise += s.totalAmount;
+    existing.todaySalesPaise += s.totalAmount || 0;
     customerMap.set(c.id, existing);
   });
 
@@ -498,18 +499,19 @@ export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: n
 
   return sorted.map(item => {
     const c = item.customer;
+    if (!c) return null;
     const outstanding = calculateOutstanding(c as any);
 
     return {
       customerId: c.id,
-      customerName: c.customerName,
+      customerName: c.customerName || 'Customer',
       routeName: c.route?.name || 'Unassigned',
       areaName: c.area?.name || 'Unassigned',
       todaySalesPaise: item.todaySalesPaise,
       outstandingPaise: outstanding,
-      contact: c.contact
+      contact: c.contact || ''
     };
-  });
+  }).filter((x): x is TopCustomerItem => Boolean(x));
 }
 
 // ---------------------------------------------------------------------------
@@ -653,7 +655,7 @@ export async function getAttendanceAndFieldActivity(
     let currentCustomerName: string | undefined;
     let currentAreaName: string | undefined;
 
-    if (currentActiveVisit) {
+    if (currentActiveVisit && currentActiveVisit.customer) {
       currentAction = 'At Customer Visit';
       currentCustomerName = currentActiveVisit.customer.customerName;
       currentAreaName = currentActiveVisit.customer.area?.name;
@@ -916,32 +918,43 @@ export async function getProductionSummary(startOfDay: Date, endOfDay: Date): Pr
 // ---------------------------------------------------------------------------
 
 export async function getPurchaseSummary(startOfDay: Date, endOfDay: Date): Promise<PurchaseSummary> {
-  const purchases = await prisma.purchase.findMany({
-    where: { purchaseDate: { gte: startOfDay, lte: endOfDay } },
-    include: { items: true },
-  });
+  try {
+    const purchases = await prisma.purchase.findMany({
+      where: { purchaseDate: { gte: startOfDay, lte: endOfDay } },
+      include: { items: true },
+    });
 
-  let todayTotalAmountPaise = 0;
-  let todayPaidPaise = 0;
-  let todayOutstandingPaise = 0;
-  let todayQuantity = 0;
+    let todayTotalAmountPaise = 0;
+    let todayPaidPaise = 0;
+    let todayOutstandingPaise = 0;
+    let todayQuantity = 0;
 
-  for (const p of purchases) {
-    todayTotalAmountPaise += p.totalAmount;
-    todayPaidPaise += p.paidAmount;
-    todayOutstandingPaise += (p.totalAmount - p.paidAmount);
-    for (const item of p.items) {
-      todayQuantity += item.quantity;
+    for (const p of purchases) {
+      todayTotalAmountPaise += p.totalAmount || 0;
+      todayPaidPaise += p.paidAmount || 0;
+      todayOutstandingPaise += ((p.totalAmount || 0) - (p.paidAmount || 0));
+      for (const item of (p.items || [])) {
+        todayQuantity += item.quantity || 0;
+      }
     }
-  }
 
-  return {
-    todayTotalAmountPaise,
-    todayPaidPaise,
-    todayOutstandingPaise,
-    todayQuantity: Math.round(todayQuantity),
-    purchasesCount: purchases.length,
-  };
+    return {
+      todayTotalAmountPaise,
+      todayPaidPaise,
+      todayOutstandingPaise,
+      todayQuantity: Math.round(todayQuantity),
+      purchasesCount: purchases.length,
+    };
+  } catch (err) {
+    console.warn('[dashboard-data] Safe fallback for getPurchaseSummary:', err);
+    return {
+      todayTotalAmountPaise: 0,
+      todayPaidPaise: 0,
+      todayOutstandingPaise: 0,
+      todayQuantity: 0,
+      purchasesCount: 0,
+    };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1079,7 +1092,16 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
 
   const targetDate = new Date(selectedDate);
 
-  // Parallel execution of all core modules + system metadata
+  // Parallel resilient execution of all core modules + system metadata
+  const safeRun = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await fn();
+    } catch (err) {
+      console.warn('[dashboard-data] Safe query fallback used:', err);
+      return fallback;
+    }
+  };
+
   const [
     trendsResult,
     productSales,
@@ -1095,24 +1117,88 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
     payroll,
     metaCounts
   ] = await Promise.all([
-    getSalesAndCollectionTrends(selectedDate),
-    getProductWiseSales(startOfDay, endOfDay),
-    getTopCustomers(startOfDay, endOfDay, 10),
-    getAreaWiseSales(startOfDay, endOfDay),
-    getAttendanceAndFieldActivity(startOfDay, endOfDay),
-    getOperationalAlerts(startOfDay, endOfDay, isToday),
-    getInventoryAndDispatches(startOfDay, endOfDay),
-    getExpensesSummary(startOfDay, endOfDay, targetDate),
-    getProductionSummary(startOfDay, endOfDay),
-    getPurchaseSummary(startOfDay, endOfDay),
-    getStockSummary(endOfDay),
-    getPayrollSummary(targetDate),
-    Promise.all([
-      prisma.customer.count(),
-      prisma.customer.count({ where: { status: 'ACTIVE' } }),
-      prisma.route.count({ where: { isActive: true } }),
-      prisma.area.count()
-    ])
+    safeRun(
+      () => getSalesAndCollectionTrends(selectedDate),
+      {
+        trends: {
+          points: [],
+          todaySalesPaise: 0,
+          yesterdaySalesPaise: 0,
+          salesChangePercent: 0,
+          todayCollectionsPaise: 0,
+          yesterdayCollectionsPaise: 0,
+          collectionsChangePercent: 0,
+          totalMarketDuesPaise: 0,
+          todayDispatchedLitres: 0,
+          yesterdayDispatchedLitres: 0,
+          dispatchedLitresChangePercent: 0,
+        },
+        sevenDaysList: [],
+      }
+    ),
+    safeRun(
+      () => getProductWiseSales(startOfDay, endOfDay),
+      { products: [], totalSalesPaise: 0, totalBottles: 0, totalCrates: 0, totalLitres: 0 }
+    ),
+    safeRun(() => getTopCustomers(startOfDay, endOfDay, 10), []),
+    safeRun(() => getAreaWiseSales(startOfDay, endOfDay), []),
+    safeRun(
+      () => getAttendanceAndFieldActivity(startOfDay, endOfDay),
+      {
+        totalStaff: 0,
+        present: 0,
+        working: 0,
+        completed: 0,
+        absent: 0,
+        attendancePercent: 0,
+        activeVisits: 0,
+        completedVisits: 0,
+        noSaleVisits: 0,
+        totalVisitsToday: 0,
+        salesmen: [],
+      }
+    ),
+    safeRun(() => getOperationalAlerts(startOfDay, endOfDay, isToday), []),
+    safeRun(
+      () => getInventoryAndDispatches(startOfDay, endOfDay),
+      { totalCrates: 0, totalLooseBottles: 0, totalBottles: 0, totalLitres: 0, byProduct: [] }
+    ),
+    safeRun(
+      () => getExpensesSummary(startOfDay, endOfDay, targetDate),
+      { todayExpensesPaise: 0, monthExpensesPaise: 0, expensesCount: 0 }
+    ),
+    safeRun(
+      () => getProductionSummary(startOfDay, endOfDay),
+      { todayCrates: 0, todayLooseBottles: 0, todayLitres: 0, batchesCount: 0 }
+    ),
+    safeRun(
+      () => getPurchaseSummary(startOfDay, endOfDay),
+      {
+        todayTotalAmountPaise: 0,
+        todayPaidPaise: 0,
+        todayOutstandingPaise: 0,
+        todayQuantity: 0,
+        purchasesCount: 0,
+      }
+    ),
+    safeRun(
+      () => getStockSummary(endOfDay),
+      { totalAvailableCrates: 0, totalAvailableLitres: 0 }
+    ),
+    safeRun(
+      () => getPayrollSummary(targetDate),
+      { activeStaffCount: 0, monthlyLiabilityPaise: 0, paidThisMonthPaise: 0 }
+    ),
+    safeRun(
+      () =>
+        Promise.all([
+          prisma.customer.count(),
+          prisma.customer.count({ where: { status: 'ACTIVE' } }),
+          prisma.route.count({ where: { isActive: true } }),
+          prisma.area.count(),
+        ]),
+      [0, 0, 0, 0]
+    ),
   ]);
 
   const activeCustomersCount = metaCounts[1];

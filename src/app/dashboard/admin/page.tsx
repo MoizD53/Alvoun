@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { getCurrentKolkataTime, getKolkataTimeDetails } from '@/lib/time';
+import { getCurrentKolkataTime, getKolkataTimeDetails, getKolkataDateString } from '@/lib/time';
 import { getDashboardExecutiveData } from '@/lib/dashboard-data';
 import { isFinancialRole } from '@/lib/rbac';
 
@@ -44,7 +44,29 @@ export default async function AdminDashboard({
     data = await getDashboardExecutiveData(dateStr);
   } catch (err) {
     console.error('[AdminDashboard Server Error during data fetch]:', err);
-    throw err;
+    try {
+      data = await getDashboardExecutiveData();
+    } catch {
+      data = {
+        selectedDate: getKolkataDateString(now),
+        isToday: true,
+        trends: { points: [], todaySalesPaise: 0, yesterdaySalesPaise: 0, salesChangePercent: 0, todayCollectionsPaise: 0, yesterdayCollectionsPaise: 0, collectionsChangePercent: 0, totalMarketDuesPaise: 0, todayDispatchedLitres: 0, yesterdayDispatchedLitres: 0, dispatchedLitresChangePercent: 0 },
+        productSales: { products: [], totalSalesPaise: 0, totalBottles: 0, totalCrates: 0, totalLitres: 0 },
+        topCustomers: [],
+        areaSales: [],
+        attendance: { totalStaff: 0, present: 0, working: 0, completed: 0, absent: 0, attendancePercent: 0, activeVisits: 0, completedVisits: 0, noSaleVisits: 0, totalVisitsToday: 0, salesmen: [] },
+        alerts: [],
+        dispatches: { totalCrates: 0, totalLooseBottles: 0, totalBottles: 0, totalLitres: 0, byProduct: [] },
+        expenses: { todayExpensesPaise: 0, monthExpensesPaise: 0, expensesCount: 0 },
+        production: { todayCrates: 0, todayLooseBottles: 0, todayLitres: 0, batchesCount: 0 },
+        purchase: { todayTotalAmountPaise: 0, todayPaidPaise: 0, todayOutstandingPaise: 0, todayQuantity: 0, purchasesCount: 0 },
+        stock: { totalAvailableCrates: 0, totalAvailableLitres: 0 },
+        cashFlow: { inflowPaise: 0, outflowPaise: 0, netPaise: 0 },
+        customerActivity: { totalActiveCustomers: 0, purchasedTodayCount: 0, purchasePercentage: 0 },
+        payroll: { activeStaffCount: 0, monthlyLiabilityPaise: 0, paidThisMonthPaise: 0 },
+        meta: { totalCustomersCount: 0, activeCustomersCount: 0, activeRoutesCount: 0, totalAreasCount: 0 }
+      };
+    }
   }
 
   return (
