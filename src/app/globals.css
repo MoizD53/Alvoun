@@ -601,3 +601,76 @@ body {
   height: 100vh;
   height: 100dvh;
 }
+
+
+/* ============================================================
+   GLOBAL UNIFORM TYPOGRAPHY & TABULAR NUMERALS
+   ============================================================ */
+input, button, select, textarea, optgroup, option {
+  font-family: inherit;
+}
+
+.tabular-nums,
+[data-tabular-nums='true'],
+.font-mono,
+td[class*='text-right'],
+th[class*='text-right'] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   GLOBAL PREMIUM HOVER EFFECTS SYSTEM (150ms-220ms Transitions)
+   ============================================================ */
+/* Universal interactive transitions without layout shifts */
+button, 
+a, 
+input, 
+select, 
+textarea, 
+[role='button'], 
+.press-active {
+  transition: color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 180ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* KPI & Analytics Cards: Subtle elevation & border glow on hover */
+.kpi-card-hover,
+.card-hover {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+.kpi-card-hover:hover,
+.card-hover:hover {
+  transform: translateY(-1.5px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--teal-300);
+}
+
+/* Table Rows: Smooth soft background on hover */
+tbody tr {
+  transition: background-color 160ms ease;
+}
+tbody tr:hover {
+  background-color: rgba(26, 95, 99, 0.04);
+}
+.dark tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Icon Buttons: Gentle circular feedback */
+.icon-btn {
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+.icon-btn:hover {
+  background-color: var(--surface-inset);
+  color: var(--teal-600);
+}
+
+/* Navigation items hover */
+nav a {
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}

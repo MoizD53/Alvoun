@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { getKolkataTimeDetails, getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
+import { getCurrentKolkataTime, getKolkataDateString } from '@/lib/time';
 import DailyRegisterClient from './DailyRegisterClient';
 
 export default async function DailyReportsPage({
@@ -9,11 +9,12 @@ export default async function DailyReportsPage({
 }) {
   const resolvedParams = await searchParams;
   const now = getCurrentKolkataTime();
-  
-  // Parse date range
   const todayStr = getKolkataDateString(now);
-  const fromDate = resolvedParams.from || todayStr;
-  const toDate = resolvedParams.to || todayStr;
+
+  // Single universal calendar reporting date support
+  const targetDate = resolvedParams.date || resolvedParams.from || todayStr;
+  const fromDate = resolvedParams.from || targetDate;
+  const toDate = resolvedParams.to || targetDate;
 
   const start = new Date(`${fromDate}T00:00:00+05:30`);
   const end = new Date(`${toDate}T23:59:59+05:30`);
@@ -40,15 +41,15 @@ export default async function DailyReportsPage({
     })
   ]);
 
-  const daysMap = new Map();
+  const daysMap = new Map<string, any>();
 
   const ensureCustomerDay = (dateStr: string, customerId: string, customerRef?: any) => {
     if (!daysMap.has(dateStr)) {
       daysMap.set(dateStr, {
         dateStr,
-        customers: new Map(),
+        customers: new Map<string, any>(),
         dayTotals: {
-          productQuantities: {},
+          productQuantities: {} as Record<string, number>,
           totalCrates: 0,
           saleAmount: 0,
           receivedAmount: 0,
@@ -61,21 +62,25 @@ export default async function DailyReportsPage({
     if (!dayObj.customers.has(customerId)) {
       dayObj.customers.set(customerId, {
         customerId,
-        customerName: customerRef?.customerName || 'Unknown',
-        areaName: customerRef?.area?.name || 'Unknown',
-        productQuantities: {},
+        customerName: customerRef?.customerName || 'Unknown Customer',
+        customerCode: customerRef?.code || null,
+        contact: customerRef?.contact || '',
+        routeId: customerRef?.route?.id || 'unassigned',
+        routeName: customerRef?.route?.name || 'Direct / Unassigned Route',
+        areaId: customerRef?.area?.id || 'unassigned',
+        areaName: customerRef?.area?.name || 'General Sector',
+        productQuantities: {} as Record<string, number>,
         totalCrates: 0,
         saleAmount: 0,
         receivedAmount: 0,
         dueAmount: 0,
-        transactions: []
+        transactions: [] as any[]
       });
     }
     return { dayObj, customerObj: dayObj.customers.get(customerId) };
   };
 
   const getDateStr = (d: Date) => {
-    // Convert to IST string roughly
     const istTime = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
     return istTime.toISOString().split('T')[0];
   };
@@ -94,7 +99,7 @@ export default async function DailyReportsPage({
     dayObj.dayTotals.saleAmount += s.totalAmount;
 
     let totalCratesSale = 0;
-    const salePQs: any = {};
+    const salePQs: Record<string, number> = {};
     
     s.items.forEach((item: any) => {
       const q = item.crates;
@@ -132,11 +137,11 @@ export default async function DailyReportsPage({
     });
   });
 
-  // Calculate Due and construct final array
+  // Build hierarchical breakdown: Routes -> Areas -> Customers
   let globalSales = 0;
   let globalColl = 0;
   let globalCrates = 0;
-  const uniqueCustomers = new Set();
+  const uniqueCustomers = new Set<string>();
 
   const daysList = Array.from(daysMap.values()).map(day => {
     const customersList = Array.from(day.customers.values()).map((c: any) => {
@@ -148,16 +153,68 @@ export default async function DailyReportsPage({
       globalCrates += c.totalCrates;
       uniqueCustomers.add(c.customerId);
       
-      // Sort transactions by time
       c.transactions.sort((a: any, b: any) => a.time.localeCompare(b.time));
-      
       return c;
     });
+
+    // Group customers by Route -> Area
+    const routesMap = new Map<string, any>();
+    customersList.forEach((c: any) => {
+      if (!routesMap.has(c.routeId)) {
+        routesMap.set(c.routeId, {
+          routeId: c.routeId,
+          routeName: c.routeName,
+          totalSales: 0,
+          totalReceived: 0,
+          totalDue: 0,
+          totalCrates: 0,
+          productQuantities: {} as Record<string, number>,
+          areas: new Map<string, any>()
+        });
+      }
+      const routeObj = routesMap.get(c.routeId);
+      routeObj.totalSales += c.saleAmount;
+      routeObj.totalReceived += c.receivedAmount;
+      routeObj.totalDue += c.dueAmount;
+      routeObj.totalCrates += c.totalCrates;
+      Object.entries(c.productQuantities).forEach(([pId, qty]) => {
+        routeObj.productQuantities[pId] = (routeObj.productQuantities[pId] || 0) + (qty as number);
+      });
+
+      if (!routeObj.areas.has(c.areaId)) {
+        routeObj.areas.set(c.areaId, {
+          areaId: c.areaId,
+          areaName: c.areaName,
+          totalSales: 0,
+          totalReceived: 0,
+          totalDue: 0,
+          totalCrates: 0,
+          productQuantities: {} as Record<string, number>,
+          customers: []
+        });
+      }
+      const areaObj = routeObj.areas.get(c.areaId);
+      areaObj.totalSales += c.saleAmount;
+      areaObj.totalReceived += c.receivedAmount;
+      areaObj.totalDue += c.dueAmount;
+      areaObj.totalCrates += c.totalCrates;
+      Object.entries(c.productQuantities).forEach(([pId, qty]) => {
+        areaObj.productQuantities[pId] = (areaObj.productQuantities[pId] || 0) + (qty as number);
+      });
+      areaObj.customers.push(c);
+    });
+
+    // Convert to nested arrays
+    const routes = Array.from(routesMap.values()).map((r: any) => ({
+      ...r,
+      areas: Array.from(r.areas.values())
+    })).sort((a, b) => b.totalSales - a.totalSales);
 
     return {
       dateStr: day.dateStr,
       dayTotals: day.dayTotals,
-      customers: customersList
+      customers: customersList,
+      routes
     };
   }).sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 

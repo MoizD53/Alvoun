@@ -8,7 +8,7 @@ import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime } from 
 
 const ProductionSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
-  cratesProduced: z.number().int().positive('Crates produced must be positive'),
+  cratesProduced: z.number().int().positive('PKGs produced must be positive'),
   looseBottles: z.number().int().min(0).default(0),
   productionDate: z.string().optional(),
   shift: z.enum(['DAY', 'NIGHT']).default('DAY'),
@@ -48,13 +48,28 @@ export async function getProductionBatches(filters?: {
     }
   }
 
-  const [batches, products] = await Promise.all([
+  const [batches, products, rawMaterials, rawMovements, salesItems] = await Promise.all([
     prisma.productionBatch.findMany({
       where,
       include: { product: true },
       orderBy: { productionDate: 'desc' },
     }),
     prisma.product.findMany({ where: { isActive: true }, orderBy: { bottlesPerCrate: 'asc' } }),
+    prisma.rawMaterial.findMany({
+      orderBy: [{ category: 'asc' }, { name: 'asc' }]
+    }),
+    prisma.rawMaterialMovement.findMany({
+      take: 50,
+      orderBy: { movementDate: 'desc' },
+      include: { material: true }
+    }),
+    prisma.saleItem.groupBy({
+      by: ['productId'],
+      _sum: {
+        crates: true,
+        looseBottles: true
+      }
+    })
   ]);
 
   const totalCrates = batches.reduce((sum, b) => sum + b.cratesProduced, 0);
@@ -73,9 +88,38 @@ export async function getProductionBatches(filters?: {
     productTotals[pName].batches += 1;
   }
 
+  // Finished Goods Inventory Calculation
+  const salesByProduct: Record<string, { crates: number; loose: number }> = {};
+  salesItems.forEach((si) => {
+    salesByProduct[si.productId] = {
+      crates: si._sum.crates || 0,
+      loose: si._sum.looseBottles || 0
+    };
+  });
+
+  const productInventory = products.map((prod) => {
+    const producedCrates = productTotals[prod.name]?.crates || 0;
+    const soldCrates = salesByProduct[prod.id]?.crates || 0;
+    const stockCrates = Math.max(0, producedCrates - soldCrates);
+    const bottleLitres = getBottleVolumeLitres(prod.name);
+    return {
+      productId: prod.id,
+      productName: prod.name,
+      bottlesPerCrate: prod.bottlesPerCrate,
+      producedCrates,
+      soldCrates,
+      stockCrates,
+      stockBottles: stockCrates * prod.bottlesPerCrate,
+      stockLitres: stockCrates * prod.bottlesPerCrate * bottleLitres,
+    };
+  });
+
   return {
     batches,
     products,
+    rawMaterials,
+    rawMovements,
+    productInventory,
     totalCrates,
     totalBottles,
     totalLitres,
@@ -166,5 +210,62 @@ export async function deleteProductionBatch(id: string) {
     return { success: true };
   } catch (error: any) {
     return { error: error.message || 'Failed to delete production batch' };
+  }
+}
+
+export async function recordRawMaterialMovement(data: {
+  materialId: string;
+  type: 'INWARD' | 'CONSUMED' | 'ADJUSTMENT';
+  quantity: number;
+  referenceNo?: string;
+  notes?: string;
+}) {
+  await requireAdminSession();
+
+  if (!data.materialId) return { error: 'Material is required' };
+  if (!data.quantity || data.quantity <= 0) return { error: 'Quantity must be greater than zero' };
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const mat = await tx.rawMaterial.findUnique({ where: { id: data.materialId } });
+      if (!mat) throw new Error('Selected raw material not found');
+
+      const openingStock = mat.currentStock;
+      let closingStock = openingStock;
+
+      if (data.type === 'INWARD') {
+        closingStock = openingStock + data.quantity;
+      } else if (data.type === 'CONSUMED') {
+        closingStock = Math.max(0, openingStock - data.quantity);
+      } else if (data.type === 'ADJUSTMENT') {
+        closingStock = data.quantity;
+      }
+
+      await tx.rawMaterial.update({
+        where: { id: data.materialId },
+        data: { currentStock: closingStock }
+      });
+
+      return tx.rawMaterialMovement.create({
+        data: {
+          materialId: data.materialId,
+          type: data.type,
+          quantity: data.quantity,
+          openingStock,
+          closingStock,
+          referenceNo: data.referenceNo?.trim() || null,
+          notes: data.notes?.trim() || null,
+          movementDate: new Date()
+        }
+      });
+    });
+
+    try {
+      revalidatePath('/dashboard/admin/production');
+    } catch {}
+
+    return { success: true, id: result.id };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to record movement' };
   }
 }

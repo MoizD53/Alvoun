@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
 import { Sun, MoonStar, LogOut, X, ShieldCheck, Mail, MapPin, User, Settings } from 'lucide-react';
@@ -138,11 +139,16 @@ export default function ExecutiveHeader({
   return (
     <>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2">
-        {/* Left: Greeting with User's Name */}
-        <div className="min-w-0 flex items-center gap-3">
-          <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-extrabold text-primary tracking-tight font-sans">
-            {greeting}, Mr. {displayName}
-          </h1>
+        {/* Left: Naphareese Maschroubat Brand Logo */}
+        <div className="min-w-0 flex items-center shrink-0">
+          <Image
+            src="/naphareese-maschroubat.png"
+            alt="Naphareese Maschroubat"
+            width={240}
+            height={68}
+            className="h-9 sm:h-11 md:h-12 w-auto object-contain drop-shadow-xs"
+            priority
+          />
         </div>
 
         {/* Center: Global Search Bar */}
@@ -150,40 +156,44 @@ export default function ExecutiveHeader({
           <GlobalSearch />
         </div>
 
-        {/* Right: Weather & Live Time + Date Filter + 3D Profile Card */}
-        <div className="flex items-center gap-3 flex-wrap md:flex-nowrap shrink-0">
-          {/* Weather & Live Time Card (Date removed as requested) */}
+        {/* Right: Combined Weather + Time + Universal Date Selector Block & Profile */}
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap md:flex-nowrap shrink-0">
+          {/* Combined Weather, Live Time & Date Selector in One Block */}
           <div 
-            className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-surface-inset border border-border-default shadow-inset select-none"
-            title="Dahod Weather & IST Time"
+            className="flex items-center gap-2.5 sm:gap-3 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-2xl bg-surface-inset border border-border-default shadow-inset select-none"
+            title="Dahod Weather, Live Time & Report Date"
           >
-            <div className="flex items-center gap-2">
+            {/* Weather */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {isNight ? (
-                <MoonStar className="h-5 w-5 text-amber-300 dark:text-amber-200 shrink-0 animate-pulse" />
+                <MoonStar className="h-4 sm:h-5 w-4 sm:w-5 text-amber-300 dark:text-amber-200 shrink-0 animate-pulse" />
               ) : (
-                <Sun className="h-5 w-5 text-amber-500 shrink-0 animate-[spin_16s_linear_infinite]" />
+                <Sun className="h-4 sm:h-5 w-4 sm:w-5 text-amber-500 shrink-0 animate-[spin_16s_linear_infinite]" />
               )}
               <div className="flex flex-col leading-none">
-                <span className="text-sm font-extrabold text-primary font-sans tracking-tight tabular-nums">
+                <span className="text-xs sm:text-sm font-extrabold text-primary font-sans tracking-tight tabular-nums">
                   {weather ? `${weather.temp}°C` : '28°C'}
                 </span>
-                <span className="text-[10px] font-bold text-secondary truncate max-w-[80px]">
+                <span className="text-[9px] sm:text-[10px] font-bold text-secondary truncate max-w-[70px] sm:max-w-[80px]">
                   {weather?.condition || (isNight ? 'Clear Night' : 'Dahod')}
                 </span>
               </div>
             </div>
 
-            <div className="h-7 w-px bg-border-default" />
+            <div className="h-6 sm:h-7 w-px bg-border-default" />
 
+            {/* Live Local Time */}
             <div className="flex flex-col items-center justify-center leading-none">
-              <span className="text-sm sm:text-base font-extrabold text-primary font-sans tracking-tight tabular-nums">
+              <span className="text-xs sm:text-sm md:text-base font-extrabold text-primary font-sans tracking-tight tabular-nums">
                 {timeStr || '10:00 AM'}
               </span>
             </div>
-          </div>
 
-          {/* Date Filter Picker */}
-          <AdminDatePicker currentDate={selectedDate} />
+            <div className="h-6 sm:h-7 w-px bg-border-default" />
+
+            {/* One Universal Date Selector */}
+            <AdminDatePicker currentDate={selectedDate} compact />
+          </div>
 
           {/* 3D-Embossed Profile Card (Clickable to open profile modal) */}
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-surface-raised border border-border-default shadow-raised select-none">

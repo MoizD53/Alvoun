@@ -24,18 +24,14 @@ export default function AreaWiseSalesCard({
     <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 flex flex-col justify-between h-full select-none">
       {/* Header */}
       <div className="flex items-center justify-between mb-3 gap-2">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-800 dark:text-teal-400 shrink-0">
-            <MapPin className="h-4 w-4" />
-          </div>
+        <div className="min-w-0">
           <h3 className="text-xs sm:text-sm font-bold text-primary tracking-tight">
             Area-Wise Sales
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <AdminDatePicker currentDate={selectedDate || ''} compact />
           <Link
-            href="/dashboard/admin/routes"
+            href={`/dashboard/admin/routes${selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : ''}`}
             className="text-[11px] font-semibold text-secondary hover:text-primary transition-colors inline-flex items-center gap-0.5 shrink-0"
             title="Open Routes & Sectors Master"
           >

@@ -3,13 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { 
-  TrendingUp, 
-  Wallet, 
-  ArrowLeftRight, 
-  Receipt, 
-  Factory, 
-  Boxes, 
-  Droplets, 
   ArrowUpRight, 
   ArrowDownRight, 
   Minus,
@@ -57,7 +50,8 @@ export default function ExecutiveKPIRow({
   const salesHistory = trends?.points?.map(p => p.salesPaise) || [];
   const collectionsHistory = trends?.points?.map(p => p.collectionsPaise) || [];
 
-  const comparisonPeriod = isToday ? 'vs yest' : 'vs prev';
+  // Replace 'vs yest' with 'vs yesterday' as requested
+  const comparisonPeriod = isToday ? 'vs yesterday' : 'vs yesterday';
 
   const renderDelta = (percent: number) => {
     if (percent > 0) {
@@ -88,24 +82,20 @@ export default function ExecutiveKPIRow({
   };
 
   const periodLabel = isToday ? 'Today' : selectedDate || 'Selected';
+  const dateQuery = selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : '';
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 sm:gap-4">
       {/* 1. SALES TODAY */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
-              <Droplets className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-primary truncate block tracking-tight">
-                Sales ({periodLabel})
-              </span>
-            </div>
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-primary truncate block tracking-tight">
+              Sales ({periodLabel})
+            </span>
           </div>
           <Link
-            href="/dashboard/admin/reports/daily"
+            href={`/dashboard/admin/reports/daily${dateQuery}`}
             className={embossedViewButtonClass}
             title="Open Daily Sales Register"
           >
@@ -134,21 +124,16 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 2. RECEIVABLES / COLLECTIONS (MONEY ACTUALLY RECEIVED) */}
+      {/* 2. RECEIVABLES / COLLECTIONS */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
-              <Wallet className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-primary truncate block tracking-tight">
-                Collections ({periodLabel})
-              </span>
-            </div>
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-primary truncate block tracking-tight">
+              Collections ({periodLabel})
+            </span>
           </div>
           <Link
-            href="/dashboard/admin/reports/daily"
+            href={`/dashboard/admin/reports/daily${dateQuery}`}
             className={embossedViewButtonClass}
             title="Open Collections Register"
           >
@@ -177,21 +162,16 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 3. CASH FLOW (NET CASH MOVEMENT = COLLECTIONS - EXPENSES) */}
+      {/* 3. CASH FLOW */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
-              <ArrowLeftRight className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-primary truncate block tracking-tight">
-                Cash Flow ({periodLabel})
-              </span>
-            </div>
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-primary truncate block tracking-tight">
+              Cash Flow ({periodLabel})
+            </span>
           </div>
           <Link
-            href="/dashboard/admin/cashflow"
+            href={`/dashboard/admin/cashflow${dateQuery}`}
             className={embossedViewButtonClass}
             title="Open Dedicated Cash Flow Register"
           >
@@ -221,21 +201,16 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 4. EXPENSES TODAY */}
+      {/* 4. EXPENSES */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-rose-700 dark:text-rose-400 shrink-0">
-              <Receipt className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-primary truncate block tracking-tight">
-                Expenses ({periodLabel})
-              </span>
-            </div>
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-primary truncate block tracking-tight">
+              Expenses ({periodLabel})
+            </span>
           </div>
           <Link
-            href="/dashboard/admin/expenses"
+            href={`/dashboard/admin/expenses${dateQuery}`}
             className={embossedViewButtonClass}
             title="Open Company Expenses"
           >
@@ -260,23 +235,18 @@ export default function ExecutiveKPIRow({
         </div>
       </div>
 
-      {/* 5. PRODUCTION TODAY */}
+      {/* 5. PRODUCTION */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-700 dark:text-teal-400 shrink-0">
-              <Factory className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-primary truncate block tracking-tight">
-                Production ({periodLabel})
-              </span>
-            </div>
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-primary truncate block tracking-tight">
+              Production ({periodLabel})
+            </span>
           </div>
           <Link
-            href="/dashboard/admin/production"
+            href={`/dashboard/admin/production${selectedDate ? `?startDate=${encodeURIComponent(selectedDate)}&endDate=${encodeURIComponent(selectedDate)}` : ''}`}
             className={embossedViewButtonClass}
-            title="Open Bottling Production"
+            title="Open Bottling Production Workspace"
           >
             <span>View</span>
             <ChevronRight className="h-3 w-3 text-secondary group-hover/btn:text-teal-800 dark:group-hover/btn:text-teal-300 group-hover/btn:translate-x-0.5 transition-all duration-200" />
@@ -302,18 +272,13 @@ export default function ExecutiveKPIRow({
       {/* 6. STOCK OVERVIEW */}
       <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 hover:shadow-hover group select-none min-h-[148px]">
         <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0">
-              <Boxes className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-primary truncate block tracking-tight">
-                Stock Overview
-              </span>
-            </div>
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-primary truncate block tracking-tight">
+              Stock Overview
+            </span>
           </div>
           <Link
-            href="/dashboard/admin/stock"
+            href={`/dashboard/admin/stock${dateQuery}`}
             className={embossedViewButtonClass}
             title="Open Stock & Raw Materials"
           >

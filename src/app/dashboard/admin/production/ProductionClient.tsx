@@ -15,12 +15,22 @@ import {
   CheckCircle, 
   X,
   Calendar,
-  Box
+  Box,
+  Archive,
+  ArrowDownRight,
+  ArrowUpRight,
+  RefreshCw,
+  PackageCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { createProductionBatch, deleteProductionBatch } from '@/lib/actions/admin/production';
+import { 
+  createProductionBatch, 
+  deleteProductionBatch, 
+  recordRawMaterialMovement 
+} from '@/lib/actions/admin/production';
 
 interface ProductItem {
   id: string;
@@ -43,10 +53,47 @@ interface BatchItem {
   notes?: string | null;
 }
 
+interface RawMaterialItem {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  currentStock: number;
+  minReorderLevel: number;
+  targetProduct?: string | null;
+}
+
+interface RawMovementItem {
+  id: string;
+  materialId: string;
+  material: { name: string; unit: string; category: string };
+  type: string;
+  quantity: number;
+  openingStock: number;
+  closingStock: number;
+  referenceNo?: string | null;
+  notes?: string | null;
+  movementDate: Date | string;
+}
+
+interface ProductInventoryItem {
+  productId: string;
+  productName: string;
+  bottlesPerCrate: number;
+  producedCrates: number;
+  soldCrates: number;
+  stockCrates: number;
+  stockBottles: number;
+  stockLitres: number;
+}
+
 interface ProductionClientProps {
   initialData: {
     batches: BatchItem[];
     products: ProductItem[];
+    rawMaterials?: RawMaterialItem[];
+    rawMovements?: RawMovementItem[];
+    productInventory?: ProductInventoryItem[];
     totalCrates: number;
     totalBottles: number;
     totalLitres: number;
@@ -65,13 +112,19 @@ export default function ProductionClient({
   endDate,
 }: ProductionClientProps) {
   const router = useRouter();
-  const [modalOpen, setModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'batches' | 'raw_materials' | 'product_inventory'>('batches');
+  
+  // Modals
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [movementModalOpen, setMovementModalOpen] = useState(false);
+  const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Form State
-  const [formData, setFormData] = useState({
+  // Batch Form State
+  const [batchForm, setBatchForm] = useState({
     productId: initialData.products[0]?.id || '',
     cratesProduced: '',
     looseBottles: '0',
@@ -81,9 +134,17 @@ export default function ProductionClient({
     notes: '',
   });
 
-  const selectedProduct = initialData.products.find((p) => p.id === formData.productId);
+  // Movement Form State
+  const [movementForm, setMovementForm] = useState({
+    materialId: initialData.rawMaterials?.[0]?.id || '',
+    type: 'INWARD' as 'INWARD' | 'CONSUMED' | 'ADJUSTMENT',
+    quantity: '',
+    referenceNo: '',
+    notes: '',
+  });
+
+  const selectedProduct = initialData.products.find((p) => p.id === batchForm.productId);
   
-  // Volume helper
   const getProductLitresPerBottle = (name: string) => {
     const norm = name.toLowerCase();
     if (norm.includes('2 litre') || norm.includes('2l')) return 2.0;
@@ -94,7 +155,7 @@ export default function ProductionClient({
   };
 
   const previewBottles = selectedProduct
-    ? (parseInt(formData.cratesProduced) || 0) * selectedProduct.bottlesPerCrate + (parseInt(formData.looseBottles) || 0)
+    ? (parseInt(batchForm.cratesProduced) || 0) * selectedProduct.bottlesPerCrate + (parseInt(batchForm.looseBottles) || 0)
     : 0;
 
   const previewLitres = selectedProduct
@@ -111,38 +172,38 @@ export default function ProductionClient({
     router.push(`/dashboard/admin/production?${params.toString()}`);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleBatchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
 
-    const crates = parseInt(formData.cratesProduced);
-    if (!formData.productId) {
+    const pkgs = parseInt(batchForm.cratesProduced);
+    if (!batchForm.productId) {
       setErrorMsg('Please select a product');
       return;
     }
-    if (isNaN(crates) || crates <= 0) {
-      setErrorMsg('Crates produced must be a positive number');
+    if (isNaN(pkgs) || pkgs <= 0) {
+      setErrorMsg('PKGs produced must be a positive number');
       return;
     }
 
     setIsSubmitting(true);
     try {
       const res = await createProductionBatch({
-        productId: formData.productId,
-        cratesProduced: crates,
-        looseBottles: parseInt(formData.looseBottles) || 0,
-        productionDate: formData.productionDate,
-        shift: formData.shift,
-        supervisor: formData.supervisor.trim() || undefined,
-        notes: formData.notes.trim() || undefined,
+        productId: batchForm.productId,
+        cratesProduced: pkgs,
+        looseBottles: parseInt(batchForm.looseBottles) || 0,
+        productionDate: batchForm.productionDate,
+        shift: batchForm.shift,
+        supervisor: batchForm.supervisor.trim() || undefined,
+        notes: batchForm.notes.trim() || undefined,
       });
 
       if (res.error) {
         setErrorMsg(res.error);
       } else {
         setSuccessMsg(`Batch ${res.batchNumber} recorded successfully (${res.volumeLitres} Litres)`);
-        setFormData({
+        setBatchForm({
           productId: initialData.products[0]?.id || '',
           cratesProduced: '',
           looseBottles: '0',
@@ -152,7 +213,7 @@ export default function ProductionClient({
           notes: '',
         });
         setTimeout(() => {
-          setModalOpen(false);
+          setBatchModalOpen(false);
           setSuccessMsg('');
           router.refresh();
         }, 1200);
@@ -164,7 +225,56 @@ export default function ProductionClient({
     }
   };
 
-  const handleDelete = async (id: string, batchNumber: string) => {
+  const handleMovementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    const qty = parseFloat(movementForm.quantity);
+    if (!movementForm.materialId) {
+      setErrorMsg('Please select a raw material');
+      return;
+    }
+    if (isNaN(qty) || qty <= 0) {
+      setErrorMsg('Quantity must be greater than zero');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await recordRawMaterialMovement({
+        materialId: movementForm.materialId,
+        type: movementForm.type,
+        quantity: qty,
+        referenceNo: movementForm.referenceNo,
+        notes: movementForm.notes,
+      });
+
+      if (res.error) {
+        setErrorMsg(res.error);
+      } else {
+        setSuccessMsg('Raw material movement recorded successfully');
+        setMovementForm({
+          materialId: initialData.rawMaterials?.[0]?.id || '',
+          type: 'INWARD',
+          quantity: '',
+          referenceNo: '',
+          notes: '',
+        });
+        setTimeout(() => {
+          setMovementModalOpen(false);
+          setSuccessMsg('');
+          router.refresh();
+        }, 1200);
+      }
+    } catch {
+      setErrorMsg('Failed to record movement');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteBatch = async (id: string, batchNumber: string) => {
     if (!confirm(`Are you sure you want to delete production batch ${batchNumber}?`)) {
       return;
     }
@@ -183,7 +293,7 @@ export default function ProductionClient({
       'Date': new Date(b.productionDate).toLocaleDateString('en-IN'),
       'Product': b.product.name,
       'Shift': b.shift,
-      'Crates Produced': b.cratesProduced,
+      'PKGs Produced': b.cratesProduced,
       'Loose Bottles': b.looseBottles,
       'Total Bottles': b.totalBottles,
       'Total Volume (Litres)': b.volumeLitres,
@@ -200,483 +310,846 @@ export default function ProductionClient({
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#EDE4D8]/60 p-6 rounded-2xl border border-[#DDD3C3] shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_2px_8px_rgba(26,95,99,0.06)]">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface-raised p-6 rounded-2xl border border-border/40 shadow-raised">
         <div>
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[#1A5F63]/10 border border-[#1A5F63]/20 flex items-center justify-center text-[#1A5F63]">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
               <Factory className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-[#1A2E35]">Production & Bottling Logs</h1>
-              <p className="text-sm text-[#5A6B72]">
-                Track daily batch volume, crates, and bottle yields across 1L, 500ml, 250ml & 2L lines
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Production & Bottling Logs</h1>
+              <p className="text-sm text-muted-foreground">
+                Track daily batch volume, PKGs, bottle yields & inventory across 1L, 500ml, 250ml & 2L lines
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            onClick={handleExportXLSX}
-            className="flex-1 sm:flex-none border-[#DDD3C3] bg-[#F5EFE6] hover:bg-[#EDE4D8] text-[#1A2E35] font-medium shadow-sm gap-2"
-          >
-            <Download className="h-4 w-4 text-[#1A5F63]" />
-            Export Excel
-          </Button>
-          <Button
-            onClick={() => {
-              setErrorMsg('');
-              setSuccessMsg('');
-              setModalOpen(true);
-            }}
-            className="flex-1 sm:flex-none bg-[#1A5F63] hover:bg-[#13484B] text-white font-medium shadow-sm gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Log Batch
-          </Button>
+          {activeTab === 'batches' && (
+            <>
+              <Button
+                variant="outline"
+                onClick={handleExportXLSX}
+                className="flex-1 sm:flex-none border-border/60 bg-surface-raised hover:bg-surface-inset text-foreground font-medium shadow-raised-sm gap-2"
+              >
+                <Download className="h-4 w-4 text-primary" />
+                Export Excel
+              </Button>
+              <Button
+                onClick={() => {
+                  setErrorMsg('');
+                  setSuccessMsg('');
+                  setBatchModalOpen(true);
+                }}
+                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-raised gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Log Batch
+              </Button>
+            </>
+          )}
+
+          {activeTab === 'raw_materials' && (
+            <Button
+              onClick={() => {
+                setErrorMsg('');
+                setSuccessMsg('');
+                setMovementModalOpen(true);
+              }}
+              className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-raised gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Record Material Movement
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* KPI Overview Tiles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 bg-[#F5EFE6] border-[#DDD3C3] shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#5A6B72]">Total Volume Packaged</span>
-            <div className="p-2 rounded-lg bg-[#1A5F63]/10 text-[#1A5F63]">
-              <Droplet className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold text-[#1A5F63]">
-              {initialData.totalLitres.toLocaleString('en-IN')} <span className="text-sm font-semibold">Litres</span>
-            </div>
-            <p className="text-xs text-[#5A6B72] mt-1">Across all bottle lines</p>
-          </div>
-        </Card>
+      {/* Workspace Tabs Navigation */}
+      <div className="inline-flex p-1.5 bg-surface-inset shadow-inset rounded-2xl border border-border/40 gap-1.5">
+        <button
+          onClick={() => setActiveTab('batches')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all ${
+            activeTab === 'batches'
+              ? 'bg-primary text-primary-foreground shadow-raised-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Factory className="w-4 h-4" />
+          <span>Production Batches</span>
+        </button>
 
-        <Card className="p-5 bg-[#F5EFE6] border-[#DDD3C3] shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#5A6B72]">Total Crates Produced</span>
-            <div className="p-2 rounded-lg bg-[#1A5F63]/10 text-[#1A5F63]">
-              <Box className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold text-[#1A2E35]">
-              {initialData.totalCrates.toLocaleString('en-IN')}
-            </div>
-            <p className="text-xs text-[#5A6B72] mt-1">Ready for warehouse dispatch</p>
-          </div>
-        </Card>
+        <button
+          onClick={() => setActiveTab('raw_materials')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all ${
+            activeTab === 'raw_materials'
+              ? 'bg-primary text-primary-foreground shadow-raised-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Archive className="w-4 h-4" />
+          <span>Raw Material Inventory</span>
+        </button>
 
-        <Card className="p-5 bg-[#F5EFE6] border-[#DDD3C3] shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#5A6B72]">Total Bottles Packaged</span>
-            <div className="p-2 rounded-lg bg-[#1A5F63]/10 text-[#1A5F63]">
-              <Layers className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold text-[#1A2E35]">
-              {initialData.totalBottles.toLocaleString('en-IN')}
-            </div>
-            <p className="text-xs text-[#5A6B72] mt-1">Bottles capped & labeled</p>
-          </div>
-        </Card>
-
-        <Card className="p-5 bg-[#F5EFE6] border-[#DDD3C3] shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#5A6B72]">Total Batches Logged</span>
-            <div className="p-2 rounded-lg bg-[#1A5F63]/10 text-[#1A5F63]">
-              <Calendar className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold text-[#1A2E35]">
-              {initialData.count} <span className="text-sm font-normal text-[#5A6B72]">records</span>
-            </div>
-            <p className="text-xs text-[#5A6B72] mt-1">Day and Night shift runs</p>
-          </div>
-        </Card>
+        <button
+          onClick={() => setActiveTab('product_inventory')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all ${
+            activeTab === 'product_inventory'
+              ? 'bg-primary text-primary-foreground shadow-raised-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <PackageCheck className="w-4 h-4" />
+          <span>Finished Goods Stock</span>
+        </button>
       </div>
 
-      {/* Product Volume Breakdown Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {initialData.products.map((prod) => {
-          const stats = initialData.productTotals[prod.name] || { crates: 0, litres: 0, batches: 0 };
-          return (
-            <div
-              key={prod.id}
-              className="p-4 rounded-xl border border-[#DDD3C3] bg-[#EDE4D8]/50 shadow-sm flex flex-col justify-between"
-            >
+      {/* TAB 1: PRODUCTION BATCHES & OVERVIEW */}
+      {activeTab === 'batches' && (
+        <div className="space-y-6">
+          {/* KPI Overview Tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="p-5 bg-surface-raised border-border/40 shadow-raised">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-sm text-[#1A2E35]">{prod.name}</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1A5F63]/10 text-[#1A5F63] font-medium">
-                  {prod.bottlesPerCrate} btl/crate
-                </span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Volume Packaged</span>
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Droplet className="h-4 w-4" />
+                </div>
               </div>
               <div className="mt-3">
-                <div className="text-lg font-bold text-[#1A5F63]">
-                  {stats.litres.toLocaleString('en-IN')} L
+                <div className="text-2xl font-bold text-primary tabular-nums">
+                  {initialData.totalLitres.toLocaleString('en-IN')} <span className="text-sm font-semibold">Litres</span>
                 </div>
-                <div className="text-xs text-[#5A6B72] mt-0.5">
-                  {stats.crates} crates ({stats.batches} batches)
+                <p className="text-xs text-muted-foreground mt-1">Across all bottle lines</p>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-surface-raised border-border/40 shadow-raised">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total PKGs Produced</span>
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Box className="h-4 w-4" />
                 </div>
               </div>
+              <div className="mt-3">
+                <div className="text-2xl font-bold text-foreground tabular-nums">
+                  {initialData.totalCrates.toLocaleString('en-IN')}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Ready for warehouse dispatch</p>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-surface-raised border-border/40 shadow-raised">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Bottles Packaged</span>
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Layers className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl font-bold text-foreground tabular-nums">
+                  {initialData.totalBottles.toLocaleString('en-IN')}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Bottles capped & labeled</p>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-surface-raised border-border/40 shadow-raised">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Batches Logged</span>
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Calendar className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="text-2xl font-bold text-foreground tabular-nums">
+                  {initialData.count} <span className="text-sm font-normal text-muted-foreground">records</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Day and Night shift runs</p>
+              </div>
+            </Card>
+          </div>
+
+          {/* Product Volume Breakdown Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {initialData.products.map((prod) => {
+              const stats = initialData.productTotals[prod.name] || { crates: 0, litres: 0, batches: 0 };
+              return (
+                <div
+                  key={prod.id}
+                  className="p-4 rounded-xl border border-border/40 bg-surface-raised shadow-raised-sm flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-sm text-foreground">{prod.name}</span>
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                      {prod.bottlesPerCrate} btl/PKG
+                    </span>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-lg font-bold text-primary tabular-nums">
+                      {stats.litres.toLocaleString('en-IN')} L
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">
+                      {stats.crates} PKGs ({stats.batches} batches)
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-surface-raised p-3.5 rounded-xl border border-border/40 shadow-raised-sm">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+              <Button
+                size="sm"
+                variant={currentProduct === 'ALL' ? 'primary' : 'outline'}
+                onClick={() => handleFilterProduct('ALL')}
+                className="text-xs h-8 px-3 rounded-lg"
+              >
+                All Products
+              </Button>
+              {initialData.products.map((prod) => (
+                <Button
+                  key={prod.id}
+                  size="sm"
+                  variant={currentProduct === prod.id ? 'primary' : 'outline'}
+                  onClick={() => handleFilterProduct(prod.id)}
+                  className="text-xs h-8 px-3 rounded-lg whitespace-nowrap"
+                >
+                  {prod.name}
+                </Button>
+              ))}
             </div>
-          );
-        })}
-      </div>
 
-      {/* Filter Tabs & Date Filter */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#EDE4D8]/40 p-3 rounded-xl border border-[#DDD3C3]">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          <Button
-            size="sm"
-            variant={currentProduct === 'ALL' ? 'primary' : 'outline'}
-            onClick={() => handleFilterProduct('ALL')}
-            className={`text-xs h-8 px-3 rounded-lg ${
-              currentProduct === 'ALL'
-                ? 'bg-[#1A5F63] text-white hover:bg-[#13484B]'
-                : 'bg-[#F5EFE6] border-[#DDD3C3] text-[#1A2E35] hover:bg-[#EDE4D8]'
-            }`}
-          >
-            All Products
-          </Button>
-          {initialData.products.map((prod) => (
-            <Button
-              key={prod.id}
-              size="sm"
-              variant={currentProduct === prod.id ? 'primary' : 'outline'}
-              onClick={() => handleFilterProduct(prod.id)}
-              className={`text-xs h-8 px-3 rounded-lg whitespace-nowrap ${
-                currentProduct === prod.id
-                  ? 'bg-[#1A5F63] text-white hover:bg-[#13484B]'
-                  : 'bg-[#F5EFE6] border-[#DDD3C3] text-[#1A2E35] hover:bg-[#EDE4D8]'
-              }`}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const start = (form.elements.namedItem('startDate') as HTMLInputElement).value;
+                const end = (form.elements.namedItem('endDate') as HTMLInputElement).value;
+                const params = new URLSearchParams(window.location.search);
+                if (start) params.set('startDate', start);
+                else params.delete('startDate');
+                if (end) params.set('endDate', end);
+                else params.delete('endDate');
+                router.push(`/dashboard/admin/production?${params.toString()}`);
+              }}
+              className="flex items-center gap-2"
             >
-              {prod.name}
-            </Button>
-          ))}
+              <input
+                type="date"
+                name="startDate"
+                defaultValue={startDate}
+                className="text-xs h-8 px-2.5 rounded-lg border border-border/40 bg-surface-inset text-foreground"
+              />
+              <span className="text-xs text-muted-foreground">to</span>
+              <input
+                type="date"
+                name="endDate"
+                defaultValue={endDate}
+                className="text-xs h-8 px-2.5 rounded-lg border border-border/40 bg-surface-inset text-foreground"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="text-xs h-8 px-3 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Filter className="h-3 w-3 mr-1" />
+                Filter
+              </Button>
+            </form>
+          </div>
+
+          {/* Batches Table */}
+          <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
+                <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
+                  <tr>
+                    <th className="px-4 py-3.5">Batch Number</th>
+                    <th className="px-4 py-3.5">Date & Shift</th>
+                    <th className="px-4 py-3.5">Product</th>
+                    <th className="px-4 py-3.5 text-center">PKGs Produced</th>
+                    <th className="px-4 py-3.5 text-center">Loose Bottles</th>
+                    <th className="px-4 py-3.5 text-center">Total Bottles</th>
+                    <th className="px-4 py-3.5 text-right">Volume (Litres)</th>
+                    <th className="px-4 py-3.5">Supervisor</th>
+                    <th className="px-4 py-3.5 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40 bg-surface-raised">
+                  {initialData.batches.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                        No production batches logged for the selected period.
+                      </td>
+                    </tr>
+                  ) : (
+                    initialData.batches.map((batch) => (
+                      <tr key={batch.id} className="hover:bg-surface-inset/30 transition-colors">
+                        <td className="px-4 py-3.5 font-bold font-mono text-primary">
+                          {batch.batchNumber}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <div className="font-medium text-foreground">
+                            {new Date(batch.productionDate).toLocaleDateString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                            {batch.shift === 'DAY' ? (
+                              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                <Sun className="w-3 h-3" /> Day Shift
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
+                                <Moon className="w-3 h-3" /> Night Shift
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 font-semibold text-foreground">
+                          {batch.product.name}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-bold text-foreground tabular-nums">
+                          {batch.cratesProduced.toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-4 py-3.5 text-center text-muted-foreground tabular-nums">
+                          {batch.looseBottles || 0}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-semibold text-foreground tabular-nums">
+                          {batch.totalBottles.toLocaleString('en-IN')}
+                        </td>
+                        <td className="px-4 py-3.5 text-right font-bold text-primary tabular-nums">
+                          {batch.volumeLitres.toLocaleString('en-IN')} L
+                        </td>
+                        <td className="px-4 py-3.5 text-muted-foreground text-xs">
+                          {batch.supervisor || '—'}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <button
+                            onClick={() => handleDeleteBatch(batch.id, batch.batchNumber)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            title="Delete Batch"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+      )}
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.target as HTMLFormElement;
-            const start = (form.elements.namedItem('startDate') as HTMLInputElement).value;
-            const end = (form.elements.namedItem('endDate') as HTMLInputElement).value;
-            const params = new URLSearchParams(window.location.search);
-            if (start) params.set('startDate', start);
-            else params.delete('startDate');
-            if (end) params.set('endDate', end);
-            else params.delete('endDate');
-            router.push(`/dashboard/admin/production?${params.toString()}`);
-          }}
-          className="flex items-center gap-2"
-        >
-          <input
-            type="date"
-            name="startDate"
-            defaultValue={startDate}
-            className="text-xs h-8 px-2.5 rounded-lg border border-[#DDD3C3] bg-[#F5EFE6] text-[#1A2E35]"
-          />
-          <span className="text-xs text-[#5A6B72]">to</span>
-          <input
-            type="date"
-            name="endDate"
-            defaultValue={endDate}
-            className="text-xs h-8 px-2.5 rounded-lg border border-[#DDD3C3] bg-[#F5EFE6] text-[#1A2E35]"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            className="text-xs h-8 px-3 bg-[#1A5F63] hover:bg-[#13484B] text-white"
-          >
-            <Filter className="h-3 w-3 mr-1" />
-            Filter
-          </Button>
-        </form>
-      </div>
-
-      {/* Batches Table */}
-      <Card className="border-[#DDD3C3] bg-[#F5EFE6] overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-[#1A2E35]">
-            <thead className="bg-[#EDE4D8] text-xs uppercase font-semibold text-[#5A6B72] border-b border-[#DDD3C3]">
-              <tr>
-                <th className="py-3 px-4">Batch Number</th>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Product</th>
-                <th className="py-3 px-4">Shift</th>
-                <th className="py-3 px-4 text-right">Crates</th>
-                <th className="py-3 px-4 text-right">Bottles</th>
-                <th className="py-3 px-4 text-right">Volume</th>
-                <th className="py-3 px-4">Supervisor</th>
-                <th className="py-3 px-4 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#DDD3C3]/60">
-              {initialData.batches.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-[#5A6B72]">
-                    <Factory className="h-10 w-10 mx-auto text-[#5A6B72]/40 mb-2" />
-                    No production batches found for this filter.
-                  </td>
-                </tr>
-              ) : (
-                initialData.batches.map((batch) => (
-                  <tr key={batch.id} className="hover:bg-[#EDE4D8]/50 transition-colors">
-                    <td className="py-3.5 px-4 font-mono font-medium text-xs text-[#1A5F63]">
-                      {batch.batchNumber}
-                    </td>
-                    <td className="py-3.5 px-4 text-xs">
-                      {new Date(batch.productionDate).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </td>
-                    <td className="py-3.5 px-4 font-medium">
-                      {batch.product.name}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {batch.shift === 'DAY' ? (
-                        <Badge className="bg-amber-100 text-amber-800 border border-amber-300 font-medium text-[11px] gap-1">
-                          <Sun className="h-3 w-3" /> Day
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-indigo-100 text-indigo-800 border border-indigo-300 font-medium text-[11px] gap-1">
-                          <Moon className="h-3 w-3" /> Night
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-semibold">
-                      {batch.cratesProduced.toLocaleString('en-IN')}
-                      {batch.looseBottles > 0 && (
-                        <span className="text-xs text-[#5A6B72] font-normal ml-1">
-                          (+{batch.looseBottles} btl)
+      {/* TAB 2: RAW MATERIAL INVENTORY */}
+      {activeTab === 'raw_materials' && (
+        <div className="space-y-6">
+          {/* Raw Materials Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(initialData.rawMaterials || []).map((mat) => {
+              const isLow = mat.currentStock <= mat.minReorderLevel;
+              return (
+                <div 
+                  key={mat.id}
+                  className="bg-surface-raised shadow-raised p-5 rounded-2xl border border-border/40 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge variant="teal" size="sm">
+                        {mat.category}
+                      </Badge>
+                      {isLow && (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Low Stock
                         </span>
                       )}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      {batch.totalBottles.toLocaleString('en-IN')}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-[#1A5F63]">
-                      {batch.volumeLitres.toLocaleString('en-IN')} L
-                    </td>
-                    <td className="py-3.5 px-4 text-xs text-[#5A6B72]">
-                      {batch.supervisor || 'N/A'}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(batch.id, batch.batchNumber)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
-                        title="Delete Batch"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                    </div>
+                    <h3 className="text-base font-bold text-foreground">{mat.name}</h3>
+                    {mat.targetProduct && (
+                      <p className="text-xs text-muted-foreground mt-0.5">Line: {mat.targetProduct}</p>
+                    )}
+                  </div>
 
-      {/* Log Production Batch Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-[#F5EFE6] border border-[#DDD3C3] w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between p-5 border-b border-[#DDD3C3] bg-[#EDE4D8]/60">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-lg bg-[#1A5F63]/10 flex items-center justify-center text-[#1A5F63]">
+                  <div className="mt-4 pt-4 border-t border-border/40 flex items-end justify-between">
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Current Stock</span>
+                      <div className="text-2xl font-bold text-primary tabular-nums mt-0.5">
+                        {mat.currentStock.toLocaleString('en-IN')} <span className="text-xs font-semibold text-muted-foreground">{mat.unit}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedMaterialId(mat.id);
+                        setMovementForm({ ...movementForm, materialId: mat.id });
+                        setErrorMsg('');
+                        setSuccessMsg('');
+                        setMovementModalOpen(true);
+                      }}
+                      className="text-xs px-3 py-1.5 h-8 gap-1.5 border-border/50 bg-surface-inset"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-primary" />
+                      Adjust
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Recent Movement Log */}
+          <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-border/40 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Recent Raw Material Movements</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Audit trail of inward, consumed, and manual stock updates</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
+                <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
+                  <tr>
+                    <th className="px-4 py-3.5">Date</th>
+                    <th className="px-4 py-3.5">Material</th>
+                    <th className="px-4 py-3.5">Movement Type</th>
+                    <th className="px-4 py-3.5 text-center">Quantity</th>
+                    <th className="px-4 py-3.5 text-center">Stock Before</th>
+                    <th className="px-4 py-3.5 text-center">Stock After</th>
+                    <th className="px-4 py-3.5">Reference / Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40 bg-surface-raised">
+                  {(initialData.rawMovements || []).length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                        No movement records logged yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    (initialData.rawMovements || []).map((mov) => (
+                      <tr key={mov.id} className="hover:bg-surface-inset/30 transition-colors">
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {new Date(mov.movementDate).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-foreground">
+                          {mov.material?.name || 'Raw Material'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {mov.type === 'INWARD' && (
+                            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                              <ArrowDownRight className="w-3.5 h-3.5" /> INWARD
+                            </span>
+                          )}
+                          {mov.type === 'CONSUMED' && (
+                            <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
+                              <ArrowUpRight className="w-3.5 h-3.5" /> CONSUMED
+                            </span>
+                          )}
+                          {mov.type === 'ADJUSTMENT' && (
+                            <span className="inline-flex items-center gap-1 text-primary font-bold">
+                              <RefreshCw className="w-3.5 h-3.5" /> ADJUSTMENT
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center font-bold text-foreground tabular-nums">
+                          {mov.quantity} {mov.material?.unit}
+                        </td>
+                        <td className="px-4 py-3 text-center text-muted-foreground tabular-nums">
+                          {mov.openingStock}
+                        </td>
+                        <td className="px-4 py-3 text-center font-semibold text-primary tabular-nums">
+                          {mov.closingStock}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                          {mov.referenceNo ? `Ref #${mov.referenceNo} ` : ''}
+                          {mov.notes ? `(${mov.notes})` : ''}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: FINISHED GOODS INVENTORY */}
+      {activeTab === 'product_inventory' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {(initialData.productInventory || []).map((prod) => (
+              <div 
+                key={prod.productId}
+                className="bg-surface-raised shadow-raised p-5 rounded-2xl border border-border/40 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {prod.bottlesPerCrate} btl/PKG
+                    </span>
+                    <Badge variant="teal" size="sm">Line Active</Badge>
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">{prod.productName}</h3>
+                </div>
+
+                <div className="space-y-3 mt-4 pt-4 border-t border-border/40">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">Produced to Date:</span>
+                    <span className="font-bold text-foreground tabular-nums">{prod.producedCrates.toLocaleString('en-IN')} PKGs</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">Dispatched / Sold:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{prod.soldCrates.toLocaleString('en-IN')} PKGs</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm pt-2 border-t border-border/30">
+                    <span className="font-semibold text-foreground">Available Stock:</span>
+                    <span className="text-lg font-extrabold text-primary tabular-nums">{prod.stockCrates.toLocaleString('en-IN')} PKGs</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground text-right tabular-nums">
+                    ≈ {prod.stockBottles.toLocaleString('en-IN')} bottles ({prod.stockLitres.toLocaleString('en-IN')} L)
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 1: LOG PRODUCTION BATCH */}
+      {batchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-surface-raised shadow-raised-lg border border-border/40 rounded-3xl max-w-lg w-full overflow-hidden">
+            <div className="p-6 border-b border-border/40 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                   <Factory className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#1A2E35]">Log Production Batch</h3>
-                  <p className="text-xs text-[#5A6B72]">Record packaged crates and bottle yields</p>
+                  <h2 className="text-lg font-bold text-foreground">Log Production Batch</h2>
+                  <p className="text-xs text-muted-foreground">Record finished packaged goods by shift</p>
                 </div>
               </div>
               <button
-                onClick={() => setModalOpen(false)}
-                className="text-[#5A6B72] hover:text-[#1A2E35] p-1 rounded-md"
+                onClick={() => setBatchModalOpen(false)}
+                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-surface-inset transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            <form onSubmit={handleBatchSubmit} className="p-6 space-y-4">
               {errorMsg && (
-                <div className="p-3 text-xs bg-red-100 border border-red-200 text-red-700 rounded-lg">
+                <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold">
                   {errorMsg}
                 </div>
               )}
               {successMsg && (
-                <div className="p-3 text-xs bg-green-100 border border-green-200 text-green-700 rounded-lg flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
                   {successMsg}
                 </div>
               )}
 
-              {/* Product Selection */}
-              <div>
-                <label className="block text-xs font-semibold text-[#1A2E35] mb-1">
-                  Product / Bottle Line *
-                </label>
-                <select
-                  value={formData.productId}
-                  onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-[#DDD3C3] bg-white text-sm text-[#1A2E35] focus:outline-none focus:ring-2 focus:ring-[#1A5F63]"
-                  required
-                >
-                  {initialData.products.map((prod) => (
-                    <option key={prod.id} value={prod.id}>
-                      {prod.name} ({prod.bottlesPerCrate} bottles per crate)
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Product Line</label>
+                  <select
+                    value={batchForm.productId}
+                    onChange={(e) => setBatchForm({ ...batchForm, productId: e.target.value })}
+                    className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
+                  >
+                    {initialData.products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.bottlesPerCrate} btl/PKG)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Shift</label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setBatchForm({ ...batchForm, shift: 'DAY' })}
+                      className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                        batchForm.shift === 'DAY'
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                          : 'bg-surface-inset border-border/40 text-muted-foreground'
+                      }`}
+                    >
+                      <Sun className="w-3.5 h-3.5" /> Day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBatchForm({ ...batchForm, shift: 'NIGHT' })}
+                      className={`flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                        batchForm.shift === 'NIGHT'
+                          ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
+                          : 'bg-surface-inset border-border/40 text-muted-foreground'
+                      }`}
+                    >
+                      <Moon className="w-3.5 h-3.5" /> Night
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Crates Produced & Loose Bottles */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#1A2E35] mb-1">
-                    Crates Produced *
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">PKGs Produced</label>
                   <input
                     type="number"
                     min="1"
                     placeholder="e.g. 50"
-                    value={formData.cratesProduced}
-                    onChange={(e) => setFormData({ ...formData, cratesProduced: e.target.value })}
-                    className="w-full h-10 px-3 rounded-lg border border-[#DDD3C3] bg-white text-sm text-[#1A2E35] focus:outline-none focus:ring-2 focus:ring-[#1A5F63]"
+                    value={batchForm.cratesProduced}
+                    onChange={(e) => setBatchForm({ ...batchForm, cratesProduced: e.target.value })}
+                    className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#1A2E35] mb-1">
-                    Loose Bottles (Optional)
-                  </label>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Loose Bottles (Optional)</label>
                   <input
                     type="number"
                     min="0"
                     placeholder="0"
-                    value={formData.looseBottles}
-                    onChange={(e) => setFormData({ ...formData, looseBottles: e.target.value })}
-                    className="w-full h-10 px-3 rounded-lg border border-[#DDD3C3] bg-white text-sm text-[#1A2E35] focus:outline-none focus:ring-2 focus:ring-[#1A5F63]"
+                    value={batchForm.looseBottles}
+                    onChange={(e) => setBatchForm({ ...batchForm, looseBottles: e.target.value })}
+                    className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Shift & Date */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Calculated Preview Capsule */}
+              <div className="p-3 rounded-xl bg-surface-inset border border-border/40 flex items-center justify-between text-xs">
                 <div>
-                  <label className="block text-xs font-semibold text-[#1A2E35] mb-1">
-                    Shift *
-                  </label>
-                  <div className="grid grid-cols-2 gap-2 h-10">
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, shift: 'DAY' })}
-                      className={`flex items-center justify-center gap-1.5 text-xs font-medium rounded-lg border transition-all ${
-                        formData.shift === 'DAY'
-                          ? 'bg-[#1A5F63] text-white border-[#1A5F63]'
-                          : 'bg-white border-[#DDD3C3] text-[#5A6B72]'
-                      }`}
-                    >
-                      <Sun className="h-3.5 w-3.5" /> Day
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, shift: 'NIGHT' })}
-                      className={`flex items-center justify-center gap-1.5 text-xs font-medium rounded-lg border transition-all ${
-                        formData.shift === 'NIGHT'
-                          ? 'bg-[#1A5F63] text-white border-[#1A5F63]'
-                          : 'bg-white border-[#DDD3C3] text-[#5A6B72]'
-                      }`}
-                    >
-                      <Moon className="h-3.5 w-3.5" /> Night
-                    </button>
-                  </div>
+                  <span className="text-muted-foreground">Total Yield: </span>
+                  <strong className="text-foreground">{previewBottles.toLocaleString('en-IN')} bottles</strong>
                 </div>
-
                 <div>
-                  <label className="block text-xs font-semibold text-[#1A2E35] mb-1">
-                    Production Date *
-                  </label>
+                  <span className="text-muted-foreground">Volume: </span>
+                  <strong className="text-primary">{previewLitres.toLocaleString('en-IN')} Litres</strong>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Production Date</label>
                   <input
                     type="date"
-                    value={formData.productionDate}
-                    onChange={(e) => setFormData({ ...formData, productionDate: e.target.value })}
-                    className="w-full h-10 px-3 rounded-lg border border-[#DDD3C3] bg-white text-sm text-[#1A2E35] focus:outline-none focus:ring-2 focus:ring-[#1A5F63]"
-                    required
+                    value={batchForm.productionDate}
+                    onChange={(e) => setBatchForm({ ...batchForm, productionDate: e.target.value })}
+                    className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Supervisor Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Arif"
+                    value={batchForm.supervisor}
+                    onChange={(e) => setBatchForm({ ...batchForm, supervisor: e.target.value })}
+                    className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Calculated Yield Preview */}
-              {previewBottles > 0 && (
-                <div className="p-3 bg-[#EDE4D8]/80 border border-[#DDD3C3] rounded-xl flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[#5A6B72]">Total Yield:</span>{' '}
-                    <span className="font-bold text-[#1A2E35]">{previewBottles.toLocaleString()} Bottles</span>
-                  </div>
-                  <div>
-                    <span className="text-[#5A6B72]">Liquid Volume:</span>{' '}
-                    <span className="font-bold text-[#1A5F63]">{previewLitres.toLocaleString()} Litres</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Supervisor */}
-              <div>
-                <label className="block text-xs font-semibold text-[#1A2E35] mb-1">
-                  Supervisor Name
-                </label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Notes / Comments</label>
                 <input
                   type="text"
-                  placeholder="e.g. Ramesh Bhai (Production Incharge)"
-                  value={formData.supervisor}
-                  onChange={(e) => setFormData({ ...formData, supervisor: e.target.value })}
-                  className="w-full h-10 px-3 rounded-lg border border-[#DDD3C3] bg-white text-sm text-[#1A2E35] focus:outline-none focus:ring-2 focus:ring-[#1A5F63]"
+                  placeholder="e.g. Line cleaned before run"
+                  value={batchForm.notes}
+                  onChange={(e) => setBatchForm({ ...batchForm, notes: e.target.value })}
+                  className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
                 />
               </div>
 
-              {/* Notes */}
-              <div>
-                <label className="block text-xs font-semibold text-[#1A2E35] mb-1">
-                  Batch Notes (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Batch run completed with 2L line maintenance checked"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border border-[#DDD3C3] bg-white text-sm text-[#1A2E35] focus:outline-none focus:ring-2 focus:ring-[#1A5F63]"
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#DDD3C3]">
+              <div className="pt-2 flex items-center justify-end gap-2.5">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setModalOpen(false)}
-                  className="border-[#DDD3C3] text-[#1A2E35]"
+                  onClick={() => setBatchModalOpen(false)}
+                  className="px-4 py-2 text-xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-[#1A5F63] hover:bg-[#13484B] text-white"
+                  className="px-5 py-2 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                 >
-                  {isSubmitting ? 'Recording...' : 'Record Production Batch'}
+                  {isSubmitting ? 'Recording...' : 'Record Production'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: RECORD RAW MATERIAL MOVEMENT */}
+      {movementModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-surface-raised shadow-raised-lg border border-border/40 rounded-3xl max-w-lg w-full overflow-hidden">
+            <div className="p-6 border-b border-border/40 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                  <Archive className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-foreground">Record Raw Material Movement</h2>
+                  <p className="text-xs text-muted-foreground">Inward receipt, batch consumption, or stock adjustment</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setMovementModalOpen(false)}
+                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-surface-inset transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleMovementSubmit} className="p-6 space-y-4">
+              {errorMsg && (
+                <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold">
+                  {errorMsg}
+                </div>
+              )}
+              {successMsg && (
+                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  {successMsg}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Raw Material</label>
+                <select
+                  value={movementForm.materialId}
+                  onChange={(e) => setMovementForm({ ...movementForm, materialId: e.target.value })}
+                  className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
+                >
+                  {(initialData.rawMaterials || []).map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} (Stock: {m.currentStock} {m.unit})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Movement Type</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMovementForm({ ...movementForm, type: 'INWARD' })}
+                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                      movementForm.type === 'INWARD'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-surface-inset border-border/40 text-muted-foreground'
+                    }`}
+                  >
+                    <ArrowDownRight className="w-3.5 h-3.5" /> Inward
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMovementForm({ ...movementForm, type: 'CONSUMED' })}
+                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                      movementForm.type === 'CONSUMED'
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                        : 'bg-surface-inset border-border/40 text-muted-foreground'
+                    }`}
+                  >
+                    <ArrowUpRight className="w-3.5 h-3.5" /> Consumed
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMovementForm({ ...movementForm, type: 'ADJUSTMENT' })}
+                    className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                      movementForm.type === 'ADJUSTMENT'
+                        ? 'bg-primary/10 border-primary/30 text-primary'
+                        : 'bg-surface-inset border-border/40 text-muted-foreground'
+                    }`}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Adjustment
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">
+                    {movementForm.type === 'ADJUSTMENT' ? 'New Exact Stock Level' : 'Quantity'}
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="e.g. 100"
+                    value={movementForm.quantity}
+                    onChange={(e) => setMovementForm({ ...movementForm, quantity: e.target.value })}
+                    className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-foreground">Reference / Invoice No</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. INV-2026-90"
+                    value={movementForm.referenceNo}
+                    onChange={(e) => setMovementForm({ ...movementForm, referenceNo: e.target.value })}
+                    className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">Notes / Reason</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Supplier delivery from Vadodara"
+                  value={movementForm.notes}
+                  onChange={(e) => setMovementForm({ ...movementForm, notes: e.target.value })}
+                  className="w-full text-xs font-semibold bg-surface-inset border border-border/40 rounded-xl px-3 py-2.5 text-foreground focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMovementModalOpen(false)}
+                  className="px-4 py-2 text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                >
+                  {isSubmitting ? 'Saving...' : 'Record Movement'}
                 </Button>
               </div>
             </form>

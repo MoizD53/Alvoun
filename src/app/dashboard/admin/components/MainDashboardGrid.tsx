@@ -65,7 +65,7 @@ export default function MainDashboardGrid({
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* ROW 1: TOP 10 CUSTOMERS <--> SALES TREND (EXACTLY MATCHING SKETCH) */}
+      {/* ROW 1: TOP 10 CUSTOMERS <--> AREA-WISE SALES */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch">
         <div className="flex flex-col min-h-[340px]">
           <TopCustomersCard
@@ -75,24 +75,16 @@ export default function MainDashboardGrid({
           />
         </div>
         <div className="flex flex-col min-h-[340px]">
-          <SalesTrendChart
-            initialPoints={trendPoints}
-            selectedDate={selectedDate}
-            activeDateKey={activeDateKey}
-            onSelectDate={handleSelectDate}
-          />
-        </div>
-      </div>
-
-      {/* ROW 2: AREA-WISE SALES <--> SALES BY PRODUCT (EXACTLY MATCHING SKETCH) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch">
-        <div className="flex flex-col min-h-[340px]">
           <AreaWiseSalesCard 
             areaSales={areaSales} 
             selectedDate={selectedDate}
             isToday={isToday}
           />
         </div>
+      </div>
+
+      {/* ROW 2: SALES BY PRODUCT <--> SALES TREND */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 items-stretch">
         <div className="flex flex-col min-h-[340px]">
           <ProductSalesDonut
             productSales={productSales}
@@ -101,6 +93,14 @@ export default function MainDashboardGrid({
             isDateOverridden={isOverridden}
             onResetDate={handleReset}
             isLoading={isPending}
+          />
+        </div>
+        <div className="flex flex-col min-h-[340px]">
+          <SalesTrendChart
+            initialPoints={trendPoints}
+            selectedDate={selectedDate}
+            activeDateKey={activeDateKey}
+            onSelectDate={handleSelectDate}
           />
         </div>
       </div>

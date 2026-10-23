@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Loader2, X, Users, MapPin, Truck, ChevronRight, CornerDownLeft, ExternalLink } from 'lucide-react';
+import { Search, Loader2, X, Users, ChevronRight, CornerDownLeft } from 'lucide-react';
 import { searchGlobalRecords, type GlobalSearchResults } from '../actions/search';
 
 export default function GlobalSearch() {
@@ -17,56 +17,17 @@ export default function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const requestIdRef = useRef(0);
 
-  // Flattened list of navigable items for keyboard navigation
+  // Flattened list of navigable customer items for keyboard navigation
   const flatItems = React.useMemo(() => {
     if (!results) return [];
-    const items: { type: 'customer' | 'route' | 'salesman'; id: string; url: string; title: string; subtitle: string }[] = [];
-
-    results.customers.forEach((c) => {
-      items.push({
-        type: 'customer',
-        id: `c-${c.id}`,
-        url: `/dashboard/admin/customers/${c.id}`,
-        title: c.name,
-        subtitle: `${c.areaName} · ${c.contact}`,
-      });
-    });
-
-    results.routes.forEach((r) => {
-      items.push({
-        type: 'route',
-        id: `r-${r.id}`,
-        url: `/dashboard/admin/routes`,
-        title: r.name,
-        subtitle: `${r.cityName} · ${r.areasCount} areas · ${r.customersCount} clients`,
-      });
-    });
-
-    results.salesmen.forEach((s) => {
-      items.push({
-        type: 'salesman',
-        id: `s-${s.id}`,
-        url: `/dashboard/admin/salesmen/${s.id}`,
-        title: s.name,
-        subtitle: `${s.employeeCode} · ${s.phone || (s.isActive ? 'Active' : 'Inactive')}`,
-      });
-    });
-
-    return items;
+    return results.customers.map((c) => ({
+      type: 'customer' as const,
+      id: `c-${c.id}`,
+      url: `/dashboard/admin/customers/${c.id}`,
+      title: c.name,
+      subtitle: `${c.firmName ? `${c.firmName} · ` : ''}${c.code ? `[${c.code}] · ` : ''}${c.areaName} · ${c.contact}`,
+    }));
   }, [results]);
-
-  // Global Ctrl+K / Cmd+K shortcut listener
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        inputRef.current?.focus();
-        setIsOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // Outside click listener
   useEffect(() => {
@@ -102,8 +63,7 @@ export default function GlobalSearch() {
         } catch (err) {
           if (requestIdRef.current === currentReqId) {
             console.error('Search error:', err);
-            // Fallback gracefully without locking out user
-            setResults({ customers: [], routes: [], salesmen: [], totalMatches: 0 });
+            setResults({ customers: [], totalMatches: 0 });
           }
         }
       });
@@ -175,15 +135,15 @@ export default function GlobalSearch() {
             if (query.trim().length >= 1) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search customers, routes, staff..."
-          aria-label="Search records"
+          placeholder="Search customers by name, firm, phone or code..."
+          aria-label="Search customer records"
           aria-expanded={isOpen}
           role="combobox"
           aria-autocomplete="list"
-          className="w-full h-10 pl-9.5 pr-14 text-xs font-semibold rounded-xl bg-surface-inset border border-border-default shadow-inset text-primary placeholder:text-muted focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
+          className="w-full h-10 pl-9.5 pr-9 text-xs font-semibold rounded-xl bg-surface-inset border border-border-default shadow-inset text-primary placeholder:text-muted focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all"
         />
 
-        {/* Right Adornments: Clear Button + Loading Spinner + Ctrl+K badge */}
+        {/* Right Adornments: Clear Button or Loading Spinner (No Command/Badge) */}
         <div className="absolute right-2.5 flex items-center gap-1.5 pointer-events-auto">
           {isPending ? (
             <Loader2 className="h-4 w-4 animate-spin text-teal-600 dark:text-teal-400" />
@@ -196,11 +156,7 @@ export default function GlobalSearch() {
             >
               <X className="h-3.5 w-3.5" />
             </button>
-          ) : (
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium text-muted bg-surface-raised border border-border-default shadow-xs select-none">
-              <span className="text-[9px]">⌘</span>K
-            </kbd>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -211,10 +167,10 @@ export default function GlobalSearch() {
           <div className="px-3.5 py-2 border-b border-border-default bg-surface-raised flex items-center justify-between text-[11px] text-secondary">
             <span className="font-semibold">
               {isPending
-                ? 'Searching records...'
+                ? 'Searching customers...'
                 : results?.totalMatches
-                ? `${results.totalMatches} matches found`
-                : 'No matches'}
+                ? `${results.totalMatches} customer${results.totalMatches === 1 ? '' : 's'} found`
+                : 'No customer matches'}
             </span>
             <span className="text-[10px] text-muted hidden sm:inline">Use ↑↓ to navigate · Enter to open</span>
           </div>
@@ -225,9 +181,9 @@ export default function GlobalSearch() {
             {!isPending && results && results.totalMatches === 0 && (
               <div className="p-6 text-center text-secondary">
                 <Search className="h-8 w-8 text-muted mx-auto mb-2 opacity-50" />
-                <p className="text-xs font-bold text-primary">No records found</p>
+                <p className="text-xs font-bold text-primary">No customers found</p>
                 <p className="text-[11px] text-muted mt-0.5 mb-3">
-                  No customers, routes, or salesmen matched &ldquo;{query}&rdquo;
+                  No customer records matched &ldquo;{query}&rdquo;
                 </p>
                 <button
                   type="button"
@@ -235,12 +191,12 @@ export default function GlobalSearch() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-inset border border-border-default text-xs font-bold text-teal-700 dark:text-teal-400 hover:bg-surface-raised transition-colors cursor-pointer"
                 >
                   <Search className="h-3.5 w-3.5" />
-                  <span>Search full customer database</span>
+                  <span>Search full customer directory</span>
                 </button>
               </div>
             )}
 
-            {/* Customers Section */}
+            {/* Customers Section Exclusively */}
             {results && results.customers.length > 0 && (
               <div className="py-1">
                 <div className="px-2.5 py-1 text-[10px] font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
@@ -263,105 +219,23 @@ export default function GlobalSearch() {
                         }`}
                       >
                         <div className="min-w-0 pr-2">
-                          <p className="text-xs font-bold truncate leading-tight group-hover:text-teal-700 dark:group-hover:text-teal-400">
-                            {c.name}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-bold truncate leading-tight group-hover:text-teal-700 dark:group-hover:text-teal-400">
+                              {c.name}
+                            </p>
+                            {c.code && (
+                              <span className="font-mono text-[9px] px-1 py-0.2 rounded bg-surface-inset text-muted shrink-0">
+                                {c.code}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-secondary truncate mt-0.5">
-                            {c.areaName} · {c.contact}
+                            {c.firmName ? `${c.firmName} · ` : ''}{c.areaName}{c.contact ? ` · ${c.contact}` : ''}
                           </p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0 text-muted">
                           <span className="text-[9px] font-mono text-secondary bg-surface-inset px-1.5 py-0.5 rounded border border-border-default">
                             Customer
-                          </span>
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Routes Section */}
-            {results && results.routes.length > 0 && (
-              <div className="py-1">
-                <div className="px-2.5 py-1 text-[10px] font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
-                  <MapPin className="h-3 w-3 text-teal-600 dark:text-teal-400" />
-                  <span>Routes & Sectors ({results.routes.length})</span>
-                </div>
-                <div className="space-y-0.5 mt-0.5">
-                  {results.routes.map((r) => {
-                    const itemIdx = flatItems.findIndex((it) => it.id === `r-${r.id}`);
-                    const isSelected = activeIndex === itemIdx;
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => navigateTo(`/dashboard/admin/routes`)}
-                        className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between transition-colors cursor-pointer group ${
-                          isSelected
-                            ? 'bg-surface-inset text-teal-800 dark:text-teal-300 shadow-inset font-bold'
-                            : 'hover:bg-surface-inset/60 text-primary'
-                        }`}
-                      >
-                        <div className="min-w-0 pr-2">
-                          <p className="text-xs font-bold truncate leading-tight group-hover:text-teal-700 dark:group-hover:text-teal-400">
-                            {r.name}
-                          </p>
-                          <p className="text-[10px] text-secondary truncate mt-0.5">
-                            {r.cityName} · {r.areasCount} areas · {r.customersCount} clients
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0 text-muted">
-                          <span className="text-[9px] font-mono text-secondary bg-surface-inset px-1.5 py-0.5 rounded border border-border-default">
-                            Route
-                          </span>
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Salesmen Section */}
-            {results && results.salesmen.length > 0 && (
-              <div className="py-1">
-                <div className="px-2.5 py-1 text-[10px] font-bold text-muted uppercase tracking-wider flex items-center gap-1.5">
-                  <Truck className="h-3 w-3 text-teal-600 dark:text-teal-400" />
-                  <span>Field Salesmen ({results.salesmen.length})</span>
-                </div>
-                <div className="space-y-0.5 mt-0.5">
-                  {results.salesmen.map((s) => {
-                    const itemIdx = flatItems.findIndex((it) => it.id === `s-${s.id}`);
-                    const isSelected = activeIndex === itemIdx;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => navigateTo(`/dashboard/admin/salesmen/${s.id}`)}
-                        className={`w-full text-left px-2.5 py-2 rounded-xl flex items-center justify-between transition-colors cursor-pointer group ${
-                          isSelected
-                            ? 'bg-surface-inset text-teal-800 dark:text-teal-300 shadow-inset font-bold'
-                            : 'hover:bg-surface-inset/60 text-primary'
-                        }`}
-                      >
-                        <div className="min-w-0 pr-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold truncate leading-tight group-hover:text-teal-700 dark:group-hover:text-teal-400">
-                              {s.name}
-                            </span>
-                            <span className={`h-1.5 w-1.5 rounded-full ${s.isActive ? 'bg-emerald-500' : 'bg-muted'}`} />
-                          </div>
-                          <p className="text-[10px] text-secondary truncate mt-0.5">
-                            {s.employeeCode} {s.phone ? `· ${s.phone}` : ''}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0 text-muted">
-                          <span className="text-[9px] font-mono text-secondary bg-surface-inset px-1.5 py-0.5 rounded border border-border-default">
-                            Staff
                           </span>
                           <ChevronRight className="h-3.5 w-3.5" />
                         </div>

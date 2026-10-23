@@ -85,40 +85,34 @@ export default function ProductSalesDonut({
 
   return (
     <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-full select-none relative">
-      {/* 1. Header with Inset Well + Title + DatePicker + Catalog Link */}
+      {/* 1. Header with Title + Catalog Link */}
       <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-xl bg-surface-inset border border-border-default shadow-inset flex items-center justify-center text-teal-800 dark:text-teal-400 shrink-0">
-            <Package className="h-4.5 w-4.5" />
-          </div>
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-primary tracking-tight">
-              Sales by Product
-            </h3>
-            {isDateOverridden && (
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] font-bold text-teal-800 dark:text-teal-300 bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
-                  {selectedDateLabel}
-                </span>
-                {onResetDate && (
-                  <button
-                    type="button"
-                    onClick={onResetDate}
-                    className="text-[10px] font-bold text-secondary hover:text-teal-700 dark:hover:text-teal-400 inline-flex items-center gap-0.5 cursor-pointer underline"
-                  >
-                    <RotateCcw className="h-2.5 w-2.5" />
-                    <span>Today</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-primary tracking-tight">
+            Sales by Product
+          </h3>
+          {isDateOverridden && (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] font-bold text-teal-800 dark:text-teal-300 bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
+                {selectedDateLabel}
+              </span>
+              {onResetDate && (
+                <button
+                  type="button"
+                  onClick={onResetDate}
+                  className="text-[10px] font-bold text-secondary hover:text-teal-700 dark:hover:text-teal-400 inline-flex items-center gap-0.5 cursor-pointer underline"
+                >
+                  <RotateCcw className="h-2.5 w-2.5" />
+                  <span>Today</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <AdminDatePicker currentDate={selectedDate || ''} compact />
           <Link
-            href="/dashboard/admin/reports/products"
+            href={`/dashboard/admin/reports/products${selectedDate ? `?date=${encodeURIComponent(selectedDate)}` : ''}`}
             className="text-xs sm:text-sm font-bold text-secondary hover:text-primary transition-colors inline-flex items-center gap-1 whitespace-nowrap shrink-0"
             title="Open Products & Rates Master"
           >

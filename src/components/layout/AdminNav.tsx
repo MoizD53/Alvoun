@@ -22,7 +22,8 @@ import {
   Factory, 
   Boxes, 
   Receipt, 
-  Users2 
+  Users2,
+  ReceiptText 
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -55,6 +56,7 @@ export default function AdminNav({ user }: { user: any }) {
       ? [{ name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard }]
       : []),
     { name: 'Daily Sales', href: '/dashboard/admin/reports/daily', icon: IndianRupee },
+    { name: 'Admin Entry', href: '/dashboard/admin/entry', icon: ReceiptText },
     { name: 'Customers', href: '/dashboard/admin/customers', icon: Users },
     ...(isFounderCeo
       ? [
@@ -113,22 +115,27 @@ export default function AdminNav({ user }: { user: any }) {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Brand Header */}
-        <div className="h-18 flex items-center justify-between px-4 sm:px-5 border-b border-border-default/80 bg-surface-sidebar shrink-0">
-          <Link href="/dashboard/admin" className="flex items-center gap-3 group min-w-0">
-            <div className="relative h-11 w-11 rounded-full overflow-hidden shrink-0 border border-border-default shadow-xs flex items-center justify-center bg-white group-hover:scale-105 transition-transform duration-150">
+        <div className="h-20 flex items-center justify-between px-4 sm:px-5 border-b border-border-default/80 bg-surface-sidebar shrink-0">
+          <Link href="/dashboard/admin" className="flex items-center gap-2.5 group min-w-0 flex-1">
+            <div className="relative h-11 w-11 shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform duration-150">
               <Image 
-                src="/icons/icon.png" 
-                alt="Alvoun Water" 
+                src="/alvoun-emblem.png" 
+                alt="Alvoun Emblem" 
                 width={48} 
                 height={48} 
-                className="w-full h-full object-cover scale-110 rounded-full" 
+                className="w-full h-full object-contain" 
                 priority 
               />
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-lg font-black tracking-tight text-primary leading-tight font-sans truncate">
-                Alvoun Water
-              </span>
+            <div className="flex-1 min-w-0">
+              <Image
+                src="/alvoun-wordmark.png"
+                alt="Alvoun"
+                width={160}
+                height={48}
+                className="h-10 w-auto object-contain max-w-[155px]"
+                priority
+              />
             </div>
           </Link>
 
@@ -293,18 +300,25 @@ export default function AdminNav({ user }: { user: any }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-2.5">
-            <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 border border-border-default/80 shadow-xs flex items-center justify-center bg-white">
+          <div className="flex items-center gap-2">
+            <div className="relative h-9 w-9 shrink-0 flex items-center justify-center">
               <Image 
-                src="/icons/icon.png" 
-                alt="Alvoun Water" 
+                src="/alvoun-emblem.png" 
+                alt="Alvoun" 
                 width={36} 
                 height={36} 
-                className="w-full h-full object-cover scale-110 rounded-full" 
+                className="w-full h-full object-contain" 
                 priority 
               />
             </div>
-            <span className="font-extrabold text-base tracking-tight text-primary">Alvoun Water</span>
+            <Image
+              src="/alvoun-wordmark.png"
+              alt="Alvoun"
+              width={130}
+              height={38}
+              className="h-8 w-auto object-contain max-w-[130px]"
+              priority
+            />
           </div>
         </div>
         

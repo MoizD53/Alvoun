@@ -165,11 +165,11 @@ export default function StockClient({ initialData }: StockClientProps) {
     // 1. Finished Goods Sheet
     const finishedData = initialData.productStockSummary.map((p) => ({
       'Product Name': p.name,
-      'Pack Size (btl/crate)': p.bottlesPerCrate,
-      'Total Produced (Crates)': p.totalProducedCrates,
-      'Total Sold/Dispatched (Crates)': p.totalSoldCrates,
-      'Closing Available Stock (Crates)': p.currentCrates,
-      'Rate per Crate (INR)': (p.standardRatePaise / 100).toFixed(2),
+      'Pack Size (btl/PKG)': p.bottlesPerCrate,
+      'Total Produced (PKGs)': p.totalProducedCrates,
+      'Total Sold/Dispatched (PKGs)': p.totalSoldCrates,
+      'Closing Available Stock (PKGs)': p.currentCrates,
+      'Rate per PKG (INR)': (p.standardRatePaise / 100).toFixed(2),
       'Stock Valuation (INR)': (p.estimatedStockValuePaise / 100).toFixed(2),
     }));
     const wsFinished = xlsx.utils.json_to_sheet(finishedData);
@@ -203,7 +203,7 @@ export default function StockClient({ initialData }: StockClientProps) {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-[#1A2E35]">Stock & Inventory Management</h1>
               <p className="text-sm text-[#5A6B72]">
-                Opening, consumed, sold and closing balance for raw materials and packaged water crates
+                Opening, consumed, sold and closing balance for raw materials and packaged water PKGs
               </p>
             </div>
           </div>
@@ -248,7 +248,7 @@ export default function StockClient({ initialData }: StockClientProps) {
           <div className="mt-3">
             <div className="text-2xl font-bold text-[#1A5F63]">
               {totalFinishedGoodsCrates.toLocaleString('en-IN')}{' '}
-              <span className="text-sm font-semibold">Crates</span>
+              <span className="text-sm font-semibold">PKGs</span>
             </div>
             <p className="text-xs text-[#5A6B72] mt-1">Available across 1L, 500ml, 250ml & 2L</p>
           </div>
@@ -265,7 +265,7 @@ export default function StockClient({ initialData }: StockClientProps) {
             <div className="text-2xl font-bold text-[#1A2E35]">
               ₹{(totalFinishedGoodsValue / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
             </div>
-            <p className="text-xs text-[#5A6B72] mt-1">At standard wholesale crate rates</p>
+            <p className="text-xs text-[#5A6B72] mt-1">At standard wholesale PKG rates</p>
           </div>
         </Card>
 
@@ -315,7 +315,7 @@ export default function StockClient({ initialData }: StockClientProps) {
           }`}
         >
           <Package className="h-4 w-4" />
-          Finished Product Stock (Bottles / Crates)
+          Finished Product Stock (Bottles / PKGs)
         </button>
         <button
           onClick={() => setActiveTab('RAW')}
@@ -344,9 +344,9 @@ export default function StockClient({ initialData }: StockClientProps) {
                 <tr>
                   <th className="py-3.5 px-4">Product Line</th>
                   <th className="py-3.5 px-4">Bottles / Crate</th>
-                  <th className="py-3.5 px-4 text-right">Opening / Produced (Crates)</th>
-                  <th className="py-3.5 px-4 text-right">Sold / Dispatched (Crates)</th>
-                  <th className="py-3.5 px-4 text-right font-bold text-[#1A5F63]">Closing Available (Crates)</th>
+                  <th className="py-3.5 px-4 text-right">Opening / Produced (PKGs)</th>
+                  <th className="py-3.5 px-4 text-right">Sold / Dispatched (PKGs)</th>
+                  <th className="py-3.5 px-4 text-right font-bold text-[#1A5F63]">Closing Available (PKGs)</th>
                   <th className="py-3.5 px-4 text-right">Standard Rate</th>
                   <th className="py-3.5 px-4 text-right">Est. Valuation</th>
                   <th className="py-3.5 px-4 text-center">Status</th>

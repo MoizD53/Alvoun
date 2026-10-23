@@ -190,7 +190,7 @@ export default function QuickActionsRail() {
           <Link
             href="/dashboard/admin/stock"
             className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-raised hover:bg-surface-inset/60 border border-border-default/80 shadow-xs hover:shadow-hover transition-all duration-150 cursor-pointer group active:scale-[0.98]"
-            title="Check inventory of finished crates, preforms, caps & stickers"
+            title="Check inventory of finished PKGs, preforms, caps & stickers"
           >
             <div className="h-6 w-6 rounded-lg bg-surface-inset border border-border-default shadow-inset flex items-center justify-center shrink-0 text-teal-800 dark:text-teal-400 group-hover:scale-105 transition-all">
               <Boxes className="h-3.5 w-3.5" />

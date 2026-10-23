@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import AdminNav from '@/components/layout/AdminNav';
 import AdminLiveListener from './components/AdminLiveListener';
+import SessionLockScreen from '@/components/auth/SessionLockScreen';
 import { isExecutiveRole, isFinancialRole } from '@/lib/rbac';
 
 export default async function AdminLayout({
@@ -16,6 +17,7 @@ export default async function AdminLayout({
 
   return (
     <div className="flex flex-col bg-background text-primary min-h-screen w-full transition-colors">
+      <SessionLockScreen user={session.user} />
       <AdminLiveListener />
       <AdminNav user={session.user} />
       
