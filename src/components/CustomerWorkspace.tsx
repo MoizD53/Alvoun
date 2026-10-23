@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatMoney } from '@/lib/format';
 import { calculateOutstanding } from '@/lib/outstanding';
-import { adjustCustomerOpeningBalance } from '@/lib/actions/customer';
+import { adjustCustomerOpeningBalance, toggleCustomerStatus, deleteCustomerAccount } from '@/lib/actions/customer';
 import { 
   Phone, CreditCard, Edit, MapPin, 
   ShoppingBag, ArrowLeft,
   CheckCircle2, AlertCircle, Building2,
   Calendar, Clock, User, ShieldCheck,
-  Scale, Receipt, History, X, Save, Package
+  Scale, Receipt, History, X, Save, Package,
+  Power, Trash2, AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,13 @@ export default function CustomerWorkspace({
   const [adjustLoading, setAdjustLoading] = useState(false);
   const [adjustError, setAdjustError] = useState<string | null>(null);
   const [adjustSuccess, setAdjustSuccess] = useState<string | null>(null);
+
+  // Status & Delete Management State
+  const [currentStatus, setCurrentStatus] = useState(customer.status || 'ACTIVE');
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
 
   const tabs = [
     { id: 'OVERVIEW', label: 'Overview' },
@@ -198,8 +206,8 @@ export default function CustomerWorkspace({
                   {customer.code}
                 </span>
               )}
-              <Badge variant={customer.status === 'ACTIVE' ? 'success' : 'neutral'} size="sm" dot>
-                {customer.status}
+              <Badge variant={currentStatus === 'ACTIVE' ? 'success' : 'neutral'} size="sm" dot>
+                {currentStatus}
               </Badge>
               <Badge variant="teal" size="sm" styleType="subtle">
                 {customer.category}
@@ -227,16 +235,57 @@ export default function CustomerWorkspace({
           <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
             <a 
               href={`tel:${customer.contact}`} 
-              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-surface-raised shadow-raised hover:shadow-hover border border-border-default text-primary rounded-xl text-sm font-bold transition-all"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3 py-2 bg-surface-raised shadow-raised hover:shadow-hover border border-border-default text-primary rounded-xl text-sm font-bold transition-all"
             >
               <Phone className="h-4 w-4 text-teal-600" /> Call
             </a>
+
+            {/* Active / Inactive Status Toggle */}
+            <button
+              type="button"
+              disabled={statusLoading}
+              onClick={async () => {
+                setStatusLoading(true);
+                const res = await toggleCustomerStatus(customer.id);
+                setStatusLoading(false);
+                if (res?.success && res.status) {
+                  setCurrentStatus(res.status);
+                  router.refresh();
+                }
+              }}
+              className={`flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold border shadow-raised hover:shadow-hover transition-all cursor-pointer ${
+                currentStatus === 'ACTIVE'
+                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30'
+                  : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/30'
+              }`}
+              title="Toggle active / inactive status"
+            >
+              <Power className="h-4 w-4" />
+              {statusLoading ? 'Updating...' : currentStatus === 'ACTIVE' ? 'Set Inactive' : 'Set Active'}
+            </button>
+
             <Link 
               href={`/dashboard/admin/customers/${customer.id}/edit`} 
-              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-surface-inset shadow-inset hover:bg-surface-raised border border-border-default text-primary rounded-xl text-sm font-bold transition-all"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3 py-2 bg-surface-inset shadow-inset hover:bg-surface-raised border border-border-default text-primary rounded-xl text-sm font-bold transition-all"
             >
-              <Edit className="h-4 w-4 text-secondary" /> Edit Profile
+              <Edit className="h-4 w-4 text-secondary" /> Edit
             </Link>
+
+            {/* Delete Customer Button */}
+            {isExecutive && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteNotice(null);
+                  setDeleteModalOpen(true);
+                }}
+                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-400 border border-rose-500/30 shadow-raised hover:shadow-hover rounded-xl text-sm font-bold transition-all cursor-pointer"
+                title="Delete customer record"
+              >
+                <Trash2 className="h-4 w-4" /> Delete
+              </button>
+            )}
+
             {isExecutive && (
               <button
                 type="button"
@@ -248,10 +297,10 @@ export default function CustomerWorkspace({
                   setAdjustSuccess(null);
                   setIsAdjustModalOpen(true);
                 }}
-                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-teal-800 dark:bg-teal-700 hover:bg-teal-900 text-white shadow-raised hover:shadow-hover rounded-xl text-sm font-bold transition-all cursor-pointer"
+                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-3.5 py-2 bg-teal-800 dark:bg-teal-700 hover:bg-teal-900 text-white shadow-raised hover:shadow-hover rounded-xl text-sm font-bold transition-all cursor-pointer"
                 title="Adjust Opening Balance carried forward from previous registers"
               >
-                <Scale className="h-4 w-4" /> Adjust Opening Balance
+                <Scale className="h-4 w-4" /> Adjust Balance
               </button>
             )}
           </div>
@@ -882,6 +931,77 @@ export default function CustomerWorkspace({
           </div>
         </div>
       )}
+    
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border-default">
+              <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold">
+                <AlertTriangle className="h-5 w-5" />
+                <span>Delete Customer Account</span>
+              </div>
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="text-secondary hover:text-primary p-1 rounded-lg"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="text-sm text-secondary space-y-2">
+              <p>
+                Are you sure you want to delete <strong className="text-primary">{customer.customerName}</strong> ({customer.firmName || 'Retail Customer'})?
+              </p>
+              <p className="text-xs text-muted">
+                Note: If this customer has existing sales or payments, the system will safely mark them as <strong>INACTIVE</strong> to preserve your financial ledgers and tax audit history.
+              </p>
+            </div>
+
+            {deleteNotice && (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-semibold">
+                {deleteNotice}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={deleteLoading}
+                onClick={() => setDeleteModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={deleteLoading}
+                onClick={async () => {
+                  setDeleteLoading(true);
+                  const res = await deleteCustomerAccount(customer.id);
+                  setDeleteLoading(false);
+                  if (res?.deleted) {
+                    router.push('/dashboard/admin/customers');
+                    router.refresh();
+                  } else if (res?.deactivated) {
+                    setCurrentStatus('INACTIVE');
+                    setDeleteNotice(res.message);
+                    setTimeout(() => {
+                      setDeleteModalOpen(false);
+                      router.refresh();
+                    }, 2500);
+                  }
+                }}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleteLoading ? 'Processing...' : 'Confirm Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -93,6 +93,50 @@ interface RawMaterialSummary {
   purchasesCount: number;
 }
 
+
+// Standard Purchase Catalog matching operational master
+const CATALOG_GROUPS = [
+  {
+    group: 'Preform (Kg / Bag)',
+    category: 'RAW_MATERIAL',
+    items: [
+      { name: 'Preform (1 Litre)', unit: 'Kg', units: ['Kg', 'Bag'] },
+      { name: 'Preform (500ml)', unit: 'Kg', units: ['Kg', 'Bag'] },
+      { name: 'Preform (250ml)', unit: 'Kg', units: ['Kg', 'Bag'] },
+      { name: 'Preform (2 Litre)', unit: 'Kg', units: ['Kg', 'Bag'] },
+    ]
+  },
+  {
+    group: 'Stickers (Pcs)',
+    category: 'RAW_MATERIAL',
+    items: [
+      { name: 'Stickers (1 Litre)', unit: 'Pcs', units: ['Pcs', 'Roll'] },
+      { name: 'Stickers (500ml)', unit: 'Pcs', units: ['Pcs', 'Roll'] },
+      { name: 'Stickers (250ml)', unit: 'Pcs', units: ['Pcs', 'Roll'] },
+      { name: 'Stickers (2 Litre)', unit: 'Pcs', units: ['Pcs', 'Roll'] },
+    ]
+  },
+  {
+    group: 'Packaging & Consumables',
+    category: 'RAW_MATERIAL',
+    items: [
+      { name: 'Cap', unit: 'Pcs', units: ['Pcs', 'Box'] },
+      { name: 'Shrink Roll', unit: 'Kg', units: ['Kg', 'Nos'] },
+      { name: 'Ink / Make-up / Cleaner', unit: 'Bottle', units: ['Bottle', 'Pcs'] },
+    ]
+  },
+  {
+    group: 'Finished Products',
+    category: 'FINISHED_GOODS',
+    items: [
+      { name: '1 Litre', unit: 'PKG', units: ['PKG', 'Crates', 'Boxes'] },
+      { name: '500ml', unit: 'PKG', units: ['PKG', 'Crates', 'Boxes'] },
+      { name: '250ml', unit: 'PKG', units: ['PKG', 'Crates', 'Boxes'] },
+      { name: '2 Litre', unit: 'PKG', units: ['PKG', 'Crates', 'Boxes'] },
+    ]
+  }
+];
+
 interface PurchasesClientProps {
   initialData: {
     purchases: PurchaseRecord[];
@@ -242,13 +286,37 @@ export default function PurchasesClient({
       const items = [...prev.items];
       const item = { ...items[index], [field]: value };
 
-      // If user selected a known raw material, auto-fill unit & category
-      if (field === 'materialId') {
-        const mat = initialData.rawMaterials.find((m) => m.id === value);
-        if (mat) {
-          item.materialName = mat.name;
-          item.category = mat.category;
-          item.unit = mat.unit;
+      // If selecting from catalog or DB raw materials
+      if (field === 'catalogSelect') {
+        if (value === 'CUSTOM') {
+          item.materialId = '';
+          // Keep current materialName for editing
+        } else {
+          // Check if in standard catalog
+          let matched: any = null;
+          for (const g of CATALOG_GROUPS) {
+            const found = g.items.find(i => i.name === value);
+            if (found) {
+              matched = { ...found, category: g.category };
+              break;
+            }
+          }
+
+          if (matched) {
+            item.materialName = matched.name;
+            item.category = matched.category;
+            item.unit = matched.unit;
+            const existingInDb = initialData.rawMaterials.find(m => m.name.toLowerCase() === matched.name.toLowerCase());
+            item.materialId = existingInDb?.id || '';
+          } else {
+            const mat = initialData.rawMaterials.find((m) => m.id === value);
+            if (mat) {
+              item.materialId = mat.id;
+              item.materialName = mat.name;
+              item.category = mat.category;
+              item.unit = mat.unit;
+            }
+          }
         }
       }
 
@@ -1115,16 +1183,29 @@ export default function PurchasesClient({
                         <div className="sm:col-span-4">
                           <label className="block text-[10px] font-bold text-secondary mb-1">Material / Product</label>
                           <select
-                            value={item.materialId || ''}
-                            onChange={(e) => handleLineItemChange(idx, 'materialId', e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-surface-raised border border-border-default text-primary font-semibold focus:border-teal-500 outline-none"
+                            value={item.materialName || 'CUSTOM'}
+                            onChange={(e) => handleLineItemChange(idx, 'catalogSelect', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-surface-raised border border-border-default text-primary font-bold focus:border-teal-500 outline-none cursor-pointer"
                           >
-                            <option value="">Custom Entry...</option>
-                            {initialData.rawMaterials.map((m) => (
-                              <option key={m.id} value={m.id}>
-                                {m.name} ({m.category})
-                              </option>
+                            <option value="CUSTOM">Custom Entry...</option>
+                            {CATALOG_GROUPS.map((g) => (
+                              <optgroup key={g.group} label={g.group}>
+                                {g.items.map((catItem) => (
+                                  <option key={catItem.name} value={catItem.name}>
+                                    {catItem.name} ({catItem.unit})
+                                  </option>
+                                ))}
+                              </optgroup>
                             ))}
+                            {initialData.rawMaterials.length > 0 && (
+                              <optgroup label="Custom / DB Materials">
+                                {initialData.rawMaterials.map((m) => (
+                                  <option key={m.id} value={m.id}>
+                                    {m.name} ({m.unit})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            )}
                           </select>
                         </div>
 
@@ -1142,7 +1223,23 @@ export default function PurchasesClient({
 
                         {/* Quantity */}
                         <div className="sm:col-span-2">
-                          <label className="block text-[10px] font-bold text-secondary mb-1">Qty ({item.unit})</label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[10px] font-bold text-secondary">Qty</label>
+                            <select
+                              value={item.unit}
+                              onChange={(e) => handleLineItemChange(idx, 'unit', e.target.value)}
+                              className="text-[10px] font-bold text-teal-700 dark:text-teal-400 bg-surface-raised border border-border-default/60 rounded px-1 py-0.5 outline-none cursor-pointer"
+                            >
+                              <option value="Kg">Kg</option>
+                              <option value="Bag">Bag</option>
+                              <option value="Pcs">Pcs</option>
+                              <option value="Box">Box</option>
+                              <option value="Nos">Nos</option>
+                              <option value="Bottle">Bottle</option>
+                              <option value="PKG">PKG</option>
+                              <option value="Crates">Crates</option>
+                            </select>
+                          </div>
                           <input
                             type="number"
                             step="any"

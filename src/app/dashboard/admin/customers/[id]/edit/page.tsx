@@ -16,14 +16,18 @@ export default async function EditCustomerPage({
   const resolvedParams = await params;
   const customerId = resolvedParams.id;
 
-  const [customer, states, cities, routes, salesmen] = await Promise.all([
+  const [customer, states, cities, routes, salesmen, areas] = await Promise.all([
     prisma.customer.findUnique({
       where: { id: customerId }
     }),
     getStates(),
     getCities(),
     getRoutes(),
-    getSalesmen()
+    getSalesmen(),
+    prisma.area.findMany({
+      orderBy: { name: 'asc' },
+      include: { route: true }
+    })
   ]);
 
   if (!customer) {
@@ -53,6 +57,7 @@ export default async function EditCustomerPage({
         cities={cities}
         routes={routes}
         salesmen={salesmen}
+        areas={areas}
       />
     </div>
   );

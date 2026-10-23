@@ -12,13 +12,15 @@ export default function CustomerForm({
   states,
   cities,
   routes,
-  salesmen
+  salesmen,
+  areas = [],
 }: {
   initialData?: any;
   states: any[];
   cities: any[];
   routes: any[];
   salesmen: any[];
+  areas?: any[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -26,9 +28,12 @@ export default function CustomerForm({
 
   const [stateId, setStateId] = useState(initialData?.stateId || '');
   const [cityId, setCityId] = useState(initialData?.cityId || '');
+  const [routeId, setRouteId] = useState(initialData?.routeId || '');
+  const [areaId, setAreaId] = useState(initialData?.areaId || '');
 
-  const availableCities = cities.filter(c => c.stateId === stateId);
-  const availableRoutes = routes.filter(r => r.cityId === cityId);
+  const availableCities = stateId ? cities.filter(c => c.stateId === stateId) : cities;
+  const availableRoutes = cityId ? routes.filter(r => r.cityId === cityId) : routes;
+  const availableAreas = routeId ? areas.filter(a => a.routeId === routeId) : areas;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,6 +41,10 @@ export default function CustomerForm({
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData);
     
+    // Explicitly ensure routeId & areaId are set from state
+    if (routeId) data.routeId = routeId;
+    if (areaId) data.areaId = areaId;
+
     // Convert float input to paise for openingBalance
     const balanceInput = parseFloat(data.openingBalance as string);
     data.openingBalance = (isNaN(balanceInput) ? 0 : Math.round(balanceInput * 100)) as any;
@@ -107,12 +116,15 @@ export default function CustomerForm({
             </label>
             <select
               name="category"
-              defaultValue={initialData?.category || 'RETAILER'}
-              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+              defaultValue={
+                initialData?.category === 'B' ? 'B' :
+                initialData?.category === 'C' ? 'C' : 'A'
+              }
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-bold"
             >
-              <option value="RETAILER">Retailer (Kirana / Hotel / Stall)</option>
-              <option value="DEALER">Dealer (Wholesaler / Bulk)</option>
-              <option value="DISTRIBUTOR">Distributor (Area / Town Agent)</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
             </select>
           </div>
 
@@ -148,7 +160,7 @@ export default function CustomerForm({
         </div>
       </div>
 
-      {/* Location & City Section */}
+      {/* Location & Routing Section */}
       <div className="bg-surface-raised shadow-raised rounded-2xl p-6 border border-border/40 space-y-5">
         <div className="flex items-center gap-2 pb-3 border-b border-border/40">
           <MapPin className="w-4 h-4 text-primary" />
@@ -165,7 +177,7 @@ export default function CustomerForm({
               name="stateId"
               value={stateId} 
               onChange={(e) => { setStateId(e.target.value); setCityId(''); }}
-              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-semibold"
             >
               <option value="">Select State</option>
               {states.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -181,17 +193,67 @@ export default function CustomerForm({
               name="cityId"
               value={cityId} 
               onChange={(e) => setCityId(e.target.value)}
-              disabled={!stateId}
-              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-semibold"
             >
               <option value="">Select City</option>
               {availableCities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
 
-          
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Route / Beat
+            </label>
+            <select 
+              name="routeId"
+              value={routeId} 
+              onChange={(e) => {
+                const newRouteId = e.target.value;
+                setRouteId(newRouteId);
+                // Clear area if it doesn't belong to new route
+                if (newRouteId) {
+                  const areaBelongs = areas.some(a => a.id === areaId && a.routeId === newRouteId);
+                  if (!areaBelongs) setAreaId('');
+                }
+              }}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-semibold"
+            >
+              <option value="">Select Route</option>
+              {availableRoutes.map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Area / Sector
+            </label>
+            <select 
+              name="areaId"
+              value={areaId} 
+              onChange={(e) => {
+                const selectedVal = e.target.value;
+                setAreaId(selectedVal);
+                if (selectedVal) {
+                  const matchedArea = areas.find(a => a.id === selectedVal);
+                  if (matchedArea?.routeId && matchedArea.routeId !== routeId) {
+                    setRouteId(matchedArea.routeId);
+                  }
+                }
+              }}
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-semibold"
+            >
+              <option value="">Select Area</option>
+              {availableAreas.map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.name} {a.route ? `(${a.route.name})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -225,7 +287,7 @@ export default function CustomerForm({
             <select
               name="openingBalanceType"
               defaultValue={initialData?.openingBalanceType || 'DEBIT'}
-              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-semibold"
             >
               <option value="DEBIT">DEBIT (Customer owes us)</option>
               <option value="CREDIT">CREDIT (We owe customer)</option>
@@ -239,7 +301,7 @@ export default function CustomerForm({
             <select
               name="status"
               defaultValue={initialData?.status || 'ACTIVE'}
-              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+              className="w-full rounded-xl bg-surface-inset shadow-inset border border-border/40 px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer font-semibold"
             >
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
@@ -262,7 +324,7 @@ export default function CustomerForm({
           type="submit"
           variant="primary"
           isLoading={isPending}
-          className="shadow-raised hover:shadow-raised-sm press-active"
+          className="shadow-raised hover:shadow-raised-sm press-active font-bold"
         >
           <Save className="w-4 h-4 mr-1.5" />
           {isPending ? 'Saving...' : (initialData ? 'Update Customer' : 'Create Customer')}

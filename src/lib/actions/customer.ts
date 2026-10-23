@@ -9,7 +9,7 @@ import { normalizeRole } from '@/lib/rbac';
 const CustomerSchema = z.object({
   customerName: z.string().min(1, "Name is required"),
   firmName: z.string().optional().nullable().transform(v => (v && v.trim() ? v.trim() : null)),
-  category: z.enum(['RETAILER', 'DEALER', 'DISTRIBUTOR']).default('RETAILER'),
+  category: z.string().default('A'),
   code: z.string().optional().nullable().transform(v => (v && v.trim() ? v.trim() : null)),
   contact: z.string().min(1, "Contact is required"),
   address: z.string().min(1, "Address is required"),
@@ -317,5 +317,68 @@ export async function deactivateCustomer(id: string, routeId: string) {
     return { success: true };
   } catch (error: any) {
     return { error: 'Failed to deactivate customer' };
+  }
+}
+
+export async function toggleCustomerStatus(id: string) {
+  await requireAdminSession();
+  try {
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) return { error: 'Customer not found' };
+
+    const newStatus = customer.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    await prisma.customer.update({
+      where: { id },
+      data: { status: newStatus }
+    });
+
+    revalidatePath('/dashboard/admin/customers');
+    revalidatePath(`/dashboard/admin/customers/${id}`);
+    revalidatePath('/dashboard/admin');
+    return { success: true, status: newStatus };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to toggle customer status' };
+  }
+}
+
+export async function deleteCustomerAccount(id: string) {
+  await requireAdminSession();
+  try {
+    const customer = await prisma.customer.findUnique({
+      where: { id },
+      include: {
+        sales: { take: 1 },
+        payments: { take: 1 }
+      }
+    });
+
+    if (!customer) return { error: 'Customer not found' };
+
+    if (customer.sales.length > 0 || customer.payments.length > 0) {
+      // If financial records exist, mark as INACTIVE so ledger history is preserved
+      await prisma.customer.update({
+        where: { id },
+        data: { status: 'INACTIVE' }
+      });
+      revalidatePath('/dashboard/admin/customers');
+      revalidatePath(`/dashboard/admin/customers/${id}`);
+      return { 
+        success: true, 
+        deactivated: true, 
+        message: 'Customer has sales or payment records. Status set to INACTIVE to preserve audit integrity.' 
+      };
+    }
+
+    // Safe to permanently delete
+    await prisma.customerProductRate.deleteMany({ where: { customerId: id } });
+    await prisma.visit.deleteMany({ where: { customerId: id } });
+    await prisma.auditLog.deleteMany({ where: { customerId: id } });
+    await prisma.customer.delete({ where: { id } });
+
+    revalidatePath('/dashboard/admin/customers');
+    revalidatePath('/dashboard/admin');
+    return { success: true, deleted: true };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to delete customer' };
   }
 }

@@ -1,4 +1,5 @@
 import CustomerForm from '../customer-form';
+import { prisma } from '@/lib/db';
 import { getStates } from '@/lib/actions/state';
 import { getCities } from '@/lib/actions/city';
 import { getRoutes } from '@/lib/actions/route';
@@ -7,11 +8,15 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 export default async function NewCustomerPage() {
-  const [states, cities, routes, salesmen] = await Promise.all([
+  const [states, cities, routes, salesmen, areas] = await Promise.all([
     getStates(),
     getCities(),
     getRoutes(),
-    getSalesmen()
+    getSalesmen(),
+    prisma.area.findMany({
+      orderBy: { name: 'asc' },
+      include: { route: true }
+    })
   ]);
 
   return (
@@ -36,6 +41,7 @@ export default async function NewCustomerPage() {
         cities={cities}
         routes={routes}
         salesmen={salesmen}
+        areas={areas}
       />
     </div>
   );
