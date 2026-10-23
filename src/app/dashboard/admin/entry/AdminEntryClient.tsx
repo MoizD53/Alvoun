@@ -345,16 +345,13 @@ export default function AdminEntryClient({ initialData, selectedDate }: AdminEnt
 
   return (
     <div className="space-y-4 animate-fade-in select-none">
-      {/* 1. Header & Dedicated Admin Entry Calendar */}
-      <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* 1. Header & Dedicated Admin Entry Calendar (Highest Stacking Context z-50) */}
+      <div className="relative z-50 bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-primary tracking-tight">
               Admin Entry
             </h1>
-            <Badge variant="teal" styleType="outline" className="text-[11px] font-bold border-teal-600/30 text-teal-800 dark:text-teal-300 bg-teal-500/10">
-              Bulk Register Sheet
-            </Badge>
           </div>
           <p className="text-xs sm:text-sm text-secondary font-medium mt-0.5">
             Register-style daily sales and collections entry sheet for all 333 customer accounts.

@@ -219,7 +219,7 @@ export default function AdminDatePicker({
   }, [effectiveDate]);
 
   return (
-    <div ref={containerRef} className="relative inline-flex items-center">
+    <div ref={containerRef} className={`relative inline-flex items-center ${isOpen ? 'z-[100]' : 'z-10'}`}>
       {/* 1. Main Uniform Calendar Button */}
       <button
         type="button"
@@ -264,7 +264,7 @@ export default function AdminDatePicker({
 
       {/* 2. Interactive Calendar Popover */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-[999] w-[310px] bg-surface-overlay border border-border-default shadow-modal rounded-2xl p-4 animate-scale-in select-none">
+        <div className="absolute right-0 top-full mt-2 z-[999] w-[315px] bg-[#FAF6F0] dark:bg-[#1E242B] border border-border-strong shadow-[0_25px_60px_-10px_rgba(0,0,0,0.35)] rounded-2xl p-4 animate-scale-in select-none">
           {/* Header: Month & Year with Navigation */}
           <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-border-default/60">
             <button
