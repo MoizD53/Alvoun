@@ -147,7 +147,7 @@
      TYPOGRAPHY
      ============================================================ */
   --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
 
   /* ============================================================
      BORDER THICKNESS TOKENS
@@ -344,7 +344,7 @@
 
   /* Font */
   --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
 
   /* Radius Scale */
   --radius-xs:   var(--r-xs);
@@ -763,4 +763,73 @@ aside a:hover {
     transition-duration: 0.01ms !important;
     transform: none !important;
   }
+}
+
+
+/* ============================================================
+   UNIVERSAL CLEAN BOLD NUMBERS & FINANCIAL VALUES (NO MONOSPACE / NO SLASHED ZEROS)
+   All numbers, currency amounts, and tabular values across the SaaS
+   use the clean standard bold sans-serif font (Inter) with visible weight.
+   ============================================================ */
+.font-mono,
+[class*='font-mono'] {
+  font-family: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-feature-settings: 'zero' 0, 'tnum' 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 700 !important;
+}
+
+.tabular-nums,
+[data-tabular-nums='true'],
+[class*='tabular-nums'] {
+  font-family: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-feature-settings: 'zero' 0, 'tnum' 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 700 !important;
+}
+
+/* All table numeric / currency cells */
+td[class*='text-right']:not(:has(button, a, select)),
+td[class*='tabular-nums'] {
+  font-family: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'zero' 0, 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700 !important;
+}
+
+/* Table header & footer totals */
+tfoot td,
+tfoot th,
+.table-footer td,
+.table-footer th {
+  font-family: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'zero' 0, 'tnum' 1;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800 !important;
+}
+
+/* Numeric and currency inputs */
+input[type='number'],
+input[class*='tabular-nums'] {
+  font-family: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-feature-settings: 'zero' 0, 'tnum' 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 700 !important;
+}
+
+input[type='number']::placeholder {
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+/* Financial totals, KPIs, and balances */
+.kpi-value,
+.stat-value,
+.financial-value,
+.currency-val {
+  font-family: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-feature-settings: 'zero' 0, 'tnum' 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
 }

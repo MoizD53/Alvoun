@@ -194,7 +194,7 @@ export default function CustomerWorkspace({
                 {customer.customerName}
               </h1>
               {customer.code && (
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-surface-inset border border-border-default text-secondary">
+                <span className="text-xs  font-bold px-2 py-0.5 rounded bg-surface-inset border border-border-default text-secondary">
                   {customer.code}
                 </span>
               )}
@@ -373,7 +373,7 @@ export default function CustomerWorkspace({
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4 text-center sm:text-left">
                   <div className="p-3.5 rounded-xl bg-surface-raised border border-border-default shadow-xs">
                     <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">Opening Balance</span>
-                    <span className="text-lg font-black text-primary font-mono tabular-nums block mt-1">
+                    <span className="text-lg font-black text-primary  tabular-nums block mt-1">
                       {formatMoney(customer.openingBalance)}
                     </span>
                     <span className="text-[11px] font-semibold text-muted">
@@ -383,7 +383,7 @@ export default function CustomerWorkspace({
 
                   <div className="p-3.5 rounded-xl bg-surface-raised border border-border-default shadow-xs">
                     <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">+ New Sales</span>
-                    <span className="text-lg font-black text-primary font-mono tabular-nums block mt-1">
+                    <span className="text-lg font-black text-primary  tabular-nums block mt-1">
                       +{formatMoney(totalSales)}
                     </span>
                     <span className="text-[11px] font-semibold text-muted">
@@ -393,7 +393,7 @@ export default function CustomerWorkspace({
 
                   <div className="p-3.5 rounded-xl bg-surface-raised border border-border-default shadow-xs">
                     <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">- Payments Received</span>
-                    <span className="text-lg font-black text-emerald-700 dark:text-emerald-400 font-mono tabular-nums block mt-1">
+                    <span className="text-lg font-black text-emerald-700 dark:text-emerald-400  tabular-nums block mt-1">
                       -{formatMoney(totalPayments)}
                     </span>
                     <span className="text-[11px] font-semibold text-muted">
@@ -403,7 +403,7 @@ export default function CustomerWorkspace({
 
                   <div className="p-3.5 rounded-xl bg-surface-raised border border-border-strong shadow-xs">
                     <span className="text-[10px] font-bold text-secondary uppercase tracking-wider block">= Net Outstanding</span>
-                    <span className={`text-lg font-black font-mono tabular-nums block mt-1 ${isNegative ? 'text-danger' : 'text-primary'}`}>
+                    <span className={`text-lg font-black  tabular-nums block mt-1 ${isNegative ? 'text-danger' : 'text-primary'}`}>
                       {formatMoney(Math.abs(outstanding))}
                     </span>
                     <span className="text-[11px] font-extrabold text-teal-700 dark:text-teal-400">
@@ -427,7 +427,7 @@ export default function CustomerWorkspace({
                             <span className="text-secondary ml-1.5 font-medium">({log.actorRole})</span>
                             <p className="text-secondary mt-0.5">{log.details}</p>
                           </div>
-                          <span className="text-[11px] font-mono text-muted shrink-0">
+                          <span className="text-[11px]  text-muted shrink-0">
                             {new Date(log.createdAt).toLocaleString('en-IN')}
                           </span>
                         </div>
@@ -454,7 +454,7 @@ export default function CustomerWorkspace({
                   <div className="p-4 rounded-xl bg-surface-raised border border-border-default shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-secondary uppercase tracking-wider">1 Litre</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold border border-teal-500/20">
+                      <span className="text-[10px]  px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold border border-teal-500/20">
                         12 btls/pkg
                       </span>
                     </div>
@@ -472,7 +472,7 @@ export default function CustomerWorkspace({
                   <div className="p-4 rounded-xl bg-surface-raised border border-border-default shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-secondary uppercase tracking-wider">500 ml</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300 font-semibold border border-blue-500/20">
+                      <span className="text-[10px]  px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300 font-semibold border border-blue-500/20">
                         24 btls/pkg
                       </span>
                     </div>
@@ -490,7 +490,7 @@ export default function CustomerWorkspace({
                   <div className="p-4 rounded-xl bg-surface-raised border border-border-default shadow-xs flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-secondary uppercase tracking-wider">250 ml</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 font-semibold border border-purple-500/20">
+                      <span className="text-[10px]  px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-700 dark:text-purple-300 font-semibold border border-purple-500/20">
                         48 btls/pkg
                       </span>
                     </div>
@@ -557,7 +557,7 @@ export default function CustomerWorkspace({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-secondary">Current Balance:</span>
-                  <span className={`text-sm font-black font-mono ${isNegative ? 'text-danger' : 'text-primary'}`}>
+                  <span className={`text-sm font-black  ${isNegative ? 'text-danger' : 'text-primary'}`}>
                     {formatMoney(Math.abs(outstanding))} {outstanding > 0 ? 'Dr' : outstanding < 0 ? 'Cr' : 'Settled'}
                   </span>
                 </div>
@@ -593,13 +593,13 @@ export default function CustomerWorkspace({
                           </span>
                         </td>
                         <td className="px-6 py-3.5 text-primary font-medium">{entry.description}</td>
-                        <td className="px-6 py-3.5 text-right font-mono font-bold text-secondary">
+                        <td className="px-6 py-3.5 text-right  font-bold text-secondary">
                           {!entry.isCredit && entry.amount > 0 ? formatMoney(entry.amount) : '-'}
                         </td>
-                        <td className="px-6 py-3.5 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                        <td className="px-6 py-3.5 text-right  font-bold text-emerald-700 dark:text-emerald-400">
                           {entry.isCredit && entry.amount > 0 ? formatMoney(entry.amount) : '-'}
                         </td>
-                        <td className="px-6 py-3.5 text-right font-bold text-primary font-mono">
+                        <td className="px-6 py-3.5 text-right font-bold text-primary ">
                           <span className={entry.runningBalance > 0 ? 'text-danger' : entry.runningBalance < 0 ? 'text-emerald-600' : 'text-primary'}>
                             {formatMoney(Math.abs(entry.runningBalance))} {entry.runningBalance > 0 ? 'Dr' : entry.runningBalance < 0 ? 'Cr' : 'Settled'}
                           </span>
@@ -640,11 +640,11 @@ export default function CustomerWorkspace({
                   {customer.sales.map((sale: any) => (
                     <tr key={sale.id} className="hover:bg-surface-inset/40 transition-colors">
                       <td className="px-6 py-3.5 font-medium text-primary">{new Date(sale.saleDate || sale.createdAt).toLocaleDateString('en-IN')}</td>
-                      <td className="px-6 py-3.5 font-mono text-secondary">#{sale.id.slice(-8)}</td>
+                      <td className="px-6 py-3.5  text-secondary">#{sale.id.slice(-8)}</td>
                       <td className="px-6 py-3.5 text-secondary">
                         {sale.items.map((i: any) => `${i.crates}x crates`).join(', ')}
                       </td>
-                      <td className="px-6 py-3.5 text-right font-black font-mono text-primary">
+                      <td className="px-6 py-3.5 text-right font-black  text-primary">
                         {formatMoney(sale.totalAmount)}
                       </td>
                     </tr>
@@ -682,10 +682,10 @@ export default function CustomerWorkspace({
                           {payment.paymentMethod || 'CASH'}
                         </span>
                       </td>
-                      <td className="px-6 py-3.5 text-secondary font-mono text-xs">
+                      <td className="px-6 py-3.5 text-secondary  text-xs">
                         {payment.referenceNo || 'Direct Receipt'}
                       </td>
-                      <td className="px-6 py-3.5 text-right font-black font-mono text-emerald-700 dark:text-emerald-400">
+                      <td className="px-6 py-3.5 text-right font-black  text-emerald-700 dark:text-emerald-400">
                         {formatMoney(payment.amount)}
                       </td>
                     </tr>
@@ -788,13 +788,13 @@ export default function CustomerWorkspace({
               <div className="p-3.5 rounded-2xl bg-surface-inset border border-border-default space-y-1">
                 <div className="flex justify-between text-xs">
                   <span className="font-semibold text-secondary">Current Opening Balance:</span>
-                  <span className="font-mono font-bold text-primary">
+                  <span className=" font-bold text-primary">
                     {formatMoney(customer.openingBalance)} ({customer.openingBalanceType})
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="font-semibold text-secondary">Current Net Outstanding:</span>
-                  <span className="font-mono font-bold text-teal-700 dark:text-teal-400">
+                  <span className=" font-bold text-teal-700 dark:text-teal-400">
                     {formatMoney(Math.abs(outstanding))} ({outstanding > 0 ? 'Dr' : outstanding < 0 ? 'Cr' : 'Settled'})
                   </span>
                 </div>
@@ -814,7 +814,7 @@ export default function CustomerWorkspace({
                     value={adjustAmount}
                     onChange={(e) => setAdjustAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-inset border border-border-default text-sm font-mono font-bold text-primary focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-surface-inset border border-border-default text-sm  font-bold text-primary focus:outline-none focus:ring-2 focus:ring-teal-500/40"
                   />
                   <span className="text-[10px] text-muted font-medium mt-0.5 block">
                     Stored accurately as integer paise.

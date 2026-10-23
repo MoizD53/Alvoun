@@ -49,7 +49,7 @@ export default function BottomOperationalStrip({
         </div>
 
         <div className="my-2.5">
-          <div className="text-2xl sm:text-3xl font-black text-primary font-mono tabular-nums tracking-tight">
+          <div className="text-2xl sm:text-3xl font-black text-primary  tabular-nums tracking-tight">
             <span>{activeCustomersCount}</span>
             <span className="text-sm sm:text-base font-bold text-secondary font-sans ml-1.5">
               / {totalCustomersCount} Total
@@ -61,7 +61,7 @@ export default function BottomOperationalStrip({
         <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-[11px]">
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-emerald-700 dark:text-emerald-400 font-bold font-mono text-[10px]">
+            <span className="text-emerald-700 dark:text-emerald-400 font-bold  text-[10px]">
               100% Active Outlets
             </span>
           </div>
@@ -100,7 +100,7 @@ export default function BottomOperationalStrip({
         </div>
 
         <div className="my-2.5">
-          <div className="text-2xl sm:text-3xl font-black text-primary font-mono tabular-nums tracking-tight">
+          <div className="text-2xl sm:text-3xl font-black text-primary  tabular-nums tracking-tight">
             <span>{activeAreasCount}</span>
             <span className="text-sm sm:text-base font-bold text-secondary font-sans ml-1.5">
               Active Areas

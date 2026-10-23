@@ -65,10 +65,10 @@ export default function AreaWiseSalesCard({
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-mono font-bold text-primary text-[11px]">
+                    <span className=" font-bold text-primary text-[11px]">
                       {formatMoney(area.salesPaise)}
                     </span>
-                    <span className="font-mono text-[9px] font-bold text-teal-800 dark:text-teal-400 bg-surface-inset px-1.5 py-0.2 rounded border border-border-default shadow-inset">
+                    <span className=" text-[9px] font-bold text-teal-800 dark:text-teal-400 bg-surface-inset px-1.5 py-0.2 rounded border border-border-default shadow-inset">
                       {area.percentage}%
                     </span>
                   </div>
@@ -89,7 +89,7 @@ export default function AreaWiseSalesCard({
       {/* Footer */}
       <div className="pt-2.5 border-t border-border-subtle mt-2 flex items-center justify-between text-[11px] text-secondary">
         <span>Active Territories</span>
-        <span className="font-mono font-bold text-primary">{areaSales.length} Active Sectors</span>
+        <span className=" font-bold text-primary">{areaSales.length} Active Sectors</span>
       </div>
     </div>
   );

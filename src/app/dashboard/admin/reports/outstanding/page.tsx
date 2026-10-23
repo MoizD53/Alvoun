@@ -225,13 +225,13 @@ export default async function OutstandingReportPage({
                       <div className="font-semibold text-foreground">{c.route?.name || c.city.name}</div>
                       <div className="text-xs text-muted-foreground">{c.salesman?.name || 'Unassigned'}</div>
                     </td>
-                    <td className="px-5 py-4 text-right font-medium text-foreground">{formatMoney(c.totalSales)}</td>
-                    <td className="px-5 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(c.totalPayments)}</td>
-                    <td className="px-5 py-4 text-center text-xs text-muted-foreground">{c.lastDate}</td>
+                    <td className="px-5 py-4 text-right font-bold tabular-nums text-foreground">{formatMoney(c.totalSales)}</td>
+                    <td className="px-5 py-4 text-right font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{formatMoney(c.totalPayments)}</td>
+                    <td className="px-5 py-4 text-center text-xs font-semibold tabular-nums text-muted-foreground">{c.lastDate}</td>
                     <td className="px-5 py-4 text-right">
-                      <div className="font-bold text-destructive text-sm">{formatMoney(c.outstanding)}</div>
+                      <div className="font-black tabular-nums text-destructive text-sm">{formatMoney(c.outstanding)}</div>
                       {(fromDate || toDate) && (
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-[11px] font-bold tabular-nums text-muted-foreground">
                           Period: {formatMoney(c.periodDues)}
                         </div>
                       )}

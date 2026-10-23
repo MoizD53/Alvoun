@@ -10,6 +10,7 @@ import {
   getKolkataDateString 
 } from '@/lib/time';
 import { calculateOutstanding } from '@/lib/outstanding';
+import { normalizeRole } from '@/lib/rbac';
 
 function sanitizeCell(val: any): any {
   if (typeof val === 'string') {
@@ -38,8 +39,9 @@ export async function GET(request: Request) {
   }
 
   const role = (session.user as any).role;
-  const allowedRoles = ['OWNER', 'ADMIN', 'FOUNDER', 'DIRECTOR', 'ACCOUNTANT'];
-  if (!allowedRoles.includes(role)) {
+  const canonical = normalizeRole(role);
+  const allowedCanonical = ['FOUNDER_CEO', 'DIRECTOR', 'OPERATIONS_STAFF'];
+  if (!allowedCanonical.includes(canonical)) {
     return new NextResponse('Forbidden: Insufficient privileges', { status: 403 });
   }
 

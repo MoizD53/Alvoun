@@ -491,13 +491,13 @@ function CustomerItemRow({ customer, products }: { customer: any; products: any[
         <td className="px-2.5 py-2.5 text-center font-bold text-foreground tabular-nums">
           {formatNumber(customer.totalCrates)}
         </td>
-        <td className="px-3 py-2.5 text-right font-semibold text-foreground tabular-nums">
+        <td className="px-3 py-2.5 text-right font-bold text-foreground tabular-nums">
           {formatMoney(customer.saleAmount)}
         </td>
-        <td className="px-3 py-2.5 text-right font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+        <td className="px-3 py-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
           {formatMoney(customer.receivedAmount)}
         </td>
-        <td className="px-3 py-2.5 text-right font-bold text-destructive tabular-nums">
+        <td className="px-3 py-2.5 text-right font-black text-destructive tabular-nums">
           {customer.dueAmount > 0 ? formatMoney(customer.dueAmount) : '—'}
         </td>
       </tr>
@@ -566,13 +566,13 @@ function CustomerTableRow({ customer, products }: { customer: any; products: any
         <td className="px-4 py-3 text-center font-bold text-foreground tabular-nums">
           {formatNumber(customer.totalCrates)}
         </td>
-        <td className="px-4 py-3 text-right font-semibold text-foreground tabular-nums">
+        <td className="px-4 py-3 text-right font-bold text-foreground tabular-nums">
           {formatMoney(customer.saleAmount)}
         </td>
-        <td className="px-4 py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+        <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
           {formatMoney(customer.receivedAmount)}
         </td>
-        <td className="px-4 py-3 text-right font-bold text-destructive tabular-nums">
+        <td className="px-4 py-3 text-right font-black text-destructive tabular-nums">
           {formatMoney(customer.dueAmount)}
         </td>
       </tr>

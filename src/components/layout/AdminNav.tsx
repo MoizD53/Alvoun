@@ -23,7 +23,8 @@ import {
   Boxes, 
   Receipt, 
   Users2,
-  ReceiptText 
+  ReceiptText,
+  ShoppingCart
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -71,6 +72,7 @@ export default function AdminNav({ user }: { user: any }) {
 
   // OPERATIONS & FACTORY ITEMS
   const operationsItems = [
+    { name: 'Purchases & Procurement', href: '/dashboard/admin/purchases', icon: ShoppingCart },
     { name: 'Production Batches', href: '/dashboard/admin/production', icon: Factory },
     { name: 'Stock & Inventory', href: '/dashboard/admin/stock', icon: Boxes },
     { name: 'Company Expenses', href: '/dashboard/admin/expenses', icon: Receipt },

@@ -359,6 +359,7 @@ model RawMaterial {
   updatedAt       DateTime @updatedAt
 
   movements       RawMaterialMovement[]
+  purchaseItems   PurchaseItem[]
 }
 
 model RawMaterialMovement {
@@ -511,4 +512,86 @@ model AuditLog {
   @@index([actorId])
   @@index([action])
   @@index([createdAt])
+}
+
+
+model Supplier {
+  id                 String            @id @default(cuid())
+  name               String
+  contactPerson      String?
+  phone              String?
+  address            String?
+  gstin              String?
+  openingBalance     Int               @default(0) // in Paise
+  openingBalanceType String            @default("CREDIT") // CREDIT = Payable, DEBIT = Advance
+  paymentTerms       String?           // e.g. "30 Days", "Immediate", "Advance"
+  notes              String?
+  isActive           Boolean           @default(true)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  purchases          Purchase[]
+  payments           SupplierPayment[]
+
+  @@index([name])
+}
+
+model Purchase {
+  id                String            @id @default(cuid())
+  purchaseNumber    String            @unique // e.g. PO-2026-0001
+  supplierId        String
+  supplier          Supplier          @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  supplierInvoiceNo String?
+  purchaseDate      DateTime          @default(now())
+  totalAmount       Int               // in Paise
+  paidAmount        Int               @default(0) // in Paise
+  paymentStatus     String            @default("PENDING") // PAID, PARTIAL, PENDING
+  paymentMethod     String            @default("CASH") // CASH, BANK_TRANSFER, UPI, CHEQUE
+  remarks           String?
+  recordedBy        String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  items             PurchaseItem[]
+  payments          SupplierPayment[]
+
+  @@index([supplierId])
+  @@index([purchaseDate])
+  @@index([paymentStatus])
+}
+
+model PurchaseItem {
+  id           String       @id @default(cuid())
+  purchaseId   String
+  purchase     Purchase     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  materialId   String?
+  material     RawMaterial? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+  materialName String
+  category     String       @default("RAW_MATERIAL") // PREFORM, STICKER, CAP, SHRINK_ROLL, INK_CHEMICAL, PACKAGING, CONSUMABLE, OTHER
+  quantity     Float
+  unit         String       // PCS, KG, BOX, ROLL, BAG, LITRE
+  rate         Int          // in Paise per unit
+  totalAmount  Int          // in Paise
+
+  @@index([purchaseId])
+  @@index([materialId])
+}
+
+model SupplierPayment {
+  id            String    @id @default(cuid())
+  supplierId    String
+  supplier      Supplier  @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  purchaseId    String?
+  purchase      Purchase? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  amount        Int       // in Paise
+  paymentDate   DateTime  @default(now())
+  paymentMethod String    @default("CASH") // CASH, BANK_TRANSFER, UPI, CHEQUE
+  referenceNo   String?
+  remarks       String?
+  recordedBy    String?
+  createdAt     DateTime  @default(now())
+
+  @@index([supplierId])
+  @@index([paymentDate])
+  @@index([purchaseId])
 }

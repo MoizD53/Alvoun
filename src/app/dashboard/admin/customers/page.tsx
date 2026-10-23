@@ -418,29 +418,29 @@ export default async function CustomersPage({
 
                       {/* Total Sales */}
                       <td className="px-5 py-4 text-right">
-                        <span className="font-mono font-bold text-sm text-primary">
+                        <span className="font-bold tabular-nums text-sm text-primary">
                           ₹{(c.totalSales / 100).toLocaleString('en-IN')}
                         </span>
                       </td>
 
                       {/* Collected */}
                       <td className="px-5 py-4 text-right">
-                        <span className="font-mono font-semibold text-sm text-emerald-600 dark:text-emerald-400">
+                        <span className="font-bold tabular-nums text-sm text-emerald-600 dark:text-emerald-400">
                           ₹{(c.totalCollections / 100).toLocaleString('en-IN')}
                         </span>
                       </td>
 
                       {/* Outstanding Due */}
                       <td className="px-5 py-4 text-right">
-                        <span className={`font-mono font-bold text-sm ${isNegative ? 'text-rose-600 dark:text-rose-400' : 'text-primary'}`}>
+                        <span className={`font-black tabular-nums text-sm ${isNegative ? 'text-rose-600 dark:text-rose-400' : 'text-primary'}`}>
                           {formatMoney(Math.abs(c.outstanding))}
                         </span>
                         {c.outstanding !== 0 && (
-                          <div className="text-[10px] font-semibold tracking-wider text-muted mt-0.5">
+                          <div className="text-[10px] font-bold tracking-wider text-muted mt-0.5">
                             {isNegative ? 'TO RECEIVE (DR)' : 'IN ADVANCE (CR)'}
                           </div>
                         )}
-                        <div className="text-[10px] font-mono text-secondary mt-0.5" title="Opening balance brought forward">
+                        <div className="text-[10px] font-bold tabular-nums text-secondary mt-0.5" title="Opening balance brought forward">
                           Opening: {formatMoney(c.openingBalance)} ({c.openingBalanceType === 'CREDIT' ? 'Cr' : 'Dr'})
                         </div>
                       </td>
@@ -554,15 +554,15 @@ export default async function CustomersPage({
                   <div className="grid grid-cols-3 gap-2 text-xs mt-3 pt-3 border-t border-border-subtle text-center">
                     <div>
                       <span className="text-[10px] text-muted font-bold uppercase tracking-wider block">Total Sales</span>
-                      <p className="font-bold font-mono text-primary mt-0.5">₹{(c.totalSales / 100).toLocaleString('en-IN')}</p>
+                      <p className="font-bold tabular-nums text-primary mt-0.5">₹{(c.totalSales / 100).toLocaleString('en-IN')}</p>
                     </div>
                     <div>
                       <span className="text-[10px] text-muted font-bold uppercase tracking-wider block">Collected</span>
-                      <p className="font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">₹{(c.totalCollections / 100).toLocaleString('en-IN')}</p>
+                      <p className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">₹{(c.totalCollections / 100).toLocaleString('en-IN')}</p>
                     </div>
                     <div>
                       <span className="text-[10px] text-muted font-bold uppercase tracking-wider block">Outstanding</span>
-                      <p className={`font-bold font-mono mt-0.5 ${isNegative ? 'text-rose-600 dark:text-rose-400' : 'text-primary'}`}>
+                      <p className={`font-black tabular-nums mt-0.5 ${isNegative ? 'text-rose-600 dark:text-rose-400' : 'text-primary'}`}>
                         ₹{formatMoney(Math.abs(c.outstanding))} {isNegative ? 'Dr' : ''}
                       </p>
                     </div>

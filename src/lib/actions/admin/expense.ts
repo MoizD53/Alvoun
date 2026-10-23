@@ -7,15 +7,7 @@ import { z } from 'zod';
 import { getKolkataStartOfDay, getKolkataEndOfDay, getCurrentKolkataTime } from '@/lib/time';
 
 const ExpenseSchema = z.object({
-  category: z.enum([
-    'SALARY',
-    'FUEL',
-    'TRANSPORTATION',
-    'VEHICLE_MAINTENANCE',
-    'LABOUR',
-    'ELECTRICITY',
-    'MISCELLANEOUS',
-  ]),
+  category: z.string().min(1, 'Category is required'),
   title: z.string().min(1, 'Title is required'),
   amountPaise: z.number().int().positive('Amount must be positive'),
   expenseDate: z.string().optional(),
@@ -104,7 +96,7 @@ export async function createExpense(data: {
   try {
     const expense = await prisma.expense.create({
       data: {
-        category,
+        category: category.trim().toUpperCase(),
         title,
         amount: amountPaise,
         expenseDate: dateToUse,
@@ -119,11 +111,76 @@ export async function createExpense(data: {
     try {
       revalidatePath('/dashboard/admin/expenses');
       revalidatePath('/dashboard/admin');
+      revalidatePath('/dashboard/admin/cashflow');
+      revalidatePath('/dashboard/admin/reports/monthly');
     } catch {}
 
     return { success: true, id: expense.id };
   } catch (error: any) {
     return { error: error.message || 'Failed to record expense' };
+  }
+}
+
+export async function updateExpense(
+  id: string,
+  data: {
+    category: string;
+    title: string;
+    amountPaise: number;
+    expenseDate?: string;
+    paymentMethod?: string;
+    recipient?: string;
+    referenceNo?: string;
+    notes?: string;
+  }
+) {
+  await requireAdminSession();
+
+  const parsed = ExpenseSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0].message };
+  }
+
+  const {
+    category,
+    title,
+    amountPaise,
+    expenseDate,
+    paymentMethod,
+    recipient,
+    referenceNo,
+    notes,
+  } = parsed.data;
+
+  const dateToUse = expenseDate
+    ? new Date(`${expenseDate}T12:00:00+05:30`)
+    : getCurrentKolkataTime();
+
+  try {
+    const updated = await prisma.expense.update({
+      where: { id },
+      data: {
+        category: category.trim().toUpperCase(),
+        title,
+        amount: amountPaise,
+        expenseDate: dateToUse,
+        paymentMethod: paymentMethod || 'CASH',
+        recipient: recipient || null,
+        referenceNo: referenceNo || null,
+        notes: notes || null,
+      },
+    });
+
+    try {
+      revalidatePath('/dashboard/admin/expenses');
+      revalidatePath('/dashboard/admin');
+      revalidatePath('/dashboard/admin/cashflow');
+      revalidatePath('/dashboard/admin/reports/monthly');
+    } catch {}
+
+    return { success: true, id: updated.id };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to update expense' };
   }
 }
 
@@ -135,6 +192,8 @@ export async function deleteExpense(id: string) {
     try {
       revalidatePath('/dashboard/admin/expenses');
       revalidatePath('/dashboard/admin');
+      revalidatePath('/dashboard/admin/cashflow');
+      revalidatePath('/dashboard/admin/reports/monthly');
     } catch {}
     return { success: true };
   } catch (error: any) {

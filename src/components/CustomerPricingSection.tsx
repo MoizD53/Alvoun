@@ -236,7 +236,7 @@ export default function CustomerPricingSection({
                   <div className="bg-surface-inset shadow-inset rounded-xl p-3.5 border border-border-default/60 space-y-2 mb-4">
                     <div className="flex items-center justify-between text-xs sm:text-sm font-medium">
                       <span className="text-secondary">Standard Rate:</span>
-                      <span className="font-mono font-bold text-secondary tabular-nums">
+                      <span className=" font-bold text-secondary tabular-nums">
                         {formatMoney(item.standardRatePaise)} / crate
                       </span>
                     </div>
@@ -244,7 +244,7 @@ export default function CustomerPricingSection({
                     <div className="flex items-center justify-between text-sm sm:text-base font-bold pt-1 border-t border-border-default/60">
                       <span className="text-primary">Effective Rate:</span>
                       <span
-                        className={`font-mono text-base sm:text-lg font-black tracking-tight tabular-nums ${
+                        className={` text-base sm:text-lg font-black tracking-tight tabular-nums ${
                           item.isCustomized
                             ? 'text-teal-800 dark:text-teal-300'
                             : 'text-primary'
@@ -273,7 +273,7 @@ export default function CustomerPricingSection({
                           onChange={(e) => setEditPriceRupees(e.target.value)}
                           disabled={isSaving}
                           placeholder="Rate in ₹"
-                          className="w-full pl-8 pr-3 py-2 text-sm sm:text-base font-bold font-mono bg-surface-inset border border-teal-500 rounded-xl shadow-inset text-primary focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                          className="w-full pl-8 pr-3 py-2 text-sm sm:text-base font-bold  bg-surface-inset border border-teal-500 rounded-xl shadow-inset text-primary focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                           autoFocus
                         />
                       </div>

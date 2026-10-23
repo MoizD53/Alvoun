@@ -24,7 +24,9 @@ const BatchRowSchema = z.object({
   pkg1L: z.number().int().min(0).default(0),
   pkg500ml: z.number().int().min(0).default(0),
   pkg250ml: z.number().int().min(0).default(0),
-  receivedAmount: z.number().min(0).default(0), // in Rupees
+  cashAmount: z.number().min(0).default(0), // in Rupees
+  upiAmount: z.number().min(0).default(0), // in Rupees
+  receivedAmount: z.number().min(0).default(0), // fallback total in Rupees
   paymentMethod: z.string().default('CASH'),
   remarks: z.string().optional().nullable(),
   existingSaleIds: z.array(z.string()).default([]),
@@ -152,6 +154,8 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
 
   const customerDayPaymentsMap = new Map<string, {
     totalPaymentsPaise: number;
+    cashPaise: number;
+    upiPaise: number;
     paymentIds: string[];
     remarks: string[];
     methods: string[];
@@ -161,6 +165,8 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
     if (!customerDayPaymentsMap.has(p.customerId)) {
       customerDayPaymentsMap.set(p.customerId, {
         totalPaymentsPaise: 0,
+        cashPaise: 0,
+        upiPaise: 0,
         paymentIds: [],
         remarks: [],
         methods: [],
@@ -169,6 +175,12 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
     const entry = customerDayPaymentsMap.get(p.customerId)!;
     entry.totalPaymentsPaise += p.amount;
     entry.paymentIds.push(p.id);
+    const m = (p.paymentMethod || 'CASH').toUpperCase();
+    if (m === 'UPI') {
+      entry.upiPaise += p.amount;
+    } else {
+      entry.cashPaise += p.amount;
+    }
     if (p.referenceNumber) entry.remarks.push(p.referenceNumber);
     if (p.paymentMethod) entry.methods.push(p.paymentMethod);
   });
@@ -226,6 +238,8 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
       savedPkg1L: daySales?.pkg1L || 0,
       savedPkg500ml: daySales?.pkg500ml || 0,
       savedPkg250ml: daySales?.pkg250ml || 0,
+      savedCashRupees: (dayPayments?.cashPaise || 0) / 100,
+      savedUpiRupees: (dayPayments?.upiPaise || 0) / 100,
       savedReceivedRupees: todayPaymentsPaise > 0 ? todayPaymentsPaise / 100 : 0,
       savedRemarks,
       existingSaleIds: daySales?.saleIds || [],
@@ -236,6 +250,8 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
   // Day summary metrics
   const totalSalesPaise = salesOnDate.reduce((sum, s) => sum + s.totalAmount, 0);
   const totalReceivedPaise = paymentsOnDate.reduce((sum, p) => sum + p.amount, 0);
+  const totalCashReceivedPaise = paymentsOnDate.filter(p => (p.paymentMethod || 'CASH').toUpperCase() !== 'UPI').reduce((sum, p) => sum + p.amount, 0);
+  const totalUpiReceivedPaise = paymentsOnDate.filter(p => (p.paymentMethod || 'CASH').toUpperCase() === 'UPI').reduce((sum, p) => sum + p.amount, 0);
   const totalPKGs = salesOnDate.reduce((sum, s) => sum + s.items.reduce((iSum, i) => iSum + i.crates, 0), 0);
   const modifiedAccountsCount = new Set([
     ...salesOnDate.map((s) => s.customerId),
@@ -245,6 +261,8 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
   const daySummary = {
     totalSalesPaise,
     totalReceivedPaise,
+    totalCashReceivedPaise,
+    totalUpiReceivedPaise,
     netDuePaise: totalSalesPaise - totalReceivedPaise,
     totalPKGs,
     accountsCount: modifiedAccountsCount,
@@ -282,7 +300,9 @@ export async function saveAdminEntryBatch(payload: {
     pkg1L: number;
     pkg500ml: number;
     pkg250ml: number;
-    receivedAmount: number; // in Rupees
+    cashAmount?: number; // in Rupees
+    upiAmount?: number; // in Rupees
+    receivedAmount?: number; // in Rupees
     paymentMethod?: string;
     remarks?: string;
     existingSaleIds?: string[];
@@ -438,7 +458,18 @@ export async function saveAdminEntryBatch(payload: {
         }
 
         const totalSaleAmount = saleItems.reduce((sum, item) => sum + item.amount, 0);
-        const paymentPaise = Math.round((row.receivedAmount || 0) * 100);
+        let cashPaise = Math.round((row.cashAmount || 0) * 100);
+        let upiPaise = Math.round((row.upiAmount || 0) * 100);
+
+        // Fallback for single receivedAmount payload
+        if (cashPaise === 0 && upiPaise === 0 && row.receivedAmount > 0) {
+          const method = (row.paymentMethod || 'CASH').toUpperCase();
+          if (method === 'UPI') {
+            upiPaise = Math.round(row.receivedAmount * 100);
+          } else {
+            cashPaise = Math.round(row.receivedAmount * 100);
+          }
+        }
 
         // 3. Create Sale if product packages were entered
         if (saleItems.length > 0 && totalSaleAmount > 0) {
@@ -456,22 +487,36 @@ export async function saveAdminEntryBatch(payload: {
           totalSalesCreatedPaise += totalSaleAmount;
         }
 
-        // 4. Create Payment if collection amount was entered
-        if (paymentPaise > 0) {
+        // 4. Create Payments if Cash or UPI collections were entered
+        if (cashPaise > 0) {
           await tx.payment.create({
             data: {
               customerId: row.customerId,
               salesmanId,
-              amount: paymentPaise,
-              paymentMethod: row.paymentMethod || 'CASH',
-              referenceNumber: row.remarks?.trim() || 'Admin Entry Register',
+              amount: cashPaise,
+              paymentMethod: 'CASH',
+              referenceNumber: row.remarks?.trim() ? `Cash • ${row.remarks.trim()}` : 'Admin Entry - Cash',
               paymentDate: targetDateTime,
             },
           });
-          totalPaymentsCreatedPaise += paymentPaise;
+          totalPaymentsCreatedPaise += cashPaise;
         }
 
-        if (totalSaleAmount > 0 || paymentPaise > 0) {
+        if (upiPaise > 0) {
+          await tx.payment.create({
+            data: {
+              customerId: row.customerId,
+              salesmanId,
+              amount: upiPaise,
+              paymentMethod: 'UPI',
+              referenceNumber: row.remarks?.trim() ? `UPI • ${row.remarks.trim()}` : 'Admin Entry - UPI',
+              paymentDate: targetDateTime,
+            },
+          });
+          totalPaymentsCreatedPaise += upiPaise;
+        }
+
+        if (totalSaleAmount > 0 || cashPaise > 0 || upiPaise > 0) {
           totalRowsSaved++;
         }
       }
@@ -678,5 +723,165 @@ export async function reverseAdminEntryTransaction(data: {
   } catch (error: any) {
     console.error('Error reversing admin entry:', error);
     return { error: error.message || 'Failed to reverse transaction' };
+  }
+}
+
+/**
+ * Runtime Quick Add Customer directly from Admin Entry sheet.
+ * Adds the customer immediately to the database and returns the row data
+ * so it appears instantly on the sheet without requiring a reload or losing unsaved edits.
+ */
+export async function quickCreateAdminEntryCustomer(payload: {
+  customerName: string;
+  firmName?: string;
+  code?: string; // Custom Customer ID / Code
+  category?: string; // Category "A", "B", "C"
+  contact?: string;
+  routeName: string; // Compulsory
+  areaName: string; // Compulsory
+  address?: string; // Optional
+  openingDueRupees?: number;
+}) {
+  await requireAdminSession();
+
+  const name = payload.customerName?.trim();
+  if (!name) return { error: 'Customer Name is required' };
+
+  const routeName = payload.routeName?.trim();
+  if (!routeName) return { error: 'Route is required' };
+
+  const areaName = payload.areaName?.trim();
+  if (!areaName) return { error: 'Area is required' };
+
+  try {
+    const city = await prisma.city.findFirst();
+    const state = await prisma.state.findFirst();
+
+    if (!city || !state) {
+      return { error: 'System city/state configuration missing' };
+    }
+
+    // 1. Resolve or create Route
+    let route = await prisma.route.findFirst({
+      where: { name: routeName },
+    });
+    if (!route) {
+      route = await prisma.route.create({
+        data: {
+          name: routeName,
+          cityId: city.id,
+          isActive: true,
+        },
+      });
+    }
+
+    // 2. Resolve or create Area under this route
+    let area = await prisma.area.findFirst({
+      where: {
+        name: areaName,
+        routeId: route.id,
+      },
+    });
+    if (!area) {
+      area = await prisma.area.create({
+        data: {
+          name: areaName,
+          routeId: route.id,
+        },
+      });
+    }
+
+    // 3. Customer ID / Code: custom input or auto-generated
+    let code = payload.code?.trim();
+    if (!code) {
+      const count = await prisma.customer.count();
+      code = `CUST-${String(count + 1).padStart(4, '0')}`;
+    }
+
+    // 4. Category: A, B, C
+    const category = payload.category?.trim().toUpperCase() || 'A';
+
+    // 5. Address is optional! Fallback to "Area, Route" if omitted
+    const address = payload.address && payload.address.trim() 
+      ? payload.address.trim() 
+      : `${area.name}, ${route.name}`;
+
+    const contact = payload.contact?.trim() || 'N/A';
+    const openingBalancePaise = Math.round((Number(payload.openingDueRupees) || 0) * 100);
+
+    // 6. Create Customer
+    const customer = await prisma.customer.create({
+      data: {
+        customerName: name,
+        firmName: payload.firmName?.trim() || null,
+        code,
+        category,
+        contact,
+        address,
+        stateId: state.id,
+        cityId: city.id,
+        routeId: route.id,
+        areaId: area.id,
+        openingBalance: Math.abs(openingBalancePaise),
+        openingBalanceType: openingBalancePaise >= 0 ? 'CREDIT' : 'DEBIT',
+        status: 'ACTIVE',
+      },
+      include: {
+        route: true,
+        area: true,
+      },
+    });
+
+    // 6. Load standard product rates
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      include: { rates: true },
+    });
+    const prod1L = products.find(p => p.name.toLowerCase().includes('1l') || p.name.toLowerCase().includes('1 litre'));
+    const prod500ml = products.find(p => p.name.toLowerCase().includes('500ml') || p.name.toLowerCase().includes('500 ml'));
+    const prod250ml = products.find(p => p.name.toLowerCase().includes('250ml') || p.name.toLowerCase().includes('250 ml'));
+
+    const rate1LPaise = prod1L?.rates[0]?.rate ?? 9000;
+    const rate500mlPaise = prod500ml?.rates[0]?.rate ?? 11000;
+    const rate250mlPaise = prod250ml?.rates[0]?.rate ?? 8000;
+
+    const rowData = {
+      id: customer.id,
+      customerName: customer.customerName,
+      firmName: customer.firmName,
+      code: customer.code,
+      contact: customer.contact,
+      address: customer.address,
+      routeName: customer.route?.name || route.name,
+      areaName: customer.area?.name || area.name,
+      salesmanId: customer.salesmanId,
+      currentOutstandingPaise: openingBalancePaise,
+      previousDuePaise: openingBalancePaise,
+      rate1LPaise,
+      rate500mlPaise,
+      rate250mlPaise,
+      hasCustom1L: false,
+      hasCustom500ml: false,
+      hasCustom250ml: false,
+      savedPkg1L: 0,
+      savedPkg500ml: 0,
+      savedPkg250ml: 0,
+      savedCashRupees: 0,
+      savedUpiRupees: 0,
+      savedReceivedRupees: 0,
+      savedRemarks: '',
+      existingSaleIds: [],
+      existingPaymentIds: [],
+    };
+
+    try {
+      revalidatePath('/dashboard/admin/entry');
+      revalidatePath('/dashboard/admin/customers');
+      revalidatePath('/dashboard/admin');
+    } catch {}
+
+    return { success: true, customer: rowData };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to create customer' };
   }
 }

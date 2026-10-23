@@ -143,6 +143,14 @@ export interface ProductionSummary {
   batchesCount: number;
 }
 
+export interface PurchaseSummary {
+  todayTotalAmountPaise: number;
+  todayPaidPaise: number;
+  todayOutstandingPaise: number;
+  todayQuantity: number;
+  purchasesCount: number;
+}
+
 export interface StockSummary {
   totalAvailableCrates: number;
   totalAvailableLitres: number;
@@ -178,6 +186,7 @@ export interface DashboardExecutiveData {
   dispatches: DispatchSummary;
   expenses: ExpenseSummary;
   production: ProductionSummary;
+  purchase: PurchaseSummary;
   stock: StockSummary;
   cashFlow: CashFlowSummary;
   customerActivity: CustomerActivitySummary;
@@ -903,6 +912,39 @@ export async function getProductionSummary(startOfDay: Date, endOfDay: Date): Pr
 }
 
 // ---------------------------------------------------------------------------
+// 8B. PURCHASE SUMMARY (MATERIALS PURCHASED IN REPORTING PERIOD)
+// ---------------------------------------------------------------------------
+
+export async function getPurchaseSummary(startOfDay: Date, endOfDay: Date): Promise<PurchaseSummary> {
+  const purchases = await prisma.purchase.findMany({
+    where: { purchaseDate: { gte: startOfDay, lte: endOfDay } },
+    include: { items: true },
+  });
+
+  let todayTotalAmountPaise = 0;
+  let todayPaidPaise = 0;
+  let todayOutstandingPaise = 0;
+  let todayQuantity = 0;
+
+  for (const p of purchases) {
+    todayTotalAmountPaise += p.totalAmount;
+    todayPaidPaise += p.paidAmount;
+    todayOutstandingPaise += (p.totalAmount - p.paidAmount);
+    for (const item of p.items) {
+      todayQuantity += item.quantity;
+    }
+  }
+
+  return {
+    todayTotalAmountPaise,
+    todayPaidPaise,
+    todayOutstandingPaise,
+    todayQuantity: Math.round(todayQuantity),
+    purchasesCount: purchases.length,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // 9. STOCK SUMMARY (FINISHED PRODUCT CRATES IN INVENTORY)
 // ---------------------------------------------------------------------------
 
@@ -1048,6 +1090,7 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
     dispatches,
     expenses,
     production,
+    purchase,
     stock,
     payroll,
     metaCounts
@@ -1061,6 +1104,7 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
     getInventoryAndDispatches(startOfDay, endOfDay),
     getExpensesSummary(startOfDay, endOfDay, targetDate),
     getProductionSummary(startOfDay, endOfDay),
+    getPurchaseSummary(startOfDay, endOfDay),
     getStockSummary(endOfDay),
     getPayrollSummary(targetDate),
     Promise.all([
@@ -1093,6 +1137,7 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
     dispatches,
     expenses,
     production,
+    purchase,
     stock,
     cashFlow,
     customerActivity,

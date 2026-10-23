@@ -52,10 +52,11 @@ export default async function AdminDashboard({
         greeting={greeting}
       />
 
-      {/* 2. TOP KPI CARDS (6 CARDS: SALES, RECEIVABLES, CASH FLOW, EXPENSES, PRODUCTION, STOCK) */}
+      {/* 2. TOP KPI CARDS (6 CARDS: PURCHASES, SALES, RECEIVABLES, CASH FLOW, EXPENSES, STOCK) */}
       <ExecutiveKPIRow
         trends={data.trends}
         expenses={data.expenses}
+        purchase={data.purchase}
         production={data.production}
         stock={data.stock}
         cashFlow={data.cashFlow}

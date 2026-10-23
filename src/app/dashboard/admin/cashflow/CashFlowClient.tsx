@@ -148,12 +148,12 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
         <div className="bg-surface-raised border border-border-default shadow-raised rounded-2xl p-4 flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-secondary font-bold">
             <span className="truncate">Opening Balance</span>
-            <span className="text-[10px] bg-amber-500/10 text-amber-700 border border-amber-500/20 px-1.5 py-0.2 rounded font-mono">
+            <span className="text-[10px] bg-amber-500/10 text-amber-700 border border-amber-500/20 px-1.5 py-0.2 rounded ">
               Unverified
             </span>
           </div>
           <div className="my-2">
-            <div className="text-2xl font-black text-primary font-mono tabular-nums">
+            <div className="text-2xl font-black text-primary  tabular-nums">
               {formatMoney(openingBalancePaise)}
             </div>
           </div>
@@ -169,12 +169,12 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
               <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-600" />
               <span>Money In (Inflow)</span>
             </div>
-            <span className="text-[10px] bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 px-1.5 py-0.2 rounded font-mono">
+            <span className="text-[10px] bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 px-1.5 py-0.2 rounded ">
               Collections
             </span>
           </div>
           <div className="my-2">
-            <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 font-mono tabular-nums">
+            <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400  tabular-nums">
               +{formatMoney(totalInflowPaise)}
             </div>
           </div>
@@ -190,12 +190,12 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
               <ArrowUpRight className="h-3.5 w-3.5 text-rose-600" />
               <span>Money Out (Outflow)</span>
             </div>
-            <span className="text-[10px] bg-rose-500/10 text-rose-700 border border-rose-500/20 px-1.5 py-0.2 rounded font-mono">
+            <span className="text-[10px] bg-rose-500/10 text-rose-700 border border-rose-500/20 px-1.5 py-0.2 rounded ">
               Expenses
             </span>
           </div>
           <div className="my-2">
-            <div className="text-2xl font-black text-rose-700 dark:text-rose-400 font-mono tabular-nums">
+            <div className="text-2xl font-black text-rose-700 dark:text-rose-400  tabular-nums">
               -{formatMoney(totalOutflowPaise)}
             </div>
           </div>
@@ -211,12 +211,12 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
               <ArrowLeftRight className="h-3.5 w-3.5 text-teal-700" />
               <span>Net Movement</span>
             </div>
-            <span className="text-[10px] bg-teal-500/10 text-teal-700 border border-teal-500/20 px-1.5 py-0.2 rounded font-mono">
+            <span className="text-[10px] bg-teal-500/10 text-teal-700 border border-teal-500/20 px-1.5 py-0.2 rounded ">
               In − Out
             </span>
           </div>
           <div className="my-2">
-            <div className={`text-2xl font-black font-mono tabular-nums ${
+            <div className={`text-2xl font-black  tabular-nums ${
               netMovementPaise >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
             }`}>
               {netMovementPaise > 0 ? '+' : ''}{formatMoney(netMovementPaise)}
@@ -234,12 +234,12 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
               <Landmark className="h-3.5 w-3.5 text-primary" />
               <span>Closing Balance</span>
             </div>
-            <span className="text-[10px] bg-surface-inset border border-border-default px-1.5 py-0.2 rounded font-mono text-muted">
+            <span className="text-[10px] bg-surface-inset border border-border-default px-1.5 py-0.2 rounded  text-muted">
               Net
             </span>
           </div>
           <div className="my-2">
-            <div className="text-2xl font-black text-primary font-mono tabular-nums">
+            <div className="text-2xl font-black text-primary  tabular-nums">
               {formatMoney(closingBalancePaise)}
             </div>
           </div>
@@ -262,7 +262,7 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-primary">{m.method}</span>
-                <span className={`text-[10px] font-mono font-bold ${
+                <span className={`text-[10px]  font-bold ${
                   m.netPaise >= 0 ? 'text-emerald-700' : 'text-rose-700'
                 }`}>
                   {m.netPaise > 0 ? '+' : ''}{formatMoney(m.netPaise)}
@@ -271,11 +271,11 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
               <div className="mt-2 text-[10px] space-y-0.5 text-secondary">
                 <div className="flex justify-between">
                   <span>In:</span>
-                  <span className="font-mono text-emerald-700 font-semibold">+{formatMoney(m.inflowPaise)}</span>
+                  <span className=" text-emerald-700 font-semibold">+{formatMoney(m.inflowPaise)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Out:</span>
-                  <span className="font-mono text-rose-700 font-semibold">-{formatMoney(m.outflowPaise)}</span>
+                  <span className=" text-rose-700 font-semibold">-{formatMoney(m.outflowPaise)}</span>
                 </div>
               </div>
             </div>
@@ -360,7 +360,7 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
               ) : (
                 filteredTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-surface-inset/60 transition-colors">
-                    <td className="px-4 py-2.5 font-mono text-[10px] text-muted whitespace-nowrap">
+                    <td className="px-4 py-2.5  text-[10px] text-muted whitespace-nowrap">
                       {tx.timestamp}
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
@@ -387,14 +387,14 @@ export default function CashFlowClient({ initialData, currentPeriod }: CashFlowC
                       <div className="text-[10px] text-muted truncate max-w-[200px]">{tx.description}</div>
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="text-[10px] font-mono font-semibold text-secondary bg-surface-inset border border-border-default px-1.5 py-0.5 rounded">
+                      <span className="text-[10px]  font-semibold text-secondary bg-surface-inset border border-border-default px-1.5 py-0.5 rounded">
                         {tx.paymentMethod}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 font-mono text-[10px] text-muted">
+                    <td className="px-3 py-2.5  text-[10px] text-muted">
                       {tx.referenceNo}
                     </td>
-                    <td className={`px-4 py-2.5 text-right font-mono font-bold text-xs whitespace-nowrap ${
+                    <td className={`px-4 py-2.5 text-right  font-bold text-xs whitespace-nowrap ${
                       tx.type === 'INFLOW' ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
                     }`}>
                       {tx.type === 'INFLOW' ? '+' : '-'}{formatMoney(tx.amountPaise)}
