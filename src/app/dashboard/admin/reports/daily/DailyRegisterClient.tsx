@@ -113,7 +113,6 @@ export default function DailyRegisterClient({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-foreground">Daily Sales Register</h2>
-            <Badge variant="teal" size="sm">Single Calendar</Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Operational sales organized by Route → Area → Customer
