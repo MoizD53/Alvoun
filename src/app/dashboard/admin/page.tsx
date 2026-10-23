@@ -22,8 +22,8 @@ export default async function AdminDashboard({
     redirect('/dashboard');
   }
 
-  const resolvedParams = await searchParams;
-  const dateStr = resolvedParams.date;
+  const resolvedParams = searchParams ? await searchParams : {};
+  const dateStr = resolvedParams?.date;
 
   // Determine time-appropriate greeting
   const now = getCurrentKolkataTime();
@@ -39,7 +39,13 @@ export default async function AdminDashboard({
   }
 
   // Fetch complete real data via server data layer
-  const data = await getDashboardExecutiveData(dateStr);
+  let data;
+  try {
+    data = await getDashboardExecutiveData(dateStr);
+  } catch (err) {
+    console.error('[AdminDashboard Server Error during data fetch]:', err);
+    throw err;
+  }
 
   return (
     <div className="space-y-4 sm:space-y-5 animate-fade-in-up">

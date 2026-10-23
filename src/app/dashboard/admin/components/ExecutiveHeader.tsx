@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Image from 'next/image';
 import AdminDatePicker from './AdminDatePicker';
 import GlobalSearch from './GlobalSearch';
@@ -192,7 +192,9 @@ export default function ExecutiveHeader({
             <div className="h-6 sm:h-7 w-px bg-border-default" />
 
             {/* One Universal Date Selector */}
-            <AdminDatePicker currentDate={selectedDate} compact />
+            <Suspense fallback={<div className="h-8 w-24 bg-surface-inset rounded-xl animate-pulse" />}>
+              <AdminDatePicker currentDate={selectedDate} compact />
+            </Suspense>
           </div>
 
           {/* 3D-Embossed Profile Card (Clickable to open profile modal) */}

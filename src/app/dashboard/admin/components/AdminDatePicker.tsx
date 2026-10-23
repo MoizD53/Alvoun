@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useTransition, useMemo } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   Calendar, 
   ChevronLeft, 
@@ -34,7 +34,6 @@ export default function AdminDatePicker({
 }: AdminDatePickerProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -87,7 +86,8 @@ export default function AdminDatePicker({
     }
 
     const targetBasePath = basePath || pathname;
-    const params = new URLSearchParams(searchParams.toString());
+    const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+    const params = new URLSearchParams(currentSearch);
 
     if (targetDate && targetDate !== todayStr) {
       params.set('date', targetDate);
