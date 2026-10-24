@@ -8,6 +8,7 @@ import {
   isWorkingHours 
 } from '@/lib/time';
 import { calculateOutstanding } from '@/lib/outstanding';
+import { getOrComputeCached } from '@/lib/cache/dashboard-cache';
 
 // ---------------------------------------------------------------------------
 // TYPE DEFINITIONS
@@ -470,8 +471,6 @@ export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: n
         include: {
           route: true,
           area: true,
-          sales: { select: { totalAmount: true } },
-          payments: { select: { amount: true } }
         }
       }
     }
@@ -497,10 +496,28 @@ export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: n
     .sort((a, b) => b.todaySalesPaise - a.todaySalesPaise)
     .slice(0, limit);
 
+  // Fetch lifetime totals ONLY for top customers to compute outstanding balance efficiently
+  const topCustomerIds = sorted.map(s => s.customer.id);
+  const [salesGroup, paymentsGroup] = await Promise.all([
+    prisma.sale.groupBy({
+      by: ['customerId'],
+      where: { customerId: { in: topCustomerIds } },
+      _sum: { totalAmount: true }
+    }),
+    prisma.payment.groupBy({
+      by: ['customerId'],
+      where: { customerId: { in: topCustomerIds } },
+      _sum: { amount: true }
+    })
+  ]);
+  const salesMap = new Map(salesGroup.map(s => [s.customerId, s._sum.totalAmount || 0]));
+  const paymentsMap = new Map(paymentsGroup.map(p => [p.customerId, p._sum.amount || 0]));
+
   return sorted.map(item => {
     const c = item.customer;
     if (!c) return null;
-    const outstanding = calculateOutstanding(c as any);
+    const base = c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance;
+    const outstanding = base + (salesMap.get(c.id) || 0) - (paymentsMap.get(c.id) || 0);
 
     return {
       customerId: c.id,
@@ -704,24 +721,29 @@ export async function getOperationalAlerts(
 ): Promise<OperationalAlert[]> {
   const alerts: OperationalAlert[] = [];
 
-  const [unassignedAreas, activeCustomers, unstartedSalesmen, noSaleVisits] = await Promise.all([
+  const [unassignedAreas, activeCustomers, salesGroup, paymentsGroup, unstartedSalesmen, noSaleVisits] = await Promise.all([
     // Areas with no assigned salesman
     prisma.area.findMany({
       where: { assignments: { none: {} } },
       include: { route: true },
       take: 5
     }),
-    // Customers with balance data
+    // Customers with balance data (lightweight query without nested relations)
     prisma.customer.findMany({
       where: { status: 'ACTIVE' },
       select: {
         id: true,
-        customerName: true,
         openingBalance: true,
         openingBalanceType: true,
-        sales: { select: { totalAmount: true } },
-        payments: { select: { amount: true } }
       }
+    }),
+    prisma.sale.groupBy({
+      by: ['customerId'],
+      _sum: { totalAmount: true }
+    }),
+    prisma.payment.groupBy({
+      by: ['customerId'],
+      _sum: { amount: true }
     }),
     // Salesmen not logged in today
     prisma.salesman.findMany({
@@ -749,11 +771,15 @@ export async function getOperationalAlerts(
     })
   ]);
 
+  const salesMap = new Map(salesGroup.map(s => [s.customerId, s._sum.totalAmount || 0]));
+  const paymentsMap = new Map(paymentsGroup.map(p => [p.customerId, p._sum.amount || 0]));
+
   // 1. Overdue Customers Alert (Dues > ₹10,000 / 1,000,000 paise)
   let highDuesCount = 0;
   let highDuesTotal = 0;
   activeCustomers.forEach(c => {
-    const out = calculateOutstanding(c as any);
+    const base = c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance;
+    const out = base + (salesMap.get(c.id) || 0) - (paymentsMap.get(c.id) || 0);
     if (out > 1000000) { // > ₹10,000
       highDuesCount++;
       highDuesTotal += out;
@@ -962,8 +988,9 @@ export async function getPurchaseSummary(startOfDay: Date, endOfDay: Date): Prom
 // ---------------------------------------------------------------------------
 
 export async function getStockSummary(asOfDate?: Date): Promise<StockSummary> {
-  const whereBatch = asOfDate ? { productionDate: { lte: asOfDate } } : {};
-  const whereSale = asOfDate ? { sale: { saleDate: { lte: asOfDate } } } : {};
+  const isHistorical = Boolean(asOfDate && asOfDate.getTime() < getKolkataStartOfDay().getTime());
+  const whereBatch = isHistorical ? { productionDate: { lte: asOfDate! } } : {};
+  const whereSale = isHistorical ? { sale: { saleDate: { lte: asOfDate! } } } : {};
 
   const [prodAggregate, soldAggregate] = await Promise.all([
     prisma.productionBatch.aggregate({
@@ -1085,7 +1112,10 @@ export async function getPayrollSummary(targetDate: Date): Promise<PayrollSummar
 export async function getDashboardExecutiveData(dateStr?: string): Promise<DashboardExecutiveData> {
   const now = getCurrentKolkataTime();
   const selectedDate = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : getKolkataDateString(now);
-  const isToday = selectedDate === getKolkataDateString(now);
+  const cacheKey = `dashboard_exec_${selectedDate}`;
+
+  return getOrComputeCached(cacheKey, 45000, async () => {
+    const isToday = selectedDate === getKolkataDateString(now);
 
   const startOfDay = getKolkataStartOfDay(selectedDate);
   const endOfDay = getKolkataEndOfDay(selectedDate);
@@ -1235,4 +1265,5 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
       totalAreasCount: metaCounts[3]
     }
   };
+  });
 }

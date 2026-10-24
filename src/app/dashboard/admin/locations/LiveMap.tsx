@@ -33,7 +33,7 @@ export default function LiveMap({ salesmen }: { salesmen: SalesmanLocation[] }) 
   useEffect(() => {
     const interval = setInterval(() => {
       router.refresh();
-    }, 30000);
+    }, 60000);
     return () => clearInterval(interval);
   }, [router]);
 

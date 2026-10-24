@@ -71,7 +71,7 @@ export async function getCollectionDetails(dateStr: string | undefined) {
 export async function getOutstandingDetails() {
   await requireAdminSession();
   const allCustomers = await prisma.customer.findMany({
-    include: { sales: { include: { items: true } }, payments: true },
+    include: { sales: { select: { totalAmount: true } }, payments: { select: { amount: true } } },
   });
 
   let totalOutstanding = 0;

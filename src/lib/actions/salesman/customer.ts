@@ -18,27 +18,39 @@ export async function getMyCustomers(routeId?: string, search?: string) {
     ];
   }
 
-  const customers = await prisma.customer.findMany({
-    where,
-    include: {
-      city: true,
-      state: true,
-      route: true,
-      sales: { orderBy: { saleDate: 'desc' }, include: { items: { include: { product: true } } } },
-      payments: { orderBy: { paymentDate: 'desc' } },
-      customerRates: true,
-      visits: { where: { salesmanId }, orderBy: { createdAt: 'desc' } }
-    },
-    orderBy: { route: { name: 'asc' } }
-  });
-
   const startOfDay = getKolkataStartOfDay();
   const endOfDay = getKolkataEndOfDay();
 
+  const [customers, salesGroup, paymentsGroup] = await Promise.all([
+    prisma.customer.findMany({
+      where,
+      include: {
+        city: true,
+        state: true,
+        route: true,
+        sales: {
+          where: { saleDate: { gte: startOfDay, lte: endOfDay } },
+          include: { items: { include: { product: true } } }
+        },
+        payments: {
+          where: { paymentDate: { gte: startOfDay, lte: endOfDay } }
+        },
+        customerRates: true,
+        visits: { where: { salesmanId }, orderBy: { createdAt: 'desc' }, take: 5 }
+      },
+      orderBy: { route: { name: 'asc' } }
+    }),
+    prisma.sale.groupBy({ by: ['customerId'], _sum: { totalAmount: true } }),
+    prisma.payment.groupBy({ by: ['customerId'], _sum: { amount: true } }),
+  ]);
+
+  const salesMap = new Map(salesGroup.map(s => [s.customerId, s._sum.totalAmount || 0]));
+  const paymentsMap = new Map(paymentsGroup.map(p => [p.customerId, p._sum.amount || 0]));
+
   // Calculate dynamic outstanding and today's visit status
   return customers.map(c => {
-    const totalSales = c.sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const totalPayments = c.payments.reduce((sum, pay) => sum + pay.amount, 0);
+    const totalSales = salesMap.get(c.id) || 0;
+    const totalPayments = paymentsMap.get(c.id) || 0;
     const outstanding = (c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance) + totalSales - totalPayments;
     
     // Find today's completed visit by this salesman

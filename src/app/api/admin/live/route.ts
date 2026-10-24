@@ -1,9 +1,8 @@
 export const dynamic = 'force-dynamic';
-export const maxDuration = 25; // Clean serverless window preventing 300s timeouts
+export const maxDuration = 45; // Clean serverless window preventing 300s timeouts
 
 import { auth } from '@/auth';
-import { sseEmitter } from '@/lib/events';
-import { prisma } from '@/lib/db';
+import { sseEmitter, getRecentActivities } from '@/lib/events';
 import { isFinancialRole } from '@/lib/rbac';
 
 export async function GET(req: Request) {
@@ -19,20 +18,17 @@ export async function GET(req: Request) {
       const sendEvent = (data: any) => {
         try {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-        } catch (e) {
+        } catch {
           // Stream closed
         }
       };
 
-      // Send initial latest activities so the feed isn't completely empty
+      // Send initial latest activities from in-memory ring buffer (ZERO db reads!)
       try {
-        const recentLogs = await prisma.activityLog.findMany({
-          take: 10,
-          orderBy: { createdAt: 'desc' }
-        });
+        const recentLogs = await getRecentActivities();
         sendEvent({ type: 'INITIAL_LOGS', data: recentLogs });
-      } catch (err) {
-        // Continue stream even if initial query fails
+      } catch {
+        // Continue stream
       }
 
       // Listen for new events
@@ -46,18 +42,18 @@ export async function GET(req: Request) {
       const keepAlive = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(': keepalive\n\n'));
-        } catch (e) {
+        } catch {
           clearInterval(keepAlive);
         }
       }, 8000);
 
-      // Cleanly close stream after 20s so Vercel serverless function finishes without error
+      // Cleanly close stream after 40s so Vercel serverless function finishes without error
       const timeout = setTimeout(() => {
         cleanup();
         try {
           controller.close();
         } catch {}
-      }, 20000);
+      }, 40000);
 
       const cleanup = () => {
         sseEmitter.off('activity', activityListener);

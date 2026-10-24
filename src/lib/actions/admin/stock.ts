@@ -5,7 +5,7 @@ import { requireAdminSession } from '@/lib/session';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { getCurrentKolkataTime, getKolkataEndOfDay } from '@/lib/time';
+import { getCurrentKolkataTime, getKolkataEndOfDay, getKolkataStartOfDay } from '@/lib/time';
 
 const InwardSchema = z.object({
   materialId: z.string().min(1, 'Material is required'),
@@ -55,42 +55,48 @@ export async function getStockDashboard(selectedDateStr?: string) {
     orderBy: { bottlesPerCrate: 'asc' },
   });
 
-  const productStockSummary = await Promise.all(
-    products.map(async (prod) => {
-      const prodWhere: any = { productId: prod.id };
-      const saleWhere: any = { productId: prod.id };
-      if (endOfDay) {
-        prodWhere.batchDate = { lte: endOfDay };
-        saleWhere.sale = { saleDate: { lte: endOfDay } };
-      }
+  const isHistorical = Boolean(endOfDay && endOfDay.getTime() < getKolkataStartOfDay().getTime());
 
-      const [prodAggregate, soldAggregate] = await Promise.all([
-        prisma.productionBatch.aggregate({
-          where: prodWhere,
-          _sum: { cratesProduced: true, totalBottles: true, volumeLitres: true },
-        }),
-        prisma.saleItem.aggregate({
-          where: saleWhere,
+  const [prodGroup, soldGroup] = await Promise.all([
+    prisma.productionBatch.groupBy({
+      by: ['productId'],
+      where: isHistorical ? { productionDate: { lte: endOfDay! } } : undefined,
+      _sum: { cratesProduced: true, totalBottles: true, volumeLitres: true },
+    }),
+    isHistorical
+      ? prisma.saleItem.groupBy({
+          by: ['productId'],
+          where: { sale: { saleDate: { lte: endOfDay! } } },
+          _sum: { crates: true, looseBottles: true, amount: true },
+        })
+      : prisma.saleItem.groupBy({
+          by: ['productId'],
           _sum: { crates: true, looseBottles: true, amount: true },
         }),
-      ]);
+  ]);
 
-      const totalProducedCrates = prodAggregate._sum.cratesProduced || 0;
-      const totalSoldCrates = soldAggregate._sum.crates || 0;
-      const currentCrates = Math.max(0, totalProducedCrates - totalSoldCrates);
+  const prodMap = new Map(prodGroup.map((g) => [g.productId, g._sum]));
+  const soldMap = new Map(soldGroup.map((g) => [g.productId, g._sum]));
 
-      return {
-        id: prod.id,
-        name: prod.name,
-        bottlesPerCrate: prod.bottlesPerCrate,
-        totalProducedCrates,
-        totalSoldCrates,
-        currentCrates,
-        standardRatePaise: prod.rates[0]?.rate || 0,
-        estimatedStockValuePaise: currentCrates * (prod.rates[0]?.rate || 0),
-      };
-    })
-  );
+  const productStockSummary = products.map((prod) => {
+    const pSum = prodMap.get(prod.id);
+    const sSum = soldMap.get(prod.id);
+
+    const totalProducedCrates = pSum?.cratesProduced || 0;
+    const totalSoldCrates = sSum?.crates || 0;
+    const currentCrates = Math.max(0, totalProducedCrates - totalSoldCrates);
+
+    return {
+      id: prod.id,
+      name: prod.name,
+      bottlesPerCrate: prod.bottlesPerCrate,
+      totalProducedCrates,
+      totalSoldCrates,
+      currentCrates,
+      standardRatePaise: prod.rates[0]?.rate || 0,
+      estimatedStockValuePaise: currentCrates * (prod.rates[0]?.rate || 0),
+    };
+  });
 
   // Raw materials alert count
   const lowStockAlerts = rawMaterials.filter((m) => m.currentStock <= m.minReorderLevel);

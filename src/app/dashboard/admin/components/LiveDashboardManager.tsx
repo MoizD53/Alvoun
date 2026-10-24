@@ -53,7 +53,7 @@ export default function LiveDashboardManager() {
             }
 
             // Trigger silent background refresh of Server Components
-            router.refresh();
+            // router.refresh(); (Page refresh is handled centrally & throttled by AdminLiveListener)
           }
         } catch (e) {}
       };

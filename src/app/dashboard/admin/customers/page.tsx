@@ -39,7 +39,16 @@ export default async function CustomersPage({
     page: typeof resolvedParams.page === 'string' ? parseInt(resolvedParams.page) : 1,
   };
 
-  const [rawCustomers, states, cities, routes, salesmen] = await Promise.all([
+  const [
+    rawCustomers,
+    salesGroup,
+    paymentsGroup,
+    productStatsRaw,
+    states,
+    cities,
+    routes,
+    salesmen,
+  ] = await Promise.all([
     prisma.customer.findMany({
       where: {
         ...(filters.search ? { 
@@ -66,85 +75,100 @@ export default async function CustomersPage({
         route: true,
         area: true,
         salesman: true,
-        sales: { 
-          select: { 
-            totalAmount: true, 
-            createdAt: true,
-            items: {
-              select: {
-                crates: true,
-                looseBottles: true,
-                amount: true,
-                product: {
-                  select: { name: true, bottlesPerCrate: true }
-                }
-              }
-            }
-          }, 
-          orderBy: { createdAt: 'desc' }
-        },
-        payments: { select: { amount: true } },
         visits: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 }
       },
       orderBy: { customerName: filters.sort === 'desc' ? 'desc' : 'asc' },
     }),
+    prisma.sale.groupBy({
+      by: ['customerId'],
+      _sum: { totalAmount: true }
+    }),
+    prisma.payment.groupBy({
+      by: ['customerId'],
+      _sum: { amount: true }
+    }),
+    prisma.$queryRaw<Array<{ customerId: string; productName: string; totalCrates: number; totalLoose: number; totalAmount: number }>>`
+      SELECT 
+        s.customerId,
+        p.name as productName,
+        SUM(si.crates) as totalCrates,
+        SUM(si.looseBottles) as totalLoose,
+        SUM(si.amount) as totalAmount
+      FROM SaleItem si
+      JOIN Sale s ON si.saleId = s.id
+      JOIN Product p ON si.productId = p.id
+      GROUP BY s.customerId, p.name
+    `,
     getStates(),
     getCities(filters.stateId),
     getRoutes(filters.cityId),
     getSalesmen(),
   ]);
 
-  // Compute per-customer product-wise sales, collections, and outstanding balance
-  const customers = rawCustomers.map((c) => {
-    let crates1L = 0;
-    let loose1L = 0;
-    let amount1L = 0;
+  const salesMap = new Map<string, number>();
+  for (const s of salesGroup) {
+    salesMap.set(s.customerId, s._sum.totalAmount || 0);
+  }
 
-    let crates500ml = 0;
-    let loose500ml = 0;
-    let amount500ml = 0;
+  const paymentsMap = new Map<string, number>();
+  for (const p of paymentsGroup) {
+    paymentsMap.set(p.customerId, p._sum.amount || 0);
+  }
 
-    let crates250ml = 0;
-    let loose250ml = 0;
-    let amount250ml = 0;
+  const productStatsMap = new Map<string, {
+    crates1L: number; loose1L: number; amount1L: number;
+    crates500ml: number; loose500ml: number; amount500ml: number;
+    crates250ml: number; loose250ml: number; amount250ml: number;
+  }>();
 
-    let totalSales = 0;
-
-    for (const sale of c.sales) {
-      totalSales += sale.totalAmount;
-      for (const item of sale.items) {
-        const type = categorizeProduct(item.product?.name || '');
-        if (type === '1L') {
-          crates1L += item.crates;
-          loose1L += item.looseBottles;
-          amount1L += item.amount;
-        } else if (type === '500ml') {
-          crates500ml += item.crates;
-          loose500ml += item.looseBottles;
-          amount500ml += item.amount;
-        } else if (type === '250ml') {
-          crates250ml += item.crates;
-          loose250ml += item.looseBottles;
-          amount250ml += item.amount;
-        }
-      }
+  for (const row of productStatsRaw) {
+    if (!productStatsMap.has(row.customerId)) {
+      productStatsMap.set(row.customerId, {
+        crates1L: 0, loose1L: 0, amount1L: 0,
+        crates500ml: 0, loose500ml: 0, amount500ml: 0,
+        crates250ml: 0, loose250ml: 0, amount250ml: 0,
+      });
     }
+    const stats = productStatsMap.get(row.customerId)!;
+    const cat = categorizeProduct(row.productName);
+    if (cat === '1L') {
+      stats.crates1L += Number(row.totalCrates || 0);
+      stats.loose1L += Number(row.totalLoose || 0);
+      stats.amount1L += Number(row.totalAmount || 0);
+    } else if (cat === '500ml') {
+      stats.crates500ml += Number(row.totalCrates || 0);
+      stats.loose500ml += Number(row.totalLoose || 0);
+      stats.amount500ml += Number(row.totalAmount || 0);
+    } else if (cat === '250ml') {
+      stats.crates250ml += Number(row.totalCrates || 0);
+      stats.loose250ml += Number(row.totalLoose || 0);
+      stats.amount250ml += Number(row.totalAmount || 0);
+    }
+  }
 
-    const totalCollections = c.payments.reduce((sum, p) => sum + p.amount, 0);
+  // Compute per-customer product-wise sales, collections, and outstanding balance in O(1)
+  const customers = rawCustomers.map((c) => {
+    const stats = productStatsMap.get(c.id) || {
+      crates1L: 0, loose1L: 0, amount1L: 0,
+      crates500ml: 0, loose500ml: 0, amount500ml: 0,
+      crates250ml: 0, loose250ml: 0, amount250ml: 0,
+    };
+    const totalSales = salesMap.get(c.id) || 0;
+    const totalCollections = paymentsMap.get(c.id) || 0;
     const openingBase = c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance;
     const outstanding = openingBase + totalSales - totalCollections;
 
     return {
       ...c,
-      crates1L,
-      loose1L,
-      amount1L,
-      crates500ml,
-      loose500ml,
-      amount500ml,
-      crates250ml,
-      loose250ml,
-      amount250ml,
+      crates1L: stats.crates1L,
+      loose1L: stats.loose1L,
+      amount1L: stats.amount1L,
+      crates500ml: stats.crates500ml,
+      loose500ml: stats.loose500ml,
+      amount500ml: stats.amount500ml,
+      crates250ml: stats.crates250ml,
+      loose250ml: stats.loose250ml,
+      amount250ml: stats.amount250ml,
       totalSales,
       totalCollections,
       outstanding,
