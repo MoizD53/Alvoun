@@ -1,11 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapPin } from 'lucide-react';
+
+function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function LocationTracker() {
   const [status, setStatus] = useState<'pending' | 'active' | 'stale' | 'offline' | 'denied'>('pending');
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const lastSentRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -15,18 +28,38 @@ export default function LocationTracker() {
     }
 
     const sendLocation = async (position: GeolocationPosition) => {
+      const { latitude, longitude, accuracy } = position.coords;
+      const now = Date.now();
+
+      // Client-side stationary check: if moved < 15m and last sent was < 3 minutes ago, skip network request
+      if (lastSentRef.current) {
+        const dist = getDistanceFromLatLonInMeters(
+          lastSentRef.current.lat,
+          lastSentRef.current.lng,
+          latitude,
+          longitude
+        );
+        const elapsed = now - lastSentRef.current.time;
+        if (dist < 15 && elapsed < 180000) {
+          // Stationary — keep active status without triggering Vercel function invocation
+          setStatus('active');
+          return;
+        }
+      }
+
       try {
         const res = await fetch('/api/salesman/location', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
+            latitude,
+            longitude,
+            accuracy
           })
         });
         
         if (res.ok) {
+          lastSentRef.current = { lat: latitude, lng: longitude, time: now };
           setStatus('active');
           setLastUpdate(new Date());
         } else {

@@ -29,12 +29,25 @@ const LeafletMap = dynamic(() => import('./LeafletMap'), {
 export default function LiveMap({ salesmen }: { salesmen: SalesmanLocation[] }) {
   const router = useRouter();
 
-  // Auto-refresh data every 30s
+  // Auto-refresh data every 60s only when tab is visible
   useEffect(() => {
     const interval = setInterval(() => {
-      router.refresh();
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        router.refresh();
+      }
     }, 60000);
-    return () => clearInterval(interval);
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        router.refresh();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [router]);
 
   return <LeafletMap salesmen={salesmen} />;

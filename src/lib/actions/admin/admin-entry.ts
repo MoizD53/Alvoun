@@ -59,7 +59,15 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
   const startOfDay = new Date(`${targetDate}T00:00:00+05:30`);
   const endOfDay = new Date(`${targetDate}T23:59:59.999+05:30`);
 
-  const [products, rawCustomers, salesOnDate, paymentsOnDate, defaultSalesman] = await Promise.all([
+  const [
+    products,
+    rawCustomers,
+    salesGroup,
+    paymentsGroup,
+    salesOnDate,
+    paymentsOnDate,
+    defaultSalesman,
+  ] = await Promise.all([
     prisma.product.findMany({
       where: { isActive: true },
       include: {
@@ -73,11 +81,11 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
         route: true,
         area: true,
         customerRates: true,
-        sales: { select: { totalAmount: true } },
-        payments: { select: { amount: true } },
       },
       orderBy: { customerName: 'asc' },
     }),
+    prisma.sale.groupBy({ by: ['customerId'], _sum: { totalAmount: true } }),
+    prisma.payment.groupBy({ by: ['customerId'], _sum: { amount: true } }),
     prisma.sale.findMany({
       where: {
         saleDate: { gte: startOfDay, lte: endOfDay },
@@ -185,10 +193,13 @@ export async function getAdminEntryWorkspaceData(selectedDateStr?: string) {
     if (p.paymentMethod) entry.methods.push(p.paymentMethod);
   });
 
+  const salesMap = new Map(salesGroup.map((s) => [s.customerId, s._sum.totalAmount || 0]));
+  const paymentsMap = new Map(paymentsGroup.map((p) => [p.customerId, p._sum.amount || 0]));
+
   // Transform all 333 customers with live previous dues, customer-specific rates, and loaded date values
   const customers = rawCustomers.map((c) => {
-    const totalSalesAllTime = c.sales.reduce((sum, s) => sum + s.totalAmount, 0);
-    const totalPaymentsAllTime = c.payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalSalesAllTime = salesMap.get(c.id) || 0;
+    const totalPaymentsAllTime = paymentsMap.get(c.id) || 0;
     const openingBase = c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance;
     const currentOutstandingPaise = openingBase + totalSalesAllTime - totalPaymentsAllTime;
 

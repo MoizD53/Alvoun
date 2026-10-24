@@ -18,7 +18,7 @@ export default async function ProductReportPage({
   const start = getKolkataStartOfDay(dateStr);
   const end = getKolkataEndOfDay(dateStr);
 
-  const [products, saleItems] = await Promise.all([
+  const [products, saleAggregates] = await Promise.all([
     prisma.product.findMany({ 
       orderBy: { bottlesPerCrate: 'asc' },
       include: {
@@ -27,101 +27,101 @@ export default async function ProductReportPage({
         }
       }
     }),
-    prisma.saleItem.findMany({
-      where: {
-        sale: {
-          saleDate: { gte: start, lte: end }
-        }
-      }
-    })
+    prisma.$queryRaw<Array<{ productId: string; cratesSold: number; totalAmount: number }>>`
+      SELECT 
+        si.productId,
+        SUM(si.crates) as cratesSold,
+        SUM(si.amount) as totalAmount
+      FROM SaleItem si
+      JOIN Sale s ON si.saleId = s.id
+      WHERE s.saleDate >= ${start.toISOString()} AND s.saleDate <= ${end.toISOString()}
+      GROUP BY si.productId
+    `
   ]);
+
+  const aggMap = new Map(saleAggregates.map(a => [a.productId, a]));
 
   const productMap = new Map();
   products.forEach(p => {
+    const agg = aggMap.get(p.id);
+    const cratesSold = Number(agg?.cratesSold || 0);
+    const salesAmount = Number(agg?.totalAmount || 0);
     productMap.set(p.id, {
       name: p.name,
       bottlesPerCrate: p.bottlesPerCrate,
-      cratesSold: 0,
-      bottlesSold: 0,
-      salesAmount: 0
+      cratesSold,
+      bottlesSold: cratesSold * p.bottlesPerCrate,
+      salesAmount
     });
-  });
-
-  saleItems.forEach(item => {
-    if (productMap.has(item.productId)) {
-      const p = productMap.get(item.productId);
-      p.cratesSold += item.crates;
-      p.bottlesSold += (item.crates * p.bottlesPerCrate);
-      p.salesAmount += item.amount;
-    }
   });
 
   const reportData = Array.from(productMap.values());
 
   return (
-    <div className="space-y-8 animate-fade-in-up pb-16">
-      {/* Product Management Section */}
-      <ProductManager initialProducts={products} />
-
-      {/* Product Sales Report Section */}
-      <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 p-5 sm:p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-surface-inset shadow-inset border border-border/40 flex items-center justify-center text-primary shrink-0">
-              <BarChart2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">Daily Product Sales Report</h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Crate and bottle volume metrics dispatched for selected date</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <AdminDatePicker currentDate={dateStr} basePath="/dashboard/admin/reports/products" />
-            <a 
-              href={`/api/admin/export?type=products&date=${dateStr}`} 
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-surface-raised shadow-raised hover:shadow-raised-sm press-active border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap"
-            >
-              <Download className="h-4 w-4" /> Export Excel
-            </a>
-          </div>
+    <div className="space-y-6">
+      {/* Header and Filter */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface p-4 rounded-xl border border-border-subtle shadow-subtle">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-brand-teal" />
+            Product Sales & Performance
+          </h1>
+          <p className="text-sm text-text-muted">Daily performance breakdown by SKU and packaging</p>
         </div>
-
-        <div className="overflow-x-auto rounded-xl border border-border/40">
-          <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
-            <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
-              <tr>
-                <th className="px-5 py-3.5">Product</th>
-                <th className="px-5 py-3.5 text-right">PKG Sold</th>
-                <th className="px-5 py-3.5 text-right">Bottles Sold</th>
-                <th className="px-5 py-3.5 text-right">Total Revenue</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40 bg-surface-raised">
-              {reportData.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center">
-                    <EmptyState
-                      icon={<BarChart2 className="w-8 h-8 text-primary" />}
-                      title="No Product Activity"
-                      description={`No bottles or crates sold on ${dateStr}.`}
-                    />
-                  </td>
-                </tr>
-              ) : (
-                reportData.map((row) => (
-                  <tr key={row.name} className="hover:bg-surface-inset/30 transition-colors">
-                    <td className="px-5 py-4 font-bold text-foreground">{row.name}</td>
-                    <td className="px-5 py-4 text-right font-medium text-foreground">{formatNumber(row.cratesSold)}</td>
-                    <td className="px-5 py-4 text-right font-medium text-muted-foreground">{formatNumber(row.bottlesSold)}</td>
-                    <td className="px-5 py-4 text-right font-bold text-primary">{formatMoney(row.salesAmount)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <AdminDatePicker currentDate={dateStr} />
+          <a
+            href={`/api/admin/export?type=products&date=${dateStr}`}
+            download
+            className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-surface-sunken border border-border-subtle text-foreground text-sm font-semibold rounded-lg transition-colors shadow-subtle shrink-0"
+          >
+            <Download className="w-4 h-4 text-brand-teal" />
+            Export
+          </a>
         </div>
       </div>
+
+      {/* Grid of Product Cards */}
+      {reportData.length === 0 ? (
+        <EmptyState
+          icon={<BarChart2 className="w-8 h-8 text-brand-teal" />}
+          title="No Product Data"
+          description={`No product sales records found for ${dateStr}.`}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {reportData.map((prod, idx) => (
+            <div key={idx} className="bg-surface rounded-xl border border-border-subtle shadow-subtle p-5 flex flex-col justify-between hover:border-brand-teal/40 transition-colors">
+              <div>
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-lg text-foreground">{prod.name}</h3>
+                  <span className="text-xs px-2.5 py-1 bg-surface-sunken text-text-secondary rounded-full font-medium border border-border-subtle">
+                    {prod.bottlesPerCrate} Bottles / PKG
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div className="bg-surface-sunken/60 p-3 rounded-lg border border-border-subtle/50">
+                    <span className="text-xs text-text-muted font-medium block">Total PKG Sold</span>
+                    <span className="text-xl font-extrabold text-foreground mt-0.5 block">{formatNumber(prod.cratesSold)}</span>
+                  </div>
+                  <div className="bg-surface-sunken/60 p-3 rounded-lg border border-border-subtle/50">
+                    <span className="text-xs text-text-muted font-medium block">Total Bottles</span>
+                    <span className="text-xl font-extrabold text-brand-teal mt-0.5 block">{formatNumber(prod.bottlesSold)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-border-subtle/60 flex justify-between items-center">
+                <span className="text-xs text-text-muted font-medium">Revenue Contribution</span>
+                <span className="text-base font-bold text-foreground">{formatMoney(prod.salesAmount)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Product Pricing Matrix Component */}
+      <ProductManager initialProducts={products} />
     </div>
   );
 }

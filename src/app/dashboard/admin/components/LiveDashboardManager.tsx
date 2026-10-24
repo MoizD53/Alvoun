@@ -1,126 +1,137 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, ShoppingCart, IndianRupee, MapPin } from 'lucide-react';
-import { formatMoney } from '@/lib/format';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
+import { formatMoney } from '@/lib/format';
+import { Activity, ShoppingCart, DollarSign, MapPin, UserCheck, AlertCircle } from 'lucide-react';
+
+interface ActivityItem {
+  id: string;
+  salesmanName: string;
+  type: string;
+  description: string;
+  timestamp: string;
+  metadata?: any;
+}
 
 export default function LiveDashboardManager() {
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const router = useRouter();
-  const [activities, setActivities] = useState<any[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    let evtSource: EventSource | null = null;
-    let retryTimeout: any;
+    // Populate cached initial logs if available from AdminLiveListener
+    if (typeof window !== 'undefined' && (window as any).__alvounLatestInitialLogs) {
+      const initLogs = (window as any).__alvounLatestInitialLogs;
+      setActivities(initLogs.map((d: any) => ({
+        id: d.id,
+        salesmanName: d.salesman?.name || d.salesmanName || 'Salesman',
+        type: d.type,
+        description: d.description,
+        timestamp: d.timestamp || d.createdAt,
+        metadata: d.metadata
+      })));
+    }
 
-    const connect = () => {
-      evtSource = new EventSource('/api/admin/live');
+    const handleLiveEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const payload = customEvent.detail;
+      if (!payload) return;
 
-      evtSource.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data);
+      if (payload.type === 'INITIAL_LOGS') {
+        setActivities(payload.data.map((d: any) => ({
+          id: d.id,
+          salesmanName: d.salesman?.name || d.salesmanName || 'Salesman',
+          type: d.type,
+          description: d.description,
+          timestamp: d.timestamp || d.createdAt,
+          metadata: d.metadata
+        })));
+      } else if (payload.type === 'ACTIVITY') {
+        const act = payload.data;
+        setActivities(prev => [act, ...prev].slice(0, 50));
 
-          if (payload.type === 'INITIAL_LOGS') {
-            setActivities(payload.data.map((d: any) => ({
-              id: d.id,
-              salesmanName: d.salesman?.name || 'Unknown',
-              type: d.type,
-              description: d.description,
-              timestamp: d.createdAt,
-              metadata: d.metadata ? JSON.parse(d.metadata) : null
-            })));
-          } else if (payload.type === 'ACTIVITY') {
-            const act = payload.data;
-            
-            // Add to feed (newest at top)
-            setActivities(prev => [act, ...prev].slice(0, 50));
-            
-            // Trigger toast notification if high value
-            if (act.type === 'SALE' && act.metadata?.amount >= 1000000) {
-              toast({
-                title: 'High Value Order',
-                description: `${formatMoney(act.metadata.amount)} booked by ${act.salesmanName}`,
-                variant: 'success'
-              });
-            } else if (act.type === 'PAYMENT' && act.metadata?.amount >= 500000) {
-              toast({
-                title: 'Collection Received',
-                description: `${formatMoney(act.metadata.amount)} collected by ${act.salesmanName}`,
-                variant: 'info'
-              });
-            }
-
-            // Trigger silent background refresh of Server Components
-            // router.refresh(); (Page refresh is handled centrally & throttled by AdminLiveListener)
-          }
-        } catch (e) {}
-      };
-
-      evtSource.onerror = () => {
-        evtSource?.close();
-        retryTimeout = setTimeout(connect, 5000);
-      };
+        if (act.type === 'SALE' && act.metadata?.amount >= 1000000) {
+          toast({
+            title: 'High Value Order',
+            description: `${formatMoney(act.metadata.amount)} booked by ${act.salesmanName}`,
+            variant: 'success'
+          });
+        } else if (act.type === 'PAYMENT' && act.metadata?.amount >= 500000) {
+          toast({
+            title: 'Collection Received',
+            description: `${formatMoney(act.metadata.amount)} collected by ${act.salesmanName}`,
+            variant: 'info'
+          });
+        }
+      }
     };
 
-    connect();
-
+    window.addEventListener('alvoun:live-event', handleLiveEvent);
     return () => {
-      evtSource?.close();
-      clearTimeout(retryTimeout);
+      window.removeEventListener('alvoun:live-event', handleLiveEvent);
     };
   }, [router, toast]);
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'SALE': return <ShoppingCart className="h-4 w-4 text-teal-600 dark:text-teal-400" />;
-      case 'PAYMENT': return <IndianRupee className="h-4 w-4 text-success" />;
-      case 'VISIT_START':
-      case 'VISIT_END': return <MapPin className="h-4 w-4 text-warning" />;
-      default: return <Clock className="h-4 w-4 text-muted" />;
+      case 'SALE': return <ShoppingCart className="h-4 w-4 text-emerald-500" />;
+      case 'PAYMENT': return <DollarSign className="h-4 w-4 text-brand-teal" />;
+      case 'VISIT': return <UserCheck className="h-4 w-4 text-brand-teal" />;
+      case 'LOCATION': return <MapPin className="h-4 w-4 text-text-muted" />;
+      default: return <Activity className="h-4 w-4 text-amber-500" />;
     }
   };
 
+  const getRelativeTime = (isoString: string) => {
+    const diff = Math.floor((new Date().getTime() - new Date(isoString).getTime()) / 1000);
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    return `${Math.floor(diff / 3600)}h ago`;
+  };
+
   return (
-    <div className="bg-surface-raised rounded-2xl border border-border-default shadow-raised overflow-hidden flex flex-col h-[500px]">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-border-default flex items-center justify-between bg-surface-raised">
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-teal-500" />
+    <Card className="rounded-2xl border-border-subtle bg-surface shadow-subtle flex flex-col h-full max-h-[420px]">
+      <CardHeader className="p-4 pb-2 border-b border-border-subtle flex flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-teal opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-teal"></span>
           </div>
-          <h2 className="text-sm font-bold text-primary tracking-tight">Live Activity Feed</h2>
+          <CardTitle className="text-sm font-bold uppercase tracking-wider text-text-muted">Live Field Stream</CardTitle>
         </div>
-        <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Real-time Stream</span>
-      </div>
-      
-      {/* List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+        <Badge variant="neutral" className="text-[10px] font-mono border-brand-teal/20 text-brand-teal bg-brand-teal/5">
+          Real-Time
+        </Badge>
+      </CardHeader>
+      <CardContent className="p-0 overflow-y-auto flex-1 divide-y divide-border-subtle/50">
         {activities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-secondary text-xs">
-            <Clock className="h-8 w-8 mb-2 opacity-30 text-muted" />
-            Waiting for live field activities...
+          <div className="p-6 text-center text-text-muted flex flex-col items-center justify-center gap-2">
+            <AlertCircle className="h-6 w-6 text-text-muted/40" />
+            <p className="text-xs font-semibold">Waiting for live activities...</p>
           </div>
         ) : (
-          activities.map((act, i) => (
-            <div key={act.id || i} className="flex items-start gap-3.5 p-3 rounded-xl hover:bg-surface-inset/60 transition-colors">
-              <div className="mt-0.5 bg-surface-inset border border-border-default shadow-inset p-2 rounded-xl shrink-0">
+          activities.map((act) => (
+            <div key={act.id} className="p-3 hover:bg-surface-sunken/40 transition flex items-start gap-3">
+              <div className="p-1.5 bg-surface-sunken rounded-lg mt-0.5">
                 {getIcon(act.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-primary leading-snug">
-                  <span className="font-bold">{act.salesmanName}</span>: {act.description}
-                </p>
-                <p className="text-[10px] font-mono text-muted mt-1">
-                  {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-xs font-bold text-foreground truncate">{act.salesmanName}</span>
+                  <span className="text-[10px] font-mono text-text-muted whitespace-nowrap">
+                    {getRelativeTime(act.timestamp)}
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary truncate mt-0.5">{act.description}</p>
               </div>
             </div>
           ))
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
