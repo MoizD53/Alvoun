@@ -2,6 +2,18 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/auth';
 import { getCurrentKolkataTime, getKolkataTimeDetails, getKolkataDateOnly, isWorkingHours } from './time';
 import { normalizeRole, isFinancialRole } from './rbac';
+import { recordQueryMetrics } from './turso-budget';
+
+// In-memory 60s cache for active salesman sessions to eliminate redundant DB reads on frequent GPS pings
+const salesmanSessionCache = new Map<string, {
+  data: { salesman: any; workSession: any };
+  expiresAt: number;
+}>();
+
+export function invalidateSalesmanSessionCache(profileId?: string) {
+  if (profileId) salesmanSessionCache.delete(profileId);
+  else salesmanSessionCache.clear();
+}
 
 export async function requireActiveSalesmanSession() {
   const session = await auth();
@@ -9,15 +21,27 @@ export async function requireActiveSalesmanSession() {
   if (!session?.user) throw new Error('NOT_AUTHENTICATED');
   if (session.user.role !== 'SALESMAN') throw new Error('NOT_AUTHORIZED');
 
+  const now = getCurrentKolkataTime();
+  const workDate = getKolkataDateOnly(now);
+  const cacheKey = session.user.id;
+
+  const cached = salesmanSessionCache.get(cacheKey);
+  if (
+    cached && 
+    cached.expiresAt > Date.now() && 
+    cached.data.workSession?.status === 'ACTIVE' &&
+    cached.data.workSession?.workDate?.getTime() === workDate.getTime()
+  ) {
+    return cached.data;
+  }
+
+  recordQueryMetrics(2); // Tracks 2 row reads for salesman + session
+
   const salesman = await prisma.salesman.findUnique({
     where: { profileId: session.user.id }
   });
   
   if (!salesman) throw new Error('SALESMAN_NOT_FOUND');
-
-  const now = getCurrentKolkataTime();
-  const timeDetails = getKolkataTimeDetails(now);
-  const workDate = getKolkataDateOnly(now);
 
   // Temporarily disabled 7 AM to 7 PM restriction for 24/7 salesman access
   /*
@@ -96,7 +120,9 @@ export async function requireActiveSalesmanSession() {
     throw new Error('SESSION_ENDED'); // Manually closed or force closed earlier
   }
 
-  return { salesman, workSession };
+  const result = { salesman, workSession };
+  salesmanSessionCache.set(cacheKey, { data: result, expiresAt: Date.now() + 60000 });
+  return result;
 }
 
 export async function requireAdminSession() {

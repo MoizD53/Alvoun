@@ -32,28 +32,40 @@ export default async function MonthlyReportsPage({
     end = getKolkataEndOfDay(`${year}-12-31`);
   }
 
-  const [products, sales, payments] = await Promise.all([
+  // Push aggregation directly to Turso DB to prevent downloading thousands of sales & items
+  const [products, salesAgg, paymentsAgg, itemsAgg] = await Promise.all([
     prisma.product.findMany({
       orderBy: { bottlesPerCrate: 'asc' }
     }),
-    prisma.sale.findMany({
-      where: { saleDate: { gte: start, lte: end } },
-      include: { items: true }
-    }),
-    prisma.payment.findMany({
-      where: { paymentDate: { gte: start, lte: end } }
-    })
+    prisma.$queryRaw<Array<{ monthStr: string; numSales: number; salesAmount: number }>>`
+      SELECT substr(saleDate, 1, 7) as monthStr, COUNT(id) as numSales, SUM(totalAmount) as salesAmount
+      FROM Sale
+      WHERE saleDate >= ${start.toISOString()} AND saleDate <= ${end.toISOString()}
+      GROUP BY substr(saleDate, 1, 7)
+    `,
+    prisma.$queryRaw<Array<{ monthStr: string; collectionAmount: number }>>`
+      SELECT substr(paymentDate, 1, 7) as monthStr, SUM(amount) as collectionAmount
+      FROM Payment
+      WHERE paymentDate >= ${start.toISOString()} AND paymentDate <= ${end.toISOString()}
+      GROUP BY substr(paymentDate, 1, 7)
+    `,
+    prisma.$queryRaw<Array<{ monthStr: string; productId: string; totalCrates: number }>>`
+      SELECT substr(s.saleDate, 1, 7) as monthStr, si.productId, SUM(si.crates) as totalCrates
+      FROM SaleItem si
+      JOIN Sale s ON si.saleId = s.id
+      WHERE s.saleDate >= ${start.toISOString()} AND s.saleDate <= ${end.toISOString()}
+      GROUP BY substr(s.saleDate, 1, 7), si.productId
+    `,
   ]);
 
   const monthsMap = new Map();
 
-  const ensureMonth = (date: Date) => {
-    const dateStr = date.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }).substring(0, 7); 
-    if (!monthsMap.has(dateStr)) {
+  const ensureMonth = (monthStr: string) => {
+    if (!monthsMap.has(monthStr)) {
       const productCrates: Record<string, number> = {};
       products.forEach(p => { productCrates[p.id] = 0; });
-      monthsMap.set(dateStr, {
-        monthStr: dateStr,
+      monthsMap.set(monthStr, {
+        monthStr,
         salesAmount: 0,
         collectionAmount: 0,
         numSales: 0,
@@ -61,100 +73,122 @@ export default async function MonthlyReportsPage({
         productCrates
       });
     }
-    return monthsMap.get(dateStr);
+    return monthsMap.get(monthStr);
   };
 
-  sales.forEach(s => {
-    const m = ensureMonth(s.saleDate);
-    m.salesAmount += s.totalAmount;
-    m.numSales++;
-    s.items.forEach(i => {
-      m.crates += i.crates;
-      m.productCrates[i.productId] = (m.productCrates[i.productId] || 0) + i.crates;
-    });
+  salesAgg.forEach(s => {
+    const m = ensureMonth(s.monthStr);
+    m.salesAmount += Number(s.salesAmount || 0);
+    m.numSales += Number(s.numSales || 0);
   });
 
-  payments.forEach(p => {
-    const m = ensureMonth(p.paymentDate);
-    m.collectionAmount += p.amount;
+  paymentsAgg.forEach(p => {
+    const m = ensureMonth(p.monthStr);
+    m.collectionAmount += Number(p.collectionAmount || 0);
+  });
+
+  itemsAgg.forEach(i => {
+    const m = ensureMonth(i.monthStr);
+    const c = Number(i.totalCrates || 0);
+    m.crates += c;
+    m.productCrates[i.productId] = (m.productCrates[i.productId] || 0) + c;
   });
 
   const reportData = Array.from(monthsMap.values()).sort((a, b) => b.monthStr.localeCompare(a.monthStr));
 
   return (
     <div className="bg-surface-raised shadow-raised rounded-2xl border border-border/40 p-5 sm:p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-border/40 pb-4">
         <div className="flex items-center gap-3">
-          <Link 
-            href="/dashboard/admin" 
-            className="p-2.5 bg-surface-raised shadow-raised hover:shadow-raised-sm press-active rounded-xl text-muted-foreground hover:text-foreground transition-all border border-border/40"
-            aria-label="Back to Admin Dashboard"
+          <Link
+            href="/dashboard/admin/reports"
+            className="p-2 rounded-xl bg-surface-inset border border-border/40 hover:bg-surface-sunken transition text-secondary hover:text-primary"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-foreground tracking-tight">Monthly Sales Performance</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Aggregated revenue, payment collections, and volume by month</p>
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-primary flex items-center gap-2">
+              Monthly Sales & Collections
+              <TrendingUp className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            </h1>
+            <p className="text-xs sm:text-sm text-secondary mt-0.5">
+              Aggregated financial performance and unit volume by month
+            </p>
           </div>
         </div>
 
-        <div>
-          <MonthlyFilterBar year={year} month={selectedMonth} />
-        </div>
+        {/* Global Filter Bar */}
+        <MonthlyFilterBar year={year} month={selectedMonth} />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border/40">
-        <table className="w-full text-xs sm:text-sm text-left whitespace-nowrap">
-          <thead className="bg-surface-inset shadow-inset text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border/40">
-            <tr>
-              <th className="px-5 py-3.5">Month</th>
-              <th className="px-5 py-3.5 text-right">Total Sales</th>
-              <th className="px-5 py-3.5 text-right">Total Collection</th>
-              <th className="px-5 py-3.5 text-right">Invoices</th>
-              <th className="px-5 py-3.5 text-right">PKGs Dispatched</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/40 bg-surface-raised">
-            {reportData.length === 0 ? (
+      {reportData.length === 0 ? (
+        <EmptyState
+          icon={<TrendingUp className="w-8 h-8 text-teal-500" />}
+          title="No Data for Period"
+          description={`No transactions found for ${selectedMonth ? `${selectedMonth}/` : ''}${year}.`}
+        />
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-border/40 bg-surface-base">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="bg-surface-inset/50 border-b border-border/40 text-[11px] font-bold uppercase tracking-wider text-muted">
               <tr>
-                <td colSpan={5} className="p-8 text-center">
-                  <EmptyState
-                    icon={<TrendingUp className="w-8 h-8 text-primary" />}
-                    title="No Monthly Data"
-                    description={`No sales or collections logged for year ${year}.`}
-                  />
-                </td>
+                <th className="py-3 px-4">Month</th>
+                <th className="py-3 px-4 text-right">Total Invoiced</th>
+                <th className="py-3 px-4 text-right">Collections</th>
+                <th className="py-3 px-4 text-right">Outstanding Delta</th>
+                <th className="py-3 px-4 text-center">Invoices</th>
+                <th className="py-3 px-4 text-right font-black text-primary">Total PKGs</th>
+                {products.map(p => (
+                  <th key={p.id} className="py-3 px-4 text-right text-teal-600 dark:text-teal-400">
+                    {p.name}
+                  </th>
+                ))}
               </tr>
-            ) : (
-              reportData.map((row) => {
+            </thead>
+            <tbody className="divide-y divide-border/20 text-xs">
+              {reportData.map((row) => {
+                const diff = row.salesAmount - row.collectionAmount;
                 const [y, m] = row.monthStr.split('-');
-                const monthName = new Date(2000, parseInt(m)-1, 1).toLocaleString('default', { month: 'long' });
+                const monthDate = new Date(parseInt(y), parseInt(m) - 1, 1);
+                const monthLabel = monthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
                 return (
                   <tr key={row.monthStr} className="hover:bg-surface-inset/30 transition-colors">
-                    <td className="px-5 py-4 font-bold text-foreground">{monthName} {y}</td>
-                    <td className="px-5 py-4 text-right font-bold text-primary">{formatMoney(row.salesAmount)}</td>
-                    <td className="px-5 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(row.collectionAmount)}</td>
-                    <td className="px-5 py-4 text-right font-medium text-foreground">{formatNumber(row.numSales)}</td>
-                    <td className="px-5 py-4 text-right">
-                      <div className="font-bold text-foreground">{formatNumber(row.crates)}</div>
-                      <div className="flex flex-wrap justify-end gap-1.5 mt-1">
-                        {products.map(p => {
-                          const count = row.productCrates[p.id] || 0;
-                          return (
-                            <Badge key={p.id} variant="neutral" styleType="outline" size="sm" className="bg-surface-inset text-[10px]">
-                              {p.name}: {count}
-                            </Badge>
-                          );
-                        })}
-                      </div>
+                    <td className="py-3 px-4 font-semibold text-primary">
+                      {monthLabel}
                     </td>
+                    <td className="py-3 px-4 text-right font-bold text-foreground">
+                      {formatMoney(row.salesAmount)}
+                    </td>
+                    <td className="py-3 px-4 text-right font-bold text-teal-600 dark:text-teal-400">
+                      {formatMoney(row.collectionAmount)}
+                    </td>
+                    <td className="py-3 px-4 text-right font-medium">
+                      <span className={diff > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>
+                        {diff > 0 ? `+${formatMoney(diff)}` : formatMoney(diff)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <Badge variant="neutral" className="text-[10px] font-mono">
+                        {row.numSales}
+                      </Badge>
+                    </td>
+                    <td className="py-3 px-4 text-right font-extrabold text-primary">
+                      {formatNumber(row.crates)}
+                    </td>
+                    {products.map(p => (
+                      <td key={p.id} className="py-3 px-4 text-right font-medium text-secondary">
+                        {formatNumber(row.productCrates[p.id] || 0)}
+                      </td>
+                    ))}
                   </tr>
                 );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

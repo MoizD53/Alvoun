@@ -223,6 +223,8 @@ model Sale {
   @@index([customerId])
   @@index([salesmanId])
   @@index([saleDate])
+  @@index([createdAt])
+  @@index([salesmanId, saleDate])
 }
 
 model SaleItem {

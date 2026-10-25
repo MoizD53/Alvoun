@@ -9,6 +9,24 @@ import {
 } from '@/lib/time';
 import { calculateOutstanding } from '@/lib/outstanding';
 import { getOrComputeCached } from '@/lib/cache/dashboard-cache';
+import { recordQueryMetrics } from '@/lib/turso-budget';
+
+let cachedTotalOpening: { value: number; expiresAt: number } | null = null;
+export async function getCustomerOpeningBalanceSum(): Promise<number> {
+  const now = Date.now();
+  if (cachedTotalOpening && cachedTotalOpening.expiresAt > now) {
+    return cachedTotalOpening.value;
+  }
+  const customerBalances = await prisma.customer.findMany({
+    select: { openingBalance: true, openingBalanceType: true }
+  });
+  recordQueryMetrics(customerBalances.length);
+  const total = customerBalances.reduce((sum, c) => {
+    return sum + (c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance);
+  }, 0);
+  cachedTotalOpening = { value: total, expiresAt: now + 300000 };
+  return total;
+}
 
 // ---------------------------------------------------------------------------
 // TYPE DEFINITIONS
@@ -266,11 +284,21 @@ export async function getSalesAndCollectionTrends(
   const rangeStart = daysList[0].start;
   const rangeEnd = daysList[count - 1].end;
 
-  // Parallel queries across the 7-day range
-  const [rangeSales, rangePayments, rangeVisits, allSalesAgg, allPaymentsAgg, customerBalances, rangeSaleItems] = await Promise.all([
+  // Parallel queries across the 7-day range (eliminated separate rangeSaleItems join query and cached customer opening balance sum)
+  const [rangeSales, rangePayments, rangeVisits, allSalesAgg, allPaymentsAgg, totalOpening] = await Promise.all([
     prisma.sale.findMany({
       where: { saleDate: { gte: rangeStart, lte: rangeEnd } },
-      select: { saleDate: true, totalAmount: true }
+      select: {
+        saleDate: true,
+        totalAmount: true,
+        items: {
+          select: {
+            crates: true,
+            looseBottles: true,
+            product: { select: { name: true, bottlesPerCrate: true } }
+          }
+        }
+      }
     }),
     prisma.payment.findMany({
       where: { paymentDate: { gte: rangeStart, lte: rangeEnd } },
@@ -282,26 +310,12 @@ export async function getSalesAndCollectionTrends(
     }),
     prisma.sale.aggregate({ _sum: { totalAmount: true } }),
     prisma.payment.aggregate({ _sum: { amount: true } }),
-    prisma.customer.findMany({
-      select: { openingBalance: true, openingBalanceType: true }
-    }),
-    prisma.saleItem.findMany({
-      where: {
-        sale: { saleDate: { gte: rangeStart, lte: rangeEnd } }
-      },
-      select: {
-        crates: true,
-        looseBottles: true,
-        sale: { select: { saleDate: true } },
-        product: { select: { name: true, bottlesPerCrate: true } }
-      }
-    })
+    getCustomerOpeningBalanceSum(),
   ]);
 
+  recordQueryMetrics(rangeSales.length + rangePayments.length + rangeVisits.length + 2);
+
   // Aggregate Market Dues
-  const totalOpening = customerBalances.reduce((sum, c) => {
-    return sum + (c.openingBalanceType === 'DEBIT' ? c.openingBalance : -c.openingBalance);
-  }, 0);
   const totalMarketDuesPaise = totalOpening + (allSalesAgg._sum.totalAmount || 0) - (allPaymentsAgg._sum.amount || 0);
 
   // Bucket each day's sales, payments, visits, and dispatches
@@ -315,6 +329,11 @@ export async function getSalesAndCollectionTrends(
     const bucket = dayBuckets.get(key);
     if (bucket) {
       bucket.sales += s.totalAmount;
+      s.items.forEach(item => {
+        const bottleLitres = parseProductLitresPerBottle(item.product.name);
+        const bottles = item.crates * item.product.bottlesPerCrate + item.looseBottles;
+        bucket.litres += bottles * bottleLitres;
+      });
     }
   });
 
@@ -331,16 +350,6 @@ export async function getSalesAndCollectionTrends(
     const bucket = dayBuckets.get(key);
     if (bucket) {
       bucket.visits += 1;
-    }
-  });
-
-  rangeSaleItems.forEach(item => {
-    const key = getKolkataDateString(item.sale.saleDate);
-    const bucket = dayBuckets.get(key);
-    if (bucket) {
-      const bottleLitres = parseProductLitresPerBottle(item.product.name);
-      const bottles = item.crates * item.product.bottlesPerCrate + item.looseBottles;
-      bucket.litres += bottles * bottleLitres;
     }
   });
 
@@ -389,16 +398,8 @@ export async function getSalesAndCollectionTrends(
 // 2. PRODUCT-WISE SALES (FOR DONUT CHART & REVENUE SHARE)
 // ---------------------------------------------------------------------------
 
-export async function getProductWiseSales(startOfDay: Date, endOfDay: Date): Promise<ProductSalesData> {
-  const saleItems = await prisma.saleItem.findMany({
-    where: {
-      sale: { saleDate: { gte: startOfDay, lte: endOfDay } }
-    },
-    include: {
-      product: true
-    }
-  });
-
+export function getProductWiseSalesFromSales(sales: any[]): ProductSalesData {
+  const saleItems = sales.flatMap(s => s.items || []);
   const productMap = new Map<string, {
     productId: string;
     productName: string;
@@ -414,8 +415,9 @@ export async function getProductWiseSales(startOfDay: Date, endOfDay: Date): Pro
   let totalCrates = 0;
   let totalLitres = 0;
 
-  saleItems.forEach(item => {
+  saleItems.forEach((item: any) => {
     const p = item.product;
+    if (!p) return;
     const bottleLitres = parseProductLitresPerBottle(p.name);
     const itemBottles = item.crates * p.bottlesPerCrate + item.looseBottles;
     const itemLitres = itemBottles * bottleLitres;
@@ -459,29 +461,30 @@ export async function getProductWiseSales(startOfDay: Date, endOfDay: Date): Pro
   };
 }
 
+export async function getProductWiseSales(startOfDay: Date, endOfDay: Date): Promise<ProductSalesData> {
+  const saleItems = await prisma.saleItem.findMany({
+    where: {
+      sale: { saleDate: { gte: startOfDay, lte: endOfDay } }
+    },
+    include: {
+      product: true
+    }
+  });
+  recordQueryMetrics(saleItems.length);
+  return getProductWiseSalesFromSales([{ items: saleItems }]);
+}
+
 // ---------------------------------------------------------------------------
 // 3. TOP CUSTOMERS (WITH LIVE OUTSTANDING BALANCES)
 // ---------------------------------------------------------------------------
 
-export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: number = 5): Promise<TopCustomerItem[]> {
-  const salesToday = await prisma.sale.findMany({
-    where: { saleDate: { gte: startOfDay, lte: endOfDay } },
-    include: {
-      customer: {
-        include: {
-          route: true,
-          area: true,
-        }
-      }
-    }
-  });
-
+export async function getTopCustomersFromSales(sales: any[], limit: number = 5): Promise<TopCustomerItem[]> {
   const customerMap = new Map<string, {
-    customer: typeof salesToday[0]['customer'];
+    customer: any;
     todaySalesPaise: number;
   }>();
 
-  salesToday.forEach(s => {
+  sales.forEach((s: any) => {
     const c = s.customer;
     if (!c) return;
     const existing = customerMap.get(c.id) || {
@@ -495,6 +498,8 @@ export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: n
   const sorted = Array.from(customerMap.values())
     .sort((a, b) => b.todaySalesPaise - a.todaySalesPaise)
     .slice(0, limit);
+
+  if (sorted.length === 0) return [];
 
   // Fetch lifetime totals ONLY for top customers to compute outstanding balance efficiently
   const topCustomerIds = sorted.map(s => s.customer.id);
@@ -510,6 +515,8 @@ export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: n
       _sum: { amount: true }
     })
   ]);
+  recordQueryMetrics(salesGroup.length + paymentsGroup.length);
+
   const salesMap = new Map(salesGroup.map(s => [s.customerId, s._sum.totalAmount || 0]));
   const paymentsMap = new Map(paymentsGroup.map(p => [p.customerId, p._sum.amount || 0]));
 
@@ -531,23 +538,27 @@ export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: n
   }).filter((x): x is TopCustomerItem => Boolean(x));
 }
 
-// ---------------------------------------------------------------------------
-// 4. AREA-WISE SALES AGGREGATION
-// ---------------------------------------------------------------------------
-
-export async function getAreaWiseSales(startOfDay: Date, endOfDay: Date): Promise<AreaSaleItem[]> {
-  const sales = await prisma.sale.findMany({
+export async function getTopCustomers(startOfDay: Date, endOfDay: Date, limit: number = 5): Promise<TopCustomerItem[]> {
+  const salesToday = await prisma.sale.findMany({
     where: { saleDate: { gte: startOfDay, lte: endOfDay } },
     include: {
       customer: {
         include: {
+          route: true,
           area: true,
-          route: true
         }
       }
     }
   });
+  recordQueryMetrics(salesToday.length);
+  return getTopCustomersFromSales(salesToday, limit);
+}
 
+// ---------------------------------------------------------------------------
+// 4. AREA-WISE SALES AGGREGATION
+// ---------------------------------------------------------------------------
+
+export function getAreaWiseSalesFromSales(sales: any[]): AreaSaleItem[] {
   const areaMap = new Map<string, {
     areaId: string;
     areaName: string;
@@ -559,12 +570,12 @@ export async function getAreaWiseSales(startOfDay: Date, endOfDay: Date): Promis
 
   let totalSales = 0;
 
-  sales.forEach(s => {
-    totalSales += s.totalAmount;
-    const area = s.customer.area;
+  sales.forEach((s: any) => {
+    totalSales += s.totalAmount || 0;
+    const area = s.customer?.area;
     const areaId = area?.id || 'unassigned';
     const areaName = area?.name || 'Unassigned Area';
-    const routeName = s.customer.route?.name || 'Direct';
+    const routeName = s.customer?.route?.name || 'Direct';
 
     const existing = areaMap.get(areaId) || {
       areaId,
@@ -575,9 +586,11 @@ export async function getAreaWiseSales(startOfDay: Date, endOfDay: Date): Promis
       customerIds: new Set<string>()
     };
 
-    existing.salesPaise += s.totalAmount;
+    existing.salesPaise += s.totalAmount || 0;
     existing.ordersCount += 1;
-    existing.customerIds.add(s.customerId);
+    if (s.customerId) {
+      existing.customerIds.add(s.customerId);
+    }
 
     areaMap.set(areaId, existing);
   });
@@ -595,13 +608,30 @@ export async function getAreaWiseSales(startOfDay: Date, endOfDay: Date): Promis
     .sort((a, b) => b.salesPaise - a.salesPaise);
 }
 
+export async function getAreaWiseSales(startOfDay: Date, endOfDay: Date): Promise<AreaSaleItem[]> {
+  const sales = await prisma.sale.findMany({
+    where: { saleDate: { gte: startOfDay, lte: endOfDay } },
+    include: {
+      customer: {
+        include: {
+          area: true,
+          route: true
+        }
+      }
+    }
+  });
+  recordQueryMetrics(sales.length);
+  return getAreaWiseSalesFromSales(sales);
+}
+
 // ---------------------------------------------------------------------------
 // 5. ATTENDANCE AND FIELD ACTIVITY
 // ---------------------------------------------------------------------------
 
 export async function getAttendanceAndFieldActivity(
   startOfDay: Date, 
-  endOfDay: Date
+  endOfDay: Date,
+  prefetchedSales?: Array<{ salesmanId: string; totalAmount: number }>
 ): Promise<AttendanceData> {
   const [salesmen, workSessions, visits, sales, payments] = await Promise.all([
     prisma.salesman.findMany({
@@ -619,15 +649,19 @@ export async function getAttendanceAndFieldActivity(
         }
       }
     }),
-    prisma.sale.findMany({
-      where: { saleDate: { gte: startOfDay, lte: endOfDay } },
-      select: { salesmanId: true, totalAmount: true }
-    }),
+    prefetchedSales 
+      ? Promise.resolve(prefetchedSales) 
+      : prisma.sale.findMany({
+          where: { saleDate: { gte: startOfDay, lte: endOfDay } },
+          select: { salesmanId: true, totalAmount: true }
+        }),
     prisma.payment.findMany({
       where: { paymentDate: { gte: startOfDay, lte: endOfDay } },
       select: { salesmanId: true, amount: true }
     })
   ]);
+
+  recordQueryMetrics(salesmen.length + workSessions.length + visits.length + (prefetchedSales ? 0 : sales.length) + payments.length);
 
   const totalStaff = salesmen.length;
   let present = 0;
@@ -853,27 +887,17 @@ export async function getOperationalAlerts(
 // 7. INVENTORY AND DISPATCH (DERIVED FROM SALE ITEMS & PRODUCT MASTERS)
 // ---------------------------------------------------------------------------
 
-export async function getInventoryAndDispatches(
-  startOfDay: Date, 
-  endOfDay: Date
-): Promise<DispatchSummary> {
-  const saleItems = await prisma.saleItem.findMany({
-    where: {
-      sale: { saleDate: { gte: startOfDay, lte: endOfDay } }
-    },
-    include: {
-      product: true
-    }
-  });
-
+export function getInventoryAndDispatchesFromSales(sales: any[]): DispatchSummary {
+  const saleItems = sales.flatMap(s => s.items || []);
   const byProductMap = new Map<string, DispatchProductItem>();
   let totalCrates = 0;
   let totalLooseBottles = 0;
   let totalBottles = 0;
   let totalLitres = 0;
 
-  saleItems.forEach(item => {
+  saleItems.forEach((item: any) => {
     const p = item.product;
+    if (!p) return;
     const bottleLitres = parseProductLitresPerBottle(p.name);
     const itemBottles = item.crates * p.bottlesPerCrate + item.looseBottles;
     const itemLitres = itemBottles * bottleLitres;
@@ -910,6 +934,22 @@ export async function getInventoryAndDispatches(
       volumeLitres: Math.round(p.volumeLitres)
     })).sort((a, b) => b.totalBottles - a.totalBottles)
   };
+}
+
+export async function getInventoryAndDispatches(
+  startOfDay: Date, 
+  endOfDay: Date
+): Promise<DispatchSummary> {
+  const saleItems = await prisma.saleItem.findMany({
+    where: {
+      sale: { saleDate: { gte: startOfDay, lte: endOfDay } }
+    },
+    include: {
+      product: true
+    }
+  });
+  recordQueryMetrics(saleItems.length);
+  return getInventoryAndDispatchesFromSales([{ items: saleItems }]);
 }
 
 // ---------------------------------------------------------------------------
@@ -988,30 +1028,35 @@ export async function getPurchaseSummary(startOfDay: Date, endOfDay: Date): Prom
 // ---------------------------------------------------------------------------
 
 export async function getStockSummary(asOfDate?: Date): Promise<StockSummary> {
-  const isHistorical = Boolean(asOfDate && asOfDate.getTime() < getKolkataStartOfDay().getTime());
-  const whereBatch = isHistorical ? { productionDate: { lte: asOfDate! } } : {};
-  const whereSale = isHistorical ? { sale: { saleDate: { lte: asOfDate! } } } : {};
+  const dateKey = asOfDate ? getKolkataDateString(asOfDate) : 'today';
+  return getOrComputeCached(`stock_summary_${dateKey}`, 60000, async () => {
+    const isHistorical = Boolean(asOfDate && asOfDate.getTime() < getKolkataStartOfDay().getTime());
+    const whereBatch = isHistorical ? { productionDate: { lte: asOfDate! } } : {};
+    const whereSale = isHistorical ? { sale: { saleDate: { lte: asOfDate! } } } : {};
 
-  const [prodAggregate, soldAggregate] = await Promise.all([
-    prisma.productionBatch.aggregate({
-      where: whereBatch,
-      _sum: { cratesProduced: true, volumeLitres: true }
-    }),
-    prisma.saleItem.aggregate({
-      where: whereSale,
-      _sum: { crates: true }
-    })
-  ]);
+    const [prodAggregate, soldAggregate] = await Promise.all([
+      prisma.productionBatch.aggregate({
+        where: whereBatch,
+        _sum: { cratesProduced: true, volumeLitres: true }
+      }),
+      prisma.saleItem.aggregate({
+        where: whereSale,
+        _sum: { crates: true }
+      })
+    ]);
 
-  const producedCrates = prodAggregate._sum.cratesProduced || 0;
-  const soldCrates = soldAggregate._sum.crates || 0;
-  const availableCrates = Math.max(0, producedCrates - soldCrates);
-  const availableLitres = Math.round(Math.max(0, prodAggregate._sum.volumeLitres || 0));
+    recordQueryMetrics(2);
 
-  return {
-    totalAvailableCrates: availableCrates,
-    totalAvailableLitres: availableLitres
-  };
+    const producedCrates = prodAggregate._sum.cratesProduced || 0;
+    const soldCrates = soldAggregate._sum.crates || 0;
+    const availableCrates = Math.max(0, producedCrates - soldCrates);
+    const availableLitres = Math.round(Math.max(0, prodAggregate._sum.volumeLitres || 0));
+
+    return {
+      totalAvailableCrates: availableCrates,
+      totalAvailableLitres: availableLitres
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1054,15 +1099,21 @@ export async function getExpensesSummary(
 export async function getCustomerActivity(
   startOfDay: Date,
   endOfDay: Date,
-  totalActiveCustomers: number
+  totalActiveCustomers: number,
+  prefetchedCustomerIds?: string[]
 ): Promise<CustomerActivitySummary> {
-  const salesToday = await prisma.sale.findMany({
-    where: { saleDate: { gte: startOfDay, lte: endOfDay } },
-    select: { customerId: true }
-  });
+  let purchasedTodayCount = 0;
+  if (prefetchedCustomerIds) {
+    purchasedTodayCount = new Set(prefetchedCustomerIds).size;
+  } else {
+    const salesToday = await prisma.sale.findMany({
+      where: { saleDate: { gte: startOfDay, lte: endOfDay } },
+      select: { customerId: true }
+    });
+    recordQueryMetrics(salesToday.length);
+    purchasedTodayCount = new Set(salesToday.map((s) => s.customerId)).size;
+  }
 
-  const purchasingSet = new Set(salesToday.map((s) => s.customerId));
-  const purchasedTodayCount = purchasingSet.size;
   const purchasePercentage =
     totalActiveCustomers > 0
       ? Number(((purchasedTodayCount / totalActiveCustomers) * 100).toFixed(1))
@@ -1105,6 +1156,23 @@ export async function getPayrollSummary(targetDate: Date): Promise<PayrollSummar
   };
 }
 
+let cachedMetaCounts: { data: [number, number, number, number]; expiresAt: number } | null = null;
+export async function getCachedMetaCounts(): Promise<[number, number, number, number]> {
+  const now = Date.now();
+  if (cachedMetaCounts && cachedMetaCounts.expiresAt > now) {
+    return cachedMetaCounts.data;
+  }
+  const counts = await Promise.all([
+    prisma.customer.count(),
+    prisma.customer.count({ where: { status: 'ACTIVE' } }),
+    prisma.route.count({ where: { isActive: true } }),
+    prisma.area.count(),
+  ]);
+  recordQueryMetrics(4);
+  cachedMetaCounts = { data: counts, expiresAt: now + 300000 };
+  return counts;
+}
+
 // ---------------------------------------------------------------------------
 // MAIN EXECUTIVE DASHBOARD AGGREGATOR
 // ---------------------------------------------------------------------------
@@ -1117,63 +1185,113 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
   return getOrComputeCached(cacheKey, 45000, async () => {
     const isToday = selectedDate === getKolkataDateString(now);
 
-  const startOfDay = getKolkataStartOfDay(selectedDate);
-  const endOfDay = getKolkataEndOfDay(selectedDate);
+    const startOfDay = getKolkataStartOfDay(selectedDate);
+    const endOfDay = getKolkataEndOfDay(selectedDate);
 
-  const targetDate = new Date(selectedDate);
+    const targetDate = new Date(selectedDate);
 
-  // Parallel resilient execution of all core modules + system metadata
-  const safeRun = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
-    try {
-      return await fn();
-    } catch (err) {
-      console.warn('[dashboard-data] Safe query fallback used:', err);
-      return fallback;
-    }
-  };
-
-  const [
-    trendsResult,
-    productSales,
-    topCustomers,
-    areaSales,
-    attendance,
-    alerts,
-    dispatches,
-    expenses,
-    production,
-    purchase,
-    stock,
-    payroll,
-    metaCounts
-  ] = await Promise.all([
-    safeRun(
-      () => getSalesAndCollectionTrends(selectedDate),
-      {
-        trends: {
-          points: [],
-          todaySalesPaise: 0,
-          yesterdaySalesPaise: 0,
-          salesChangePercent: 0,
-          todayCollectionsPaise: 0,
-          yesterdayCollectionsPaise: 0,
-          collectionsChangePercent: 0,
-          totalMarketDuesPaise: 0,
-          todayDispatchedLitres: 0,
-          yesterdayDispatchedLitres: 0,
-          dispatchedLitresChangePercent: 0,
-        },
-        sevenDaysList: [],
+    // Parallel resilient execution of all core modules + system metadata
+    const safeRun = async <T>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+      try {
+        return await fn();
+      } catch (err) {
+        console.warn('[dashboard-data] Safe query fallback used:', err);
+        return fallback;
       }
-    ),
-    safeRun(
-      () => getProductWiseSales(startOfDay, endOfDay),
-      { products: [], totalSalesPaise: 0, totalBottles: 0, totalCrates: 0, totalLitres: 0 }
-    ),
-    safeRun(() => getTopCustomers(startOfDay, endOfDay, 10), []),
-    safeRun(() => getAreaWiseSales(startOfDay, endOfDay), []),
-    safeRun(
-      () => getAttendanceAndFieldActivity(startOfDay, endOfDay),
+    };
+
+    // 1. Parallel fetch: salesToday (one single query for all sale data) + domain aggregates
+    const [
+      salesToday,
+      trendsResult,
+      alerts,
+      expenses,
+      production,
+      purchase,
+      stock,
+      payroll,
+      metaCounts
+    ] = await Promise.all([
+      safeRun(
+        () =>
+          prisma.sale.findMany({
+            where: { saleDate: { gte: startOfDay, lte: endOfDay } },
+            include: {
+              customer: {
+                include: {
+                  route: true,
+                  area: true,
+                },
+              },
+              items: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          }),
+        []
+      ),
+      safeRun(
+        () => getSalesAndCollectionTrends(selectedDate),
+        {
+          trends: {
+            points: [],
+            todaySalesPaise: 0,
+            yesterdaySalesPaise: 0,
+            salesChangePercent: 0,
+            todayCollectionsPaise: 0,
+            yesterdayCollectionsPaise: 0,
+            collectionsChangePercent: 0,
+            totalMarketDuesPaise: 0,
+            todayDispatchedLitres: 0,
+            yesterdayDispatchedLitres: 0,
+            dispatchedLitresChangePercent: 0,
+          },
+          sevenDaysList: [],
+        }
+      ),
+      safeRun(() => getOperationalAlerts(startOfDay, endOfDay, isToday), []),
+      safeRun(
+        () => getExpensesSummary(startOfDay, endOfDay, targetDate),
+        { todayExpensesPaise: 0, monthExpensesPaise: 0, expensesCount: 0 }
+      ),
+      safeRun(
+        () => getProductionSummary(startOfDay, endOfDay),
+        { todayCrates: 0, todayLooseBottles: 0, todayLitres: 0, batchesCount: 0 }
+      ),
+      safeRun(
+        () => getPurchaseSummary(startOfDay, endOfDay),
+        {
+          todayTotalAmountPaise: 0,
+          todayPaidPaise: 0,
+          todayOutstandingPaise: 0,
+          todayQuantity: 0,
+          purchasesCount: 0,
+        }
+      ),
+      safeRun(
+        () => getStockSummary(endOfDay),
+        { totalAvailableCrates: 0, totalAvailableLitres: 0 }
+      ),
+      safeRun(
+        () => getPayrollSummary(targetDate),
+        { activeStaffCount: 0, monthlyLiabilityPaise: 0, paidThisMonthPaise: 0 }
+      ),
+      safeRun(() => getCachedMetaCounts(), [0, 0, 0, 0]),
+    ]);
+
+    recordQueryMetrics(salesToday.length);
+
+    // 2. Derive Product Sales, Dispatches, Area Sales, and Top Customers from salesToday in memory
+    const productSales = getProductWiseSalesFromSales(salesToday);
+    const dispatches = getInventoryAndDispatchesFromSales(salesToday);
+    const areaSales = getAreaWiseSalesFromSales(salesToday);
+    const topCustomers = await safeRun(() => getTopCustomersFromSales(salesToday, 10), []);
+
+    // 3. Attendance query reusing prefetched sales to eliminate extra query
+    const attendance = await safeRun(
+      () => getAttendanceAndFieldActivity(startOfDay, endOfDay, salesToday),
       {
         totalStaff: 0,
         present: 0,
@@ -1187,83 +1305,43 @@ export async function getDashboardExecutiveData(dateStr?: string): Promise<Dashb
         totalVisitsToday: 0,
         salesmen: [],
       }
-    ),
-    safeRun(() => getOperationalAlerts(startOfDay, endOfDay, isToday), []),
-    safeRun(
-      () => getInventoryAndDispatches(startOfDay, endOfDay),
-      { totalCrates: 0, totalLooseBottles: 0, totalBottles: 0, totalLitres: 0, byProduct: [] }
-    ),
-    safeRun(
-      () => getExpensesSummary(startOfDay, endOfDay, targetDate),
-      { todayExpensesPaise: 0, monthExpensesPaise: 0, expensesCount: 0 }
-    ),
-    safeRun(
-      () => getProductionSummary(startOfDay, endOfDay),
-      { todayCrates: 0, todayLooseBottles: 0, todayLitres: 0, batchesCount: 0 }
-    ),
-    safeRun(
-      () => getPurchaseSummary(startOfDay, endOfDay),
-      {
-        todayTotalAmountPaise: 0,
-        todayPaidPaise: 0,
-        todayOutstandingPaise: 0,
-        todayQuantity: 0,
-        purchasesCount: 0,
+    );
+
+    // 4. Customer Activity reusing prefetched customer IDs
+    const activeCustomersCount = metaCounts[1];
+    const customerIdsToday = salesToday.map(s => s.customerId);
+    const customerActivity = await getCustomerActivity(startOfDay, endOfDay, activeCustomersCount, customerIdsToday);
+
+    // Cash flow is actual collections received today minus actual cash/bank expense outflows today
+    const cashFlow: CashFlowSummary = {
+      inflowPaise: trendsResult.trends.todayCollectionsPaise,
+      outflowPaise: expenses.todayExpensesPaise,
+      netPaise: trendsResult.trends.todayCollectionsPaise - expenses.todayExpensesPaise
+    };
+
+    return {
+      selectedDate,
+      isToday,
+      trends: trendsResult.trends,
+      productSales,
+      topCustomers,
+      areaSales,
+      attendance,
+      alerts,
+      dispatches,
+      expenses,
+      production,
+      purchase,
+      stock,
+      cashFlow,
+      customerActivity,
+      payroll,
+      meta: {
+        totalCustomersCount: metaCounts[0],
+        activeCustomersCount: metaCounts[1],
+        activeRoutesCount: metaCounts[2],
+        totalAreasCount: metaCounts[3]
       }
-    ),
-    safeRun(
-      () => getStockSummary(endOfDay),
-      { totalAvailableCrates: 0, totalAvailableLitres: 0 }
-    ),
-    safeRun(
-      () => getPayrollSummary(targetDate),
-      { activeStaffCount: 0, monthlyLiabilityPaise: 0, paidThisMonthPaise: 0 }
-    ),
-    safeRun(
-      () =>
-        Promise.all([
-          prisma.customer.count(),
-          prisma.customer.count({ where: { status: 'ACTIVE' } }),
-          prisma.route.count({ where: { isActive: true } }),
-          prisma.area.count(),
-        ]),
-      [0, 0, 0, 0]
-    ),
-  ]);
-
-  const activeCustomersCount = metaCounts[1];
-  const customerActivity = await getCustomerActivity(startOfDay, endOfDay, activeCustomersCount);
-
-  // Cash flow is actual collections received today minus actual cash/bank expense outflows today
-  const cashFlow: CashFlowSummary = {
-    inflowPaise: trendsResult.trends.todayCollectionsPaise,
-    outflowPaise: expenses.todayExpensesPaise,
-    netPaise: trendsResult.trends.todayCollectionsPaise - expenses.todayExpensesPaise
-  };
-
-  return {
-    selectedDate,
-    isToday,
-    trends: trendsResult.trends,
-    productSales,
-    topCustomers,
-    areaSales,
-    attendance,
-    alerts,
-    dispatches,
-    expenses,
-    production,
-    purchase,
-    stock,
-    cashFlow,
-    customerActivity,
-    payroll,
-    meta: {
-      totalCustomersCount: metaCounts[0],
-      activeCustomersCount: metaCounts[1],
-      activeRoutesCount: metaCounts[2],
-      totalAreasCount: metaCounts[3]
-    }
-  };
+    };
   });
 }
